@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="utf-8">
+    <script>document.documentElement.classList.add('js');</script>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bias Satrio Putra — IT Professional & Full-Stack Developer</title>
@@ -777,14 +778,18 @@
             font-size: .86rem;
         }
 
-        /* reveal */
+        /* reveal — content is visible by default; only hidden (for animation)
+           when JS is available. Guarantees the page never renders blank. */
         .reveal {
-            opacity: 0;
-            transform: translateY(22px);
             transition: opacity .7s ease, transform .7s ease;
         }
 
-        .reveal.in {
+        .js .reveal {
+            opacity: 0;
+            transform: translateY(22px);
+        }
+
+        .js .reveal.in {
             opacity: 1;
             transform: none;
         }
@@ -1327,20 +1332,35 @@
             });
         })();
 
-        // reveal on scroll + skill bars
+        // reveal on scroll + skill bars — with hard fallbacks so nothing ever
+        // stays hidden if IntersectionObserver is missing or misbehaves.
         (function () {
-            var io = new IntersectionObserver(function (entries) {
-                entries.forEach(function (e) {
-                    if (e.isIntersecting) {
-                        e.target.classList.add('in');
-                        e.target.querySelectorAll('.bar span').forEach(function (s) {
-                            s.style.width = s.getAttribute('data-w');
-                        });
-                        io.unobserve(e.target);
-                    }
+            var els = document.querySelectorAll('.reveal');
+            function showAll() {
+                els.forEach(function (el) {
+                    el.classList.add('in');
+                    el.querySelectorAll('.bar span').forEach(function (s) {
+                        s.style.width = s.getAttribute('data-w');
+                    });
                 });
-            }, { threshold: 0.12 });
-            document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+            }
+            try {
+                if (!('IntersectionObserver' in window)) { showAll(); return; }
+                var io = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (e) {
+                        if (e.isIntersecting) {
+                            e.target.classList.add('in');
+                            e.target.querySelectorAll('.bar span').forEach(function (s) {
+                                s.style.width = s.getAttribute('data-w');
+                            });
+                            io.unobserve(e.target);
+                        }
+                    });
+                }, { threshold: 0.05, rootMargin: '0px 0px -5% 0px' });
+                els.forEach(function (el) { io.observe(el); });
+                // safety net: reveal everything after 1.8s no matter what
+                setTimeout(showAll, 1800);
+            } catch (err) { showAll(); }
         })();
     </script>
 </body>

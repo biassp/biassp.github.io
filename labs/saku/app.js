@@ -110,7 +110,7 @@
     }
     if (name === 'inbox') renderInbox();
     if (name === 'engine') refreshEngine();
-    $('view-' + name).focus();
+    try { $('view-' + name).focus({ preventScroll: true }); } catch (e) { $('view-' + name).focus(); }
   }
 
   VIEWS.forEach(function (v) {
@@ -158,9 +158,11 @@
     $('shareNavBtn').disabled = !ready;
     $('shareHint').textContent = ready
       ? 'The worker controls this page, so the POST below is intercepted locally. Watch the trace.'
-      : (swSupported
-        ? 'Waiting for the service worker to take control of this client. Until it does, a POST to ./share would escape to the network and the host would answer 405 — which is exactly the failure window this app is built to close.'
-        : 'This browser exposes no service worker (private mode, or an insecure context). The share pipeline cannot run here; everything else on this page still works.');
+      : (swError
+        ? 'Service worker unavailable here: ' + swError + '. That happens in a private window, behind a blocked-worker policy, or on an insecure origin — so the share pipeline is switched off rather than left to fail silently. Capture, the parser, IndexedDB, the outbox and every panel below still work.'
+        : (swSupported
+          ? 'Waiting for the service worker to take control of this client. Until it does, a POST to ./share would escape to the network and the host would answer 405 — which is exactly the failure window this app is built to close.'
+          : 'This browser exposes no service worker API. The share pipeline cannot run here; everything else on this page still works.'));
   }
 
   function registerSW() {
@@ -171,6 +173,7 @@
       return;
     }
     navigator.serviceWorker.register('./sw.js', { scope: './' }).then(function (reg) {
+      if (!reg) throw new Error('registration returned nothing — workers are blocked in this context');
       swReg = reg;
       paintSWPill();
       reg.addEventListener('updatefound', function () {

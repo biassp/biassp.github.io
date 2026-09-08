@@ -34,7 +34,7 @@
   </div>
 </header>
 
-<nav class="tabs" aria-label="Views">
+<nav class="tabs" role="tablist" aria-label="Views">
   <button type="button" class="tab" id="tab-engine" role="tab" aria-selected="true" aria-controls="view-engine" data-view="engine">Engine</button>
   <button type="button" class="tab" id="tab-inbox" role="tab" aria-selected="false" aria-controls="view-inbox" data-view="inbox">Inbox <span class="count" id="inboxCount">0</span></button>
   <button type="button" class="tab" id="tab-capture" role="tab" aria-selected="false" aria-controls="view-capture" data-view="capture">Capture</button>
@@ -88,6 +88,7 @@
       <input type="hidden" name="title" value="Shared to Saku">
       <input type="hidden" name="text" id="shareFormText" value="">
       <input type="hidden" name="url" value="">
+      <button type="submit">Share</button>
     </form>
 
     <div class="trace-wrap">
@@ -157,14 +158,14 @@
         <label class="check"><input type="checkbox" id="chaosDuplicate"><span>Deliver every op twice (at-least-once delivery)</span></label>
         <label class="check"><input type="checkbox" id="chaosQuota"><span>Inject <code>QuotaExceededError</code> mid-transaction</span></label>
         <label class="check"><input type="checkbox" id="chaosSwThrow"><span>Throw inside the service worker fetch handler</span></label>
-        <label class="field">
-          <span>Peer failure rate: <output id="failRateOut">0%</output></span>
+        <div class="field">
+          <span><label for="chaosFailRate">Peer failure rate</label>: <output id="failRateOut">0%</output></span>
           <input type="range" id="chaosFailRate" min="0" max="100" step="10" value="0">
-        </label>
-        <label class="field">
-          <span>Peer latency: <output id="latencyOut">250 ms</output></span>
+        </div>
+        <div class="field">
+          <span><label for="chaosLatency">Peer latency</label>: <output id="latencyOut">250 ms</output></span>
           <input type="range" id="chaosLatency" min="0" max="3000" step="250" value="250">
-        </label>
+        </div>
         <div class="row">
           <button type="button" class="btn small" id="divergeBtn">Peer edits your newest entry</button>
         </div>
@@ -285,7 +286,7 @@
         <input type="file" id="photoInput" accept="image/*" capture="environment">
       </label>
       <div class="photo-out" id="photoOut" hidden>
-        <img id="photoPreview" alt="Captured receipt preview">
+        <img id="photoPreview" alt="Captured receipt preview" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="1" height="1">
         <p class="status" id="photoStatus"></p>
       </div>
       <h3 class="mini">Merchant → category map</h3>
@@ -331,7 +332,7 @@
 
 <footer class="foot">
   <p>Saku · a lab from <a href="../../">biassp.github.io</a>. Vanilla HTML/CSS/JS, no build step, no
-     dependencies. <a href="./README.md">README</a></p>
+     dependencies. <a href="https://github.com/biassp/biassp.github.io/blob/master/labs/saku/README.md">README</a></p>
 </footer>
 
 <script src="./store.js"></script>

@@ -521,7 +521,9 @@
           reason: reason, confidence: confidence, name: paramName(parentSeg, g.shape.id)
         };
       } else {
-        for (var j = 0; j < g.values.length; j++) literals.push(g.values[j]);
+        // NOT pushed into `literals` here: the caller re-adds them only if the
+        // decision survives, so an override to 'param' cannot leave the same
+        // values in both the literal and the parameter branch.
         params['!' + shapeIds[i]] = { rejected: true, shapeId: g.shape.id, shapeLabel: g.shape.label, values: g.values.slice().sort(), reason: reason };
       }
     }
@@ -1073,6 +1075,8 @@
           var p = o.queryParams[k];
           p.required = p.count === o.reqCount && o.reqCount > 0;
           p.presence = p.count + '/' + o.reqCount;
+          // sorted, so the emitted spec does not depend on request order
+          p.examples.sort();
         });
       }
       ep.ops = ops; ep.methods = methods;
@@ -1121,7 +1125,7 @@
       if (h && /^http\/1/.test(e.httpVersion)) h.http1 = true;
     });
     // Longest strictly serialised chain: each request starts after the previous ends.
-    var byStart = entries.slice().sort(function (a, b) { return a.offsetMs - b.offsetMs; });
+    var byStart = entries.slice().sort(function (a, b) { return a.offsetMs - b.offsetMs || a.time - b.time; });
     var chain = [], best = [];
     for (var i = 0; i < byStart.length; i++) {
       var e = byStart[i];
@@ -1302,7 +1306,7 @@
   function lower(s) { return String(s == null ? '' : s).toLowerCase(); }
 
   function parseCacheControl(v) {
-    var out = { raw: v || '', directives: Object.create(null) };
+    var out = { raw: v || '', directives: Object.create(null), maxAge: null, noStore: false, noCache: false, isPrivate: false, immutable: false };
     if (!v) return out;
     String(v).split(',').forEach(function (part) {
       var p = part.trim();
@@ -1321,9 +1325,19 @@
   H.parseCacheControl = parseCacheControl;
 
   var SECRETY_PARAM = /^(api[_-]?key|apikey|access[_-]?token|auth[_-]?token|id[_-]?token|refresh[_-]?token|token|key|secret|password|passwd|pwd|signature|sig|sso|session|sessionid|jwt|bearer|client[_-]?secret)$/i;
-  var SECRETY_VALUE = /^(sk_live_|sk_test_|pk_live_|ghp_|gho_|github_pat_|xox[baprs]-|AKIA|ASIA|AIza|eyJ)/;
+  var SECRETY_VALUE = /^(sk_live_|sk_test_|pk_live_|ghp_|gho_|github_pat_|xox[baprs]-|AKIA|ASIA|AIza)/;
   var HASHED_ASSET = /\.[0-9a-f]{8,}\.(js|css|png|jpe?g|gif|svg|woff2?|ttf)$/i;
   var TEXTY = /(json|javascript|text|xml|html|css|svg)/;
+
+  function uniqueStrings(list) {
+    var seen = Object.create(null), out = [];
+    for (var i = 0; i < list.length; i++) {
+      if (seen[list[i]]) continue;
+      seen[list[i]] = true;
+      out.push(list[i]);
+    }
+    return out;
+  }
 
   function fnd(o) {
     o.evidence = (o.evidence || []).slice(0, 40);
@@ -1473,7 +1487,7 @@
       out.push(fnd({
         id: 'jwt-' + issueId, family: 'auth', severity: first.severity,
         title: 'JWT: ' + first.text.split(' - ')[0].replace(/\.$/, ''),
-        detail: first.text + ' Seen in: ' + hits.slice(0, 3).map(function (h) { return h.where; }).join(', ') + '.',
+        detail: first.text + ' Seen in: ' + uniqueStrings(hits.map(function (h) { return h.where; })).slice(0, 3).join(', ') + '.',
         why: 'Decoded locally from the token itself. The signature is NOT checked - that needs the signing key.',
         fix: issueId === 'alg-none'
           ? 'Pin the accepted algorithms server-side and reject alg=none outright.'
@@ -2129,10 +2143,15 @@
     var sortedPaths = {};
     Object.keys(paths).sort().forEach(function (p) { sortedPaths[p] = paths[p]; });
 
-    var scheme = 'https';
+    var schemeCounts = Object.create(null);
     for (var i = 0; i < trace.entries.length; i++) {
-      if (trace.entries[i].host === host) { scheme = trace.entries[i].scheme || 'https'; break; }
+      if (trace.entries[i].host !== host) continue;
+      var sc = trace.entries[i].scheme || 'https';
+      schemeCounts[sc] = (schemeCounts[sc] || 0) + 1;
     }
+    var scheme = Object.keys(schemeCounts).sort(function (a, b) {
+      return schemeCounts[b] - schemeCounts[a] || (a < b ? -1 : 1);
+    })[0] || 'https';
 
     var doc = {
       openapi: '3.1.0',

@@ -19,6 +19,7 @@ var PRECACHE = [
   './',
   './index.html',
   './app.css',
+  './theme.js',
   './store.js',
   './parse.js',
   './sync.js',
@@ -146,7 +147,9 @@ function handleShare(request) {
         ', files=' + files.length
     });
 
-    var combined = [title, text, url].filter(Boolean).join(' · ');
+    // Parse the shared TEXT on its own when there is one: the OS-supplied title
+    // ("Shared to Saku", "Photos") would otherwise win the merchant pattern.
+    var combined = text || [title, url].filter(Boolean).join(' · ');
     var parsed = SakuParse.parse(combined);
     trace.push({
       t: Date.now(),

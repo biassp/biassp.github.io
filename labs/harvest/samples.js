@@ -360,8 +360,8 @@
   var cached = {};
   H.samples = {
     list: [
-      { id: 'clean', label: 'Clean REST API', note: '25 requests, well-behaved: ETags, HSTS, Retry-After, one idempotency key.' },
-      { id: 'messy', label: 'Pathological trace', note: '38 requests: N+1 fan-out, key in the URL, plaintext auth, 200-with-error-body.' }
+      { id: 'clean', label: 'Clean REST API', note: '27 requests, well-behaved: ETags, HSTS, Retry-After, one idempotency key.' },
+      { id: 'messy', label: 'Pathological trace', note: '30 requests: N+1 fan-out, key in the URL, plaintext auth, 200-with-error-body.' }
     ],
     get: function (id) {
       if (!cached[id]) cached[id] = (id === 'messy' ? messyTrace() : cleanTrace());

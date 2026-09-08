@@ -63,23 +63,24 @@
   S.SEMESTER_AKTIF = 'ganjil';
 
   /* ------------------------------------------------------------ kalender --
-   * A five-day week (sekolah lima hari). Senin-Kamis run 10 JP of 40 minutes
-   * with two breaks — after JP 3 (istirahat pertama) and after JP 7 (istirahat
-   * dan salat zuhur), which is the shape most SMP actually use. Jum'at is short
-   * and ends before Jumatan.
+   * A five-day week (sekolah lima hari), which is why Senin-Kamis are long:
+   * 11 JP of 40 minutes, 07.00 to 14.50, with two breaks — after JP 3
+   * (istirahat pertama) and after JP 7 (istirahat dan salat zuhur). Jum'at is
+   * short and ends before Jumatan.
    *
    * `breakAfter` splits a day into segments, and a lesson block may never
    * straddle one — a 3-JP block cannot have istirahat in the middle of it. The
    * segment widths are load-bearing for feasibility, not cosmetic: with breaks
-   * after JP 4 and JP 8 the day is 4/4/2 and only two segments per day can hold
-   * a 3-JP block, which is not enough for a 40-JP week that contains eight of
-   * them. 3/4/3 gives three, and the instance breathes.
+   * after JP 4 and JP 8 the day would be 4/4/3 and only two segments per day
+   * could hold a 3-JP block flush, which is not enough for a 40-JP week. 3/4/4
+   * gives three, and 50 slots against 40 JP leaves the ten periods of slack a
+   * real school keeps for upacara, projek and remedial.
    */
   S.HARI = [
-    { id: 'senin', label: 'Senin', slots: 10, breakAfter: [3, 7] },
-    { id: 'selasa', label: 'Selasa', slots: 10, breakAfter: [3, 7] },
-    { id: 'rabu', label: 'Rabu', slots: 10, breakAfter: [3, 7] },
-    { id: 'kamis', label: 'Kamis', slots: 10, breakAfter: [3, 7] },
+    { id: 'senin', label: 'Senin', slots: 11, breakAfter: [3, 7] },
+    { id: 'selasa', label: 'Selasa', slots: 11, breakAfter: [3, 7] },
+    { id: 'rabu', label: 'Rabu', slots: 11, breakAfter: [3, 7] },
+    { id: 'kamis', label: 'Kamis', slots: 11, breakAfter: [3, 7] },
     { id: 'jumat', label: "Jum'at", slots: 6, breakAfter: [3] }
   ];
   S.JP_MENIT = 40;
@@ -270,7 +271,7 @@
     },
     {
       id: 'bind', kode: 'B.IND', nama: 'Bahasa Indonesia', kelompok: 'A',
-      jp: 6, blok: [{ len: 3 }, { len: 3 }], kkm: 72, berat: true,
+      jp: 6, blok: [{ len: 2 }, { len: 2 }, { len: 2 }], kkm: 72, berat: true,
       materi: ['teks berita', 'teks eksposisi', 'teks eksplanasi', 'puisi dan majas']
     },
     {

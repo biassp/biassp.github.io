@@ -24,6 +24,10 @@
     --accent: #6366f1;
     --accent-2: #22d3ee;
     --accent-3: #a855f7;
+    /* Solid-fill buttons need their own token: white on --accent #6366f1 is
+       4.47:1, which misses 4.5 by a hair in BOTH themes. This one clears it at
+       6.29:1 and still reads as the same indigo. */
+    --accent-solid: #4f46e5;
     --link: #22d3ee;
     --focus: #22d3ee;
     --grad: linear-gradient(120deg, #6366f1 0%, #a855f7 50%, #22d3ee 100%);
@@ -64,6 +68,13 @@ html[data-theme="light"] {
     --text: #131a2e;
     --muted: #55618a;
     --faint: #656e8f;
+    /* These three were missing from the light block, so .rolechip, the picked
+       lesson outline and the "edited mark" purple all kept their dark-theme
+       values on a white surface: 1.81:1, 1.81:1 and 3.39:1 measured. They are
+       the same darkened hues already used for --mp-1/2/3 below. */
+    --accent: #4f46e5;
+    --accent-2: #0e7490;
+    --accent-3: #7e22ce;
     --link: #0e7490;
     --focus: #045981;
     --shadow: 0 18px 50px -30px rgba(30, 41, 90, 0.35);
@@ -221,8 +232,8 @@ main {
 }
 
 .btn.primary {
-    background: var(--accent);
-    border-color: var(--accent);
+    background: var(--accent-solid);
+    border-color: var(--accent-solid);
     color: #fff;
 }
 
@@ -234,8 +245,8 @@ main {
 }
 
 .btn[aria-pressed="true"] {
-    background: var(--accent);
-    border-color: var(--accent);
+    background: var(--accent-solid);
+    border-color: var(--accent-solid);
     color: #fff;
 }
 
@@ -598,6 +609,22 @@ tr.sel { background: var(--card-2); }
     font-weight: 600;
 }
 
+/* The JP labels live in grid column 1 inside the same scroller as the days, so
+   on a 390px viewport scrolling right to Kamis left every row unlabelled. The
+   container already scrolls; pinning column 1 costs nothing elsewhere. */
+.jadwal-grid > .jadwal-slot,
+.jadwal-grid > .jadwal-head.corner {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: var(--card);
+    /* The grid's 4px gaps are transparent, so a multi-row lesson scrolling
+       underneath shows through both beside and BETWEEN the pinned cells as
+       coloured slivers. One offset-plus-spread shadow paints the column gap on
+       the right and the row gaps above and below, all in the card colour. */
+    box-shadow: 2px 0 0 2px var(--card);
+}
+
 .jadwal-slot {
     font-size: 10.5px;
     font-family: var(--mono);
@@ -866,20 +893,26 @@ tr.sel { background: var(--card-2); }
     align-items: start;
 }
 
-.nilai-input {
-    width: 58px;
+/* Specificity matters here. `input[type=number]` is (0,1,1) and `.nilai-input`
+   is (0,1,0), so the intended padding, font-size and font-family were dead
+   declarations: the field rendered at 13px Inter inside 20px of horizontal
+   padding in a 58px box, and a mark of 100 was clipped to "10(". Qualifying the
+   class with the element+attribute selector wins, and the box is wide enough for
+   three digits plus the spinner. */
+input[type=number].nilai-input {
+    width: 68px;
     text-align: right;
     font-family: var(--mono);
     padding: 3px 6px;
     font-size: 12px;
 }
 
-.nilai-input.edited {
+input[type=number].nilai-input.edited {
     border-color: var(--accent-3);
     color: var(--accent-3);
 }
 
-.nilai-input:disabled {
+input[type=number].nilai-input:disabled {
     opacity: .75;
     cursor: not-allowed;
 }
@@ -936,16 +969,72 @@ tr.sel { background: var(--card-2); }
     color: var(--faint);
 }
 
+/* Each state also carries a glyph in its text and an aria-label, so the colour
+   is reinforcement rather than the only channel. */
 .spp-m.lunas { background: color-mix(in srgb, var(--ok) 22%, transparent); color: var(--ok); border-color: currentColor; }
-.spp-m.tunggakan { background: color-mix(in srgb, var(--bad) 22%, transparent); color: var(--bad); border-color: currentColor; }
+/* Amber, not red: an unpaid month of a VOLUNTARY contribution is not a
+   delinquency, and the palette should not say otherwise. */
+.spp-m.belum { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); border-color: currentColor; }
 .spp-m.bebas { color: var(--info); border-color: currentColor; }
 
 @media print {
     .top, .tabs, .ctxbar, .foot, .no-print { display: none !important; }
+
+    /* Redefine the PALETTE, not just body. Printing from the default dark theme
+       otherwise put --ok #34d399 and --warn #eab308 straight onto white paper at
+       1.9:1 — which made the "tuntas" pills and the fabrication disclaimer the
+       faintest things on a printed child record. Both themes are overridden, so
+       it does not matter which one the reader printed from. */
+    :root,
+    html[data-theme="dark"],
+    html[data-theme="light"] {
+        --bg: #fff;
+        --bg-soft: #fff;
+        --card: #fff;
+        --card-2: #fff;
+        --border: #b9bfcf;
+        --border-strong: #8b93a6;
+        --text: #000;
+        --muted: #333;
+        --faint: #444;
+        --link: #0b4f73;
+        --accent: #2f2a8f;
+        --accent-2: #0b4f73;
+        --accent-3: #5b21b6;
+        --ok: #065f46;
+        --warn: #7a4a00;
+        --bad: #8b1030;
+        --info: #0b4f73;
+        --st-h: #065f46;
+        --st-s: #0b4f73;
+        --st-i: #5b21b6;
+        --st-a: #8b1030;
+        --shadow: none;
+        --shadow-sm: none;
+    }
+
     body { background: #fff; color: #000; font-size: 11px; }
     body::before { display: none; }
     .rapor { border: 0; padding: 0; }
     main { padding: 0; max-width: none; }
+    .card { border: 0; box-shadow: none; padding: 0; }
+
+    /* A4 is 794 CSS px. The rapor tables carry a min-width for the screen, and
+       inside `overflow-x:auto` there is no scrollbar on paper — the overflowing
+       columns are simply cut off the sheet. Let them reflow instead. */
+    .tbl-wrap { overflow: visible !important; }
+    .rapor table,
+    table { min-width: 0 !important; width: 100% !important; font-size: 9.5px; }
+    th, td { padding: 3px 4px !important; }
+
+    .rapor .card, .rapor tr, .rapor dl, .kv { break-inside: avoid; }
+    /* break-after alone still lets the heading's own box straddle the sheet
+       boundary, which prints half a line of text at the top of the next page. */
+    .rapor h4 { break-inside: avoid; break-after: avoid; }
+
+    /* The distribution bar is background-only, so an economy print drops it
+       entirely. The H/S/I/A counts are printed as text right beneath it. */
+    .bar { display: none; }
 }
 
 @media (max-width: 900px) {

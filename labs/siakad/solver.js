@@ -133,6 +133,37 @@
       return out;
     }
 
+    /* Validate the instance BEFORE building domains. A session naming a teacher
+     * or a home room that does not exist is a DATA error, and it has to surface
+     * as one: dereferencing guruBlok[undefined] throws a TypeError that the
+     * main-thread fallback path cannot render, and an unknown homeRuangId is
+     * worse still — the board writes land on NaN indices, are silently dropped,
+     * and the run only fails at the very end in verify(), where a data problem
+     * gets reported to the user as "this is a solver bug". */
+    var cacat = [];
+    for (i = 0; i < spec.sesi.length; i++) {
+      var sv = spec.sesi[i];
+      if (guruIdx[sv.guruId] === undefined) {
+        cacat.push('sesi ' + sv.id + ' menunjuk guru "' + sv.guruId + '" yang tidak ada dalam daftar guru');
+      }
+      if (ruangIdx[sv.homeRuangId] === undefined) {
+        cacat.push('sesi ' + sv.id + ' menunjuk ruang kelas "' + sv.homeRuangId + '" yang tidak ada dalam daftar ruang');
+      }
+      if (sv.ruangTipe) {
+        var ada = false;
+        for (j = 0; j < spec.ruang.length; j++) if (spec.ruang[j].tipe === sv.ruangTipe) { ada = true; break; }
+        if (!ada) cacat.push('sesi ' + sv.id + ' membutuhkan ruang bertipe "' + sv.ruangTipe + '" dan sekolah tidak punya satu pun');
+      }
+      if (!(sv.len > 0)) cacat.push('sesi ' + sv.id + ' punya panjang blok tidak sah (' + sv.len + ')');
+    }
+    if (cacat.length) {
+      return {
+        cacat: cacat,
+        spec: spec, hari: hari, nDays: nDays, maxSlots: maxSlots, cellCount: cellCount,
+        nVars: spec.sesi.length, values: [], varInfo: []
+      };
+    }
+
     var nVars = spec.sesi.length;
     var values = [], varInfo = [];
     for (i = 0; i < nVars; i++) {
@@ -469,6 +500,23 @@
     function now() { return ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - t0; }
 
     var C = SV.compile(spec);
+    if (C.cacat) {
+      return {
+        ok: false, assign: null,
+        stats: {
+          variabel: C.nVars, nilaiKandidat: 0, node: 0, backtrack: 0, restart: 0,
+          propagasiDibuang: 0, msTotal: 0, msCari: 0, msOptimasi: 0,
+          langkahOptimasi: 0, softAwal: null, softAkhir: null, bobotKonflikMaks: 0
+        },
+        diagnosis: {
+          tahap: 'pra-pencarian', sifat: 'terbukti',
+          judul: 'Instance jadwal tidak sah — bukan masalah pencarian',
+          pesan: C.cacat.slice(0, 4).join('; ') + (C.cacat.length > 4 ? ' (dan ' + (C.cacat.length - 4) + ' lainnya)' : '') + '.',
+          buktiKuat: 'Ini cacat data, bukan infeasibilitas jadwal: solver tidak dijalankan sama sekali karena spesifikasinya merujuk entitas yang tidak ada.',
+          saran: 'Perbaiki pemetaan pengampu atau daftar ruang pada data induk, lalu susun ulang.'
+        }
+      };
+    }
     var n = C.nVars;
     var stats = {
       variabel: n, nilaiKandidat: 0, node: 0, backtrack: 0, restart: 0,
@@ -512,7 +560,7 @@
     var alive = [], aliveCount = new Int32Array(n), order = [];
     for (i = 0; i < n; i++) alive.push(new Uint8Array(C.values[i].length));
 
-    var best = null, diagnosis = null, deepest = -1;
+    var best = null, diagnosis = null, deepest = -1, tuntas = false;
     var rnd = mulberry32(seed);
     /* Conflict weights, the dom/wdeg part. Every time forward checking wipes a
      * domain, both the variable that lost its options and the one that took the
@@ -541,20 +589,51 @@
         jitter.push(row);
       }
       var btBudget = attempt === 0 ? 3000 : (1500 + attempt * 400);
-      var res = search(0, btBudget, jitter);
+      /* The budget is PER ATTEMPT, so it has to be compared against an absolute
+       * ceiling derived from where this attempt started — `stats.backtrack` is
+       * the lifetime counter and is never reset. Passing the raw per-attempt
+       * number made every restart after the fifth abort at ~400 backtracks
+       * regardless of its nominal budget, capped total search effort at ~121k
+       * instead of the ~18M the schedule implies, left the 8-second time budget
+       * unreachable (~0.7 s was ever used), and reported a solvable shipped
+       * scenario as unsolvable about 1% of the time. */
+      var res = search(0, stats.backtrack + btBudget, jitter);
       if (res === true) {
         var assign = {};
         for (i = 0; i < n; i++) assign[C.varInfo[i].sesi.id] = C.values[i][assignIdx[i]];
         best = assign;
         break;
       }
+      /* A clean `false` is not the same answer as 'budget' or 'timeout'. It
+       * means the attempt walked the WHOLE tree without ever hitting its
+       * ceiling: value ordering only reorders candidates and forward checking
+       * only removes values that provably conflict, so nothing was skipped and
+       * the space is genuinely exhausted. That is a proof of infeasibility, and
+       * restarting to re-prove it 300 more times before reporting "not proven
+       * impossible" is both slow and wrong. */
+      if (res === false) { tuntas = true; break; }
       if (now() > budgetMs) break;
     }
 
     stats.msCari = Math.round(now());
+    stats.pencarianTuntas = tuntas;
 
     if (!best) {
       stats.msTotal = Math.round(now());
+      if (tuntas) {
+        return {
+          ok: false, assign: null, stats: stats,
+          diagnosis: {
+            tahap: 'pencarian-tuntas',
+            sifat: 'terbukti',
+            judul: 'Tidak ada jadwal yang memenuhi seluruh kendala keras',
+            pesan: 'Pencarian menelusuri seluruh ruang solusi sampai habis dalam ' + stats.backtrack +
+              ' backtrack dan ' + Math.round(now()) + ' ms — bukan berhenti karena anggaran, melainkan karena tidak ada cabang tersisa.',
+            buktiKuat: 'Ini infeasibilitas yang TERBUKTI. Pengurutan nilai hanya mengubah urutan pencobaan dan forward checking hanya membuang nilai yang pasti bentrok, jadi tidak ada kandidat yang terlewat: seluruh pohon sudah dienumerasi dan tidak satu pun daun yang sah.',
+            saran: 'Kendalanya harus dilonggarkan, bukan dicari lebih lama: kurangi ketidaksediaan guru, tambah ruang khusus, pecah blok yang panjang, atau tambah slot pada kalender.'
+          }
+        };
+      }
       return {
         ok: false, assign: null, stats: stats,
         diagnosis: diagnosis

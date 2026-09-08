@@ -1,0 +1,1083 @@
+/*!
+ * Gudang — part of the biassp.github.io portfolio
+ * Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+ * Not open source. Readable for evaluation only. See /LICENSE.
+ * https://biassp.github.io/
+ */
+/* Gudang — app.css
+ * Design tokens copied from the CV and from the sibling labs (rekam, siakad) so
+ * this reads as part of the same site. Dark by default, html[data-theme="light"]
+ * overrides. No web fonts: a font request would be network egress and this page
+ * has none.
+ *
+ * THE LIGHT-THEME RULE, learned the hard way twice on this site: every accent
+ * token that carries TEXT must be redefined in the light block. Both sibling
+ * labs shipped with a dark-surface cyan left in place on a white card, at
+ * 1.6–1.8:1. Here the light block redefines every single accent, status and
+ * movement-type colour, and the contrast each one was chosen for is written
+ * next to it.
+ */
+
+:root {
+    --bg: #0b1020;
+    --bg-soft: #10162b;
+    --card: #141b33;
+    --card-2: #182142;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --text: #eaeefb;
+    --muted: #9aa6c4;
+    --faint: #7f8aad;
+    --accent: #6366f1;
+    --accent-2: #22d3ee;
+    --accent-3: #c084fc;
+    /* Solid-fill buttons carry white text, so they get their own token: white
+       on --accent #6366f1 is 4.47:1, which misses AA in BOTH themes. */
+    --accent-solid: #4f46e5;
+    --accent-solid-hover: #4338ca;
+    --link: #22d3ee;
+    --focus: #22d3ee;
+    --grad: linear-gradient(120deg, #6366f1 0%, #a855f7 50%, #22d3ee 100%);
+    --shadow: 0 18px 50px -24px rgba(0, 0, 0, 0.85);
+    --shadow-sm: 0 8px 24px -16px rgba(0, 0, 0, 0.8);
+    --radius: 16px;
+
+    --ok: #34d399;
+    --warn: #eab308;
+    --bad: #f43f5e;
+    --info: #38bdf8;
+
+    /* Movement types. Green in, red out, and every badge also carries its word,
+       so colour is reinforcement rather than the only channel — a warehouse
+       screen gets read by tired people under bad lighting. */
+    --gerak-masuk: #34d399;
+    --gerak-keluar: #f43f5e;
+    --gerak-transfer: #38bdf8;
+    --gerak-adjust: #eab308;
+    --gerak-retur: #c084fc;
+    --gerak-awal: #9aa6c4;
+
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+html[data-theme="light"] {
+    --bg: #f5f7fc;
+    --bg-soft: #eef1f9;
+    --card: #ffffff;
+    --card-2: #f4f6fd;
+    --border: rgba(15, 23, 42, 0.09);
+    --border-strong: rgba(15, 23, 42, 0.18);
+    --text: #131a2e;
+    --muted: #55618a;
+    /* #7f8aad measures 4.45:1 on the tinted --bg-soft, a fail; this clears it
+       at 5.01:1 there and 5.66:1 on white. */
+    --faint: #5c6688;
+    /* --accent is the SKU code, the document number and the active tab label,
+       all of them text. Left at #6366f1 it read 3.7:1 on white. */
+    --accent: #4338ca;
+    /* --accent-2 is the colour of every rupiah figure in a header, every
+       barcode and every cost-layer key. The dark theme's #22d3ee measures
+       1.60:1 on white; #155e75 keeps the same cyan family at 7.27:1. */
+    --accent-2: #155e75;
+    --accent-3: #7e22ce;
+    --accent-solid: #4338ca;
+    --accent-solid-hover: #3730a3;
+    --link: #0e7490;
+    --focus: #045981;
+    --shadow: 0 18px 50px -30px rgba(30, 41, 90, 0.35);
+    --shadow-sm: 0 10px 26px -20px rgba(30, 41, 90, 0.4);
+
+    --ok: #047857;
+    --warn: #a16207;
+    --bad: #be123c;
+    --info: #0369a1;
+
+    /* The movement colours are all text colours on a white card, so all six are
+       redefined. #34d399 on white is 1.8:1; #047857 is 4.9:1. */
+    --gerak-masuk: #047857;
+    --gerak-keluar: #be123c;
+    --gerak-transfer: #0369a1;
+    --gerak-adjust: #a16207;
+    --gerak-retur: #7e22ce;
+    --gerak-awal: #55618a;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    font-size: 15px;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(720px 420px at 12% -6%, rgba(99, 102, 241, 0.18), transparent 60%),
+        radial-gradient(640px 420px at 100% 0%, rgba(34, 211, 238, 0.12), transparent 55%);
+}
+
+h1, h2, h3, h4 {
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+}
+
+a { color: var(--link); }
+
+code, pre, .mono {
+    font-family: var(--mono);
+    font-size: 0.86em;
+}
+
+:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.skip {
+    position: absolute;
+    left: -999px;
+    top: 8px;
+    background: var(--card);
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    z-index: 99;
+}
+
+.skip:focus { left: 8px; }
+
+/* ------------------------------------------------------------------ shell */
+
+main {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 18px 60px;
+}
+
+.top {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mark {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: .04em;
+    padding: 9px 10px;
+    border-radius: 12px;
+    background: var(--grad);
+    color: #fff;
+}
+
+.brand h1 { font-size: 21px; }
+
+.sub {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.top-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 7px 13px;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .18s ease, border-color .18s ease;
+}
+
+.btn:hover {
+    background: var(--card-2);
+    border-color: var(--accent);
+}
+
+.btn.primary {
+    background: var(--accent-solid);
+    border-color: var(--accent-solid);
+    color: #fff;
+}
+
+.btn.ghost { background: transparent; }
+
+.btn.small {
+    padding: 4px 9px;
+    font-size: 12px;
+}
+
+.btn[aria-pressed="true"] {
+    background: var(--accent-solid);
+    border-color: var(--accent-solid);
+    color: #fff;
+}
+
+.btn:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.netbadge, .testbadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    background: var(--card);
+    border-radius: 999px;
+    padding: 5px 12px;
+}
+
+.netbadge .dot, .testbadge .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, .18);
+    flex: none;
+}
+
+.netbadge.bad .dot, .testbadge.bad .dot {
+    background: var(--bad);
+    box-shadow: 0 0 0 3px rgba(244, 63, 94, .2);
+}
+
+.testbadge.busy .dot {
+    background: var(--warn);
+    box-shadow: 0 0 0 3px rgba(234, 179, 8, .2);
+}
+
+.testbadge {
+    background: none;
+    border-color: var(--border);
+    cursor: pointer;
+    font-family: var(--mono);
+}
+
+/* --------------------------------------------------------------- context */
+
+.ctxbar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 14px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    /* Flex items default to min-width:auto, so a <select> with long option text
+       refuses to shrink and pushes the whole document sideways on a phone.
+       min-width:0 lets it shrink; max-width:100% on the control caps it. */
+    min-width: 0;
+    max-width: 100%;
+}
+
+.field > select,
+.field > input {
+    max-width: 100%;
+    text-overflow: ellipsis;
+}
+
+.field > span {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--faint);
+}
+
+input[type=text], input[type=number], input[type=search], select, textarea {
+    background: var(--bg-soft);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: 9px;
+    padding: 6px 10px;
+    font: inherit;
+    font-size: 13px;
+    max-width: 100%;
+}
+
+select { cursor: pointer; }
+
+.ctx-note {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--muted);
+    max-width: 420px;
+}
+
+.perchip {
+    font-size: 11.5px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    color: var(--accent-2);
+}
+
+/* ------------------------------------------------------------------ tabs */
+
+.tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+    scrollbar-width: thin;
+}
+
+.tab {
+    background: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 13.5px;
+    padding: 9px 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    border-radius: 8px 8px 0 0;
+}
+
+.tab:hover {
+    color: var(--text);
+    background: var(--card);
+}
+
+.tab[aria-selected="true"] {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+}
+
+.panel { min-height: 240px; }
+
+/* ----------------------------------------------------------------- cards */
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+}
+
+.card > h3 {
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.card > .note, .note {
+    color: var(--muted);
+    font-size: 12.5px;
+    margin-bottom: 12px;
+}
+
+.note b, .hint b { color: var(--text); }
+
+.hint {
+    color: var(--muted);
+    font-size: 12.5px;
+}
+
+.small { font-size: 12px; }
+
+.row-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 12px;
+}
+
+.summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin: 0 0 16px;
+}
+
+.stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 11px 13px;
+}
+
+.stat .k {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--faint);
+}
+
+.stat .v {
+    font-size: 18px;
+    font-weight: 650;
+    font-family: var(--mono);
+}
+
+.stat .n {
+    font-size: 11.5px;
+    color: var(--muted);
+}
+
+.callout {
+    font-size: 12.5px;
+    color: var(--text);
+    background: var(--card-2);
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 9px 12px;
+    margin-bottom: 12px;
+}
+
+.callout.warn { border-left-color: var(--warn); }
+.callout.bad { border-left-color: var(--bad); }
+.callout.ok { border-left-color: var(--ok); }
+
+.empty {
+    color: var(--muted);
+    font-size: 13.5px;
+    padding: 26px 16px;
+    text-align: center;
+    border: 1px dashed var(--border-strong);
+    border-radius: 12px;
+}
+
+/* ---------------------------------------------------------------- tables */
+
+.tbl-wrap { overflow-x: auto; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    min-width: 520px;
+}
+
+th, td {
+    text-align: left;
+    padding: 7px 9px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--faint);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    background: var(--card);
+    z-index: 1;
+}
+
+td.num, th.num {
+    text-align: right;
+    font-family: var(--mono);
+}
+
+tbody tr:hover { background: var(--card-2); }
+
+tr.sel { background: var(--card-2); }
+
+.linkbtn {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--link);
+    font: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+
+.linkbtn:hover { text-decoration: underline; }
+
+/* ----------------------------------------------------------------- pills */
+
+.pill {
+    display: inline-block;
+    font-size: 10.5px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    color: var(--muted);
+    font-family: var(--mono);
+}
+
+.pill.ok { color: var(--ok); border-color: currentColor; }
+.pill.warn { color: var(--warn); border-color: currentColor; }
+.pill.bad { color: var(--bad); border-color: currentColor; }
+.pill.info { color: var(--info); border-color: currentColor; }
+
+.pillbig {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-strong);
+}
+
+.pillbig.pass { color: var(--ok); border-color: currentColor; }
+.pillbig.fail { color: var(--bad); border-color: currentColor; }
+
+/* ------------------------------------------------------------------ tests */
+
+.test-summary {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.tgroup { margin-bottom: 12px; }
+
+.tgroup > h4 {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 4px;
+}
+
+.tcase {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 12.5px;
+    padding: 2px 0;
+    border-bottom: 1px dotted var(--border);
+}
+
+.tcase .mk {
+    font-family: var(--mono);
+    font-weight: 700;
+    flex: none;
+}
+
+.tcase.ok .mk { color: var(--ok); }
+.tcase.no .mk { color: var(--bad); }
+
+.tcase .msg {
+    color: var(--bad);
+    font-family: var(--mono);
+    font-size: 11px;
+}
+
+/* ------------------------------------------------------------------ misc */
+
+.grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.grid-side {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+    gap: 14px;
+    align-items: start;
+}
+
+/* Specificity matters here. `input[type=number]` is (0,1,1) and `.nilai-input`
+   is (0,1,0), so the intended padding, font-size and font-family were dead
+   declarations: the field rendered at 13px Inter inside 20px of horizontal
+   padding in a 58px box, and a mark of 100 was clipped to "10(". Qualifying the
+   class with the element+attribute selector wins, and the box is wide enough for
+   three digits plus the spinner. */
+input[type=number].nilai-input {
+    width: 68px;
+    text-align: right;
+    font-family: var(--mono);
+    padding: 3px 6px;
+    font-size: 12px;
+}
+
+input[type=number].nilai-input.edited {
+    border-color: var(--accent-3);
+    color: var(--accent-3);
+}
+
+.foot {
+    margin-top: 34px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12.5px;
+}
+
+.foot p + p { margin-top: 8px; }
+.foot code { color: var(--text); }
+
+.banner {
+    background: var(--card-2);
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid var(--warn);
+    border-radius: 10px;
+    padding: 9px 13px;
+    font-size: 12.5px;
+    margin-bottom: 14px;
+}
+
+.banner b { color: var(--warn); }
+
+.stack { display: flex; flex-direction: column; gap: 3px; }
+
+
+/* --------------------------------------------------------- gudang-specific */
+
+/* Money and quantity are always monospace and always right-aligned. A column of
+   rupiah that does not line up cannot be scanned, and scanning a column for the
+   one figure that looks wrong is most of what an inventory clerk actually does. */
+.rp { font-family: var(--mono); text-align: right; white-space: nowrap; }
+.rp.plus { color: var(--gerak-masuk); }
+.rp.minus { color: var(--gerak-keluar); }
+.rp.nol { color: var(--faint); }
+
+.sku {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--accent-2);
+}
+
+.bc { font-family: var(--mono); font-size: 11px; color: var(--faint); letter-spacing: .02em; }
+
+.gerak {
+    display: inline-block;
+    font-size: 10.5px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+}
+.gerak.terima, .gerak.saldo-awal { color: var(--gerak-masuk); }
+.gerak.jual, .gerak.retur-beli { color: var(--gerak-keluar); }
+.gerak.transfer-masuk, .gerak.transfer-keluar { color: var(--gerak-transfer); }
+.gerak.adjust { color: var(--gerak-adjust); }
+.gerak.retur-jual { color: var(--gerak-retur); }
+.gerak.saldo-awal { color: var(--gerak-awal); }
+
+/* The costing method switch. Two columns, side by side, because the whole point
+   is seeing FIFO and rata-rata disagree on the same book. */
+.banding {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.metode-kartu {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    background: var(--bg-soft);
+}
+
+.metode-kartu.aktif {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.metode-kartu h4 { font-size: 13px; margin-bottom: 6px; }
+.metode-kartu .angka { font-family: var(--mono); font-size: 19px; color: var(--accent-2); }
+.metode-kartu .kecil { font-size: 11.5px; color: var(--faint); }
+
+/* Cost layers, drawn as a stack. Oldest at the top, because that is the one
+   the next issue will eat. */
+.lapisan { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+
+.lapis {
+    display: grid;
+    grid-template-columns: 84px 1fr auto auto;
+    gap: 8px;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: var(--card-2);
+    border-left: 3px solid var(--accent);
+}
+
+.lapis.berikut { border-left-color: var(--gerak-keluar); }
+.lapis .kecil { color: var(--faint); font-size: 10.5px; }
+
+.lapis-bar {
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-3) 100%);
+    min-width: 3px;
+}
+
+/* The reconciliation table: every line of the accounting identity, with the
+   closing figure and the difference spelled out rather than implied. */
+.rekon { display: flex; flex-direction: column; gap: 0; margin-top: 8px; }
+
+.rekon-baris {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 5px 2px;
+    border-bottom: 1px dashed var(--border);
+    font-size: 12.5px;
+}
+
+.rekon-baris.total {
+    border-bottom: 0;
+    border-top: 2px solid var(--border-strong);
+    margin-top: 4px;
+    padding-top: 8px;
+    font-weight: 600;
+}
+
+.rekon-baris .n { font-family: var(--mono); }
+.rekon-baris.sisa .n { color: var(--ok); }
+.rekon-baris.sisa.rusak .n { color: var(--bad); }
+
+/* Before/after diff on a backdated insert. */
+.diff-baris {
+    display: grid;
+    grid-template-columns: 92px 1fr auto auto auto;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 12px;
+    padding: 4px 6px;
+    border-radius: 7px;
+}
+.diff-baris:nth-child(odd) { background: var(--card-2); }
+.diff-baris .n { font-family: var(--mono); }
+.diff-baris .naik { color: var(--gerak-keluar); }
+.diff-baris .turun { color: var(--gerak-masuk); }
+.diff-baris .panah { color: var(--faint); }
+
+/* Cashier. The cart is the left column and the total block is sticky on the
+   right, because a cashier looks at exactly one number. */
+.kasir-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; align-items: start; }
+
+.total-blok {
+    background: var(--bg-soft);
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.total-blok .besar {
+    font-family: var(--mono);
+    font-size: 27px;
+    color: var(--accent-2);
+    letter-spacing: -0.02em;
+}
+
+.total-blok .baris {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    padding: 3px 0;
+}
+
+.bayar-baris { display: grid; grid-template-columns: 108px 1fr auto; gap: 8px; align-items: center; margin-bottom: 6px; }
+.bayar-baris input { width: 100%; }
+
+.struk {
+    background: var(--card);
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    padding: 16px 18px;
+    max-width: 380px;
+    font-family: var(--mono);
+    font-size: 12px;
+}
+.struk h4 { text-align: center; font-size: 13px; margin-bottom: 2px; }
+.struk .pisah { border-top: 1px dashed var(--border-strong); margin: 8px 0; }
+.struk .b { display: flex; justify-content: space-between; gap: 10px; }
+.struk .kecil { font-size: 10.5px; color: var(--faint); }
+
+/* Opname sheet. The three columns that matter — book, physical, variance —
+   never move, and the post-count column sits next to them so nobody has to
+   remember that it exists. */
+.opname-baris input { width: 92px; }
+
+td.varians-lebih { color: var(--gerak-masuk); font-weight: 600; }
+td.varians-kurang { color: var(--gerak-keluar); font-weight: 600; }
+
+.meter {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--card-2);
+    overflow: hidden;
+    min-width: 60px;
+}
+.meter > i { display: block; height: 100%; background: var(--accent); }
+.meter > i.bahaya { background: var(--bad); }
+.meter > i.aman { background: var(--ok); }
+
+.kv2 {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 3px 12px;
+    font-size: 12.5px;
+    margin-top: 6px;
+}
+.kv2 dt { color: var(--faint); }
+.kv2 dd { font-family: var(--mono); }
+
+.cari {
+    width: 100%;
+    max-width: 340px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    border-radius: 9px;
+    padding: 8px 11px;
+    font: inherit;
+    font-size: 13px;
+}
+
+input, select, textarea {
+    background: var(--bg-soft);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 6px 9px;
+    font: inherit;
+    font-size: 12.5px;
+}
+
+input[type="date"] { color-scheme: dark; }
+html[data-theme="light"] input[type="date"] { color-scheme: light; }
+
+.tolak {
+    border-left: 3px solid var(--bad);
+    background: color-mix(in srgb, var(--bad) 8%, transparent);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 12.5px;
+    margin-top: 8px;
+}
+.tolak b { color: var(--bad); }
+
+.terima-ok {
+    border-left: 3px solid var(--ok);
+    background: color-mix(in srgb, var(--ok) 8%, transparent);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 12.5px;
+    margin-top: 8px;
+}
+.terima-ok b { color: var(--ok); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+
+.chip {
+    font-size: 11.5px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-soft);
+    color: var(--muted);
+    cursor: pointer;
+    font-family: inherit;
+}
+.chip[aria-pressed="true"] { border-color: var(--accent); color: var(--text); background: var(--card-2); }
+
+/* The role chip is TEXT, and --accent is a border/focus hue: #6366f1 on the
+   context bar measured 3.81:1, under AA. The chip keeps the indigo as its
+   outline and tint and takes its text colour from --text, which passes in both
+   themes without inventing a fourth accent token. */
+.perchip {
+    font-size: 11px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    color: var(--text);
+    white-space: nowrap;
+}
+
+.jalur {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 11.5px;
+    font-family: var(--mono);
+    color: var(--muted);
+}
+.jalur .titik {
+    padding: 2px 8px;
+    border-radius: 7px;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+}
+.jalur .titik.aktif { border-color: var(--accent); color: var(--text); }
+.jalur .anak { color: var(--faint); }
+
+.mini-tabel td, .mini-tabel th { padding: 4px 7px; }
+.mini-tabel table { min-width: 0; }
+
+.wrap-normal { white-space: normal; }
+.grow { flex: 1 1 auto; }
+
+@media print {
+    .top, .tabs, .ctxbar, .foot, .no-print { display: none !important; }
+
+    /* Redefine the PALETTE, not just body. Printing from the default dark theme
+       otherwise put --ok #34d399 and --warn #eab308 straight onto white paper at
+       1.9:1, which made the totals and the fabrication notice the faintest things
+       on the sheet. Both themes are overridden, so it does not matter which one
+       the reader printed from. */
+    :root,
+    html[data-theme="dark"],
+    html[data-theme="light"] {
+        --bg: #fff;
+        --bg-soft: #fff;
+        --card: #fff;
+        --card-2: #fff;
+        --border: #b9bfcf;
+        --border-strong: #8b93a6;
+        --text: #000;
+        --muted: #333;
+        --faint: #444;
+        --link: #0b4f73;
+        --accent: #2f2a8f;
+        --accent-2: #0b4f73;
+        --accent-3: #5b21b6;
+        --ok: #065f46;
+        --warn: #7a4a00;
+        --bad: #8b1030;
+        --info: #0b4f73;
+        --shadow: none;
+        --shadow-sm: none;
+    }
+
+    body { background: #fff; color: #000; font-size: 11px; }
+    body::before { display: none; }
+    .struk { border: 0; padding: 0; margin: 0; box-shadow: none; }
+    main { padding: 0; max-width: none; }
+    .card { border: 0; box-shadow: none; padding: 0; }
+
+    /* A4 is 794 CSS px. Tables carry a min-width for the screen, and
+       inside `overflow-x:auto` there is no scrollbar on paper — the overflowing
+       columns are simply cut off the sheet. Let them reflow instead. */
+    .tbl-wrap { overflow: visible !important; }
+    .struk table,
+    table { min-width: 0 !important; width: 100% !important; font-size: 9.5px; }
+    th, td { padding: 3px 4px !important; }
+
+    .struk .card, .struk tr, .struk dl, .kv { break-inside: avoid; }
+    /* break-after alone still lets the heading's own box straddle the sheet
+       boundary, which prints half a line of text at the top of the next page. */
+    .struk h4 { break-inside: avoid; break-after: avoid; }
+
+    /* The struk is the only thing worth printing, so on paper everything else
+       gets out of the way. It prints at receipt width, not A4-wide, because a
+       cashier prints it on an 80 mm roll. */
+    .panel > .card:not(.struk-wrap) { display: none !important; }
+    .struk { max-width: 74mm; font-family: var(--mono); font-size: 10px; }
+    .struk table { font-size: 9.5px; }
+}
+
+@media (max-width: 900px) {
+    .grid2, .grid-side { grid-template-columns: 1fr; }
+    .ctx-note { margin-left: 0; max-width: none; }
+
+    /* The side-by-side FIFO/rata comparison is the point of those cards, so it
+       stays two columns as long as two columns fit. Below this it stacks: a
+       320px-wide card holding a monospace rupiah figure has no give in it, and
+       forcing two of them side by side is what pushed the whole document into
+       horizontal scroll at 390px. */
+    .banding { grid-template-columns: 1fr; }
+    .kasir-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+    body { font-size: 14px; }
+    .lapis { grid-template-columns: 72px 1fr auto; }
+    .lapis > :last-child { display: none; }
+    .diff-baris { grid-template-columns: 78px 1fr; row-gap: 2px; }
+    .bayar-baris { grid-template-columns: 84px 1fr auto; }
+    .struk { max-width: none; }
+    .kv2 { grid-template-columns: 1fr; }
+    .kv2 dd { margin-bottom: 4px; }
+    .top { padding: 14px 12px; }
+    main { padding: 0 12px 48px; }
+    .brand h1 { font-size: 18px; }
+    .sub { font-size: 12.5px; }
+    .card { padding: 13px; }
+    .struk { padding: 14px; }
+
+    .summary { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); }
+    .ctxbar { padding: 10px; }
+    .field > span { font-size: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+        animation: none !important;
+        scroll-behavior: auto !important;
+    }
+}

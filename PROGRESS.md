@@ -89,10 +89,11 @@ Order agreed: rekam (medical) -> siakad (school) -> inventory/POS -> keuangan ->
                 hard constraints never violated or it reports infeasibility. Plus NISN vs NIS,
                 tahun ajaran/semester scoping, weighted assessment + KKM + predikat + rapor,
                 presensi H/S/I/A, PPDB with quota, SPP arrears, role-based views.
-  [~] gudang  — inventory + POS, IN PROGRESS. Centrepiece: stock ledger as the only truth
-                (balance always derived, never stored), FIFO cost layers + weighted average
-                side by side, and backdated-transaction recomputation with a value-conservation
-                identity asserted to the rupiah. No LIFO — Indonesian tax law does not permit it.
+  [x] gudang  — inventory + POS. Ledger is the only truth (balance always derived), FIFO layers
+                + weighted average side by side, backdated recomputation, value conservation
+                asserted to the rupiah. No LIFO — Indonesian tax law does not permit it.
+                568 in-page assertions. Its build workflow was killed mid-run by a session
+                limit and resumed; the two completed reviews replayed from cache.
   [ ] keuangan / akuntansi UMKM (double-entry — must be genuinely correct or not shipped)
   [ ] HR / payroll (PPh 21, BPJS Ketenagakerjaan)
 
@@ -106,6 +107,13 @@ just self-reported by the build agent):
     the infeasible scenario is PROVED infeasible rather than silently emitting a bad timetable.
     Open: hardest scenario can take ~9s; deskripsi capaian has no KD codes; rapor has no
     signature block or kenaikan-kelas decision; no P5/ekstrakurikuler on the timetable.
+  - /labs/gudang/ — 568 in-page assertions. 11 confirmed findings, 4 of them money bugs:
+    gross profit mixed VAT bases (overstated 128%), sales returns had no cumulative limit
+    (created stock from nothing), ledger ids from a per-tab counter used as the IndexedDB key
+    (one tab silently destroyed the other's entries), and TRANSIT was one pooled FIFO location
+    so costs swapped between destination warehouses. All fixed and independently re-verified.
+    Note the cross-tab fix took a better route than the review suggested: put() -> add(), so a
+    colliding key throws and the tab stops writing, instead of minting UUIDs to dodge it.
   RECURRING BUG TO CHECK IN EVERY NEW LAB: both labs shipped a light-theme regression where
   --accent/--accent-2 were not overridden, leaving dark-surface cyan on near-white and text
   below AA. Check the light block overrides EVERY accent token before shipping.

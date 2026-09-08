@@ -89,9 +89,26 @@ Order agreed: rekam (medical) -> siakad (school) -> inventory/POS -> keuangan ->
                 hard constraints never violated or it reports infeasibility. Plus NISN vs NIS,
                 tahun ajaran/semester scoping, weighted assessment + KKM + predikat + rapor,
                 presensi H/S/I/A, PPDB with quota, SPP arrears, role-based views.
-  [ ] inventory / gudang / POS
+  [~] gudang  — inventory + POS, IN PROGRESS. Centrepiece: stock ledger as the only truth
+                (balance always derived, never stored), FIFO cost layers + weighted average
+                side by side, and backdated-transaction recomputation with a value-conservation
+                identity asserted to the rupiah. No LIFO — Indonesian tax law does not permit it.
   [ ] keuangan / akuntansi UMKM (double-entry — must be genuinely correct or not shipped)
   [ ] HR / payroll (PPh 21, BPJS Ketenagakerjaan)
+
+SHIPPED SO FAR (both live on master, both independently re-verified by the main session, not
+just self-reported by the build agent):
+  - /labs/rekam/  — 379/379 in-page assertions. 28 review findings fixed, 0 skipped.
+    Open: no paediatric mg/kg dosing, paediatric hypertension uninterpreted (needs percentile
+    curves), audit-chain commitment shares IndexedDB with the rows it protects.
+  - /labs/siakad/ — 309/309 in-page assertions. 28 fixed, 3 skipped with reasons.
+    Solver: 136 variables, 2129 nodes, 3764 backtracks, 70ms, 0 hard-constraint violations, and
+    the infeasible scenario is PROVED infeasible rather than silently emitting a bad timetable.
+    Open: hardest scenario can take ~9s; deskripsi capaian has no KD codes; rapor has no
+    signature block or kenaikan-kelas decision; no P5/ekstrakurikuler on the timetable.
+  RECURRING BUG TO CHECK IN EVERY NEW LAB: both labs shipped a light-theme regression where
+  --accent/--accent-2 were not overridden, leaving dark-surface cyan on near-white and text
+  below AA. Check the light block overrides EVERY accent token before shipping.
 Every lab: synthetic seed data from a seeded PRNG, stated as fake in the UI; all storage in
 try/catch; zero network egress scoped to the lab page; copyright header in every file.
 

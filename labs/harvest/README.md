@@ -243,6 +243,10 @@ deliberately pathological and produces 28 findings across every family.
   `analyze.js`/`edge.js` the page uses, so there is one implementation, not two. If Worker
   construction or startup fails for any reason, it falls back to the main thread and the status line
   says so out loud, naming the reason — rather than appearing to work while quietly being slower.
+- **The theme is stored raw, under both keys.** `harvest.theme` and the CV's own `theme` key are
+  written as plain `light`/`dark` so the preference survives a reload and travels in both directions
+  between the lab and the CV. `guard.js` strips stray quotes from a legacy JSON-encoded value and
+  rewrites it, and falls through to the CV's key for anything it does not recognise.
 - **Every `localStorage` access is inside `try`/`catch`** and nothing depends on a successful read.
   The CV shipped that bug once: a single unguarded read threw where site data was blocked and blanked
   the whole page. Verified by driving the page with `localStorage` rigged to throw — it renders and
@@ -250,10 +254,14 @@ deliberately pathological and produces 28 findings across every family.
 - **Exports offer copy *and* download.** The async clipboard API needs a secure context, and some
   contexts block downloads, so neither is the only path.
 - **Accessibility** — real tablist semantics with arrow/Home/End keys, visible focus rings, an
-  `aria-live` status line, every interactive element reachable by keyboard, and no horizontal
-  overflow down to 390 px (verified on every tab).
+  `aria-live` status line, every interactive element reachable by keyboard (including the endpoint
+  table's jump-to-request affordance, which is a real `<button>`), and no horizontal overflow down to
+  320 px (verified on every tab). Link and focus-ring colours are separate tokens from the brand
+  accent so both themes clear WCAG AA — the brand cyan is 1.7:1 on a light ground.
 - **Redaction is on by default** for displayed header, cookie and query values, including inside the
-  displayed URL. It can be turned off deliberately; nothing is ever transmitted either way.
+  displayed URL *and* the waterfall row's `title` tooltip — a tooltip that leaked the raw value while
+  the checkbox claimed otherwise would be worse than no checkbox. It can be turned off deliberately;
+  nothing is ever transmitted either way.
 
 ## Files
 

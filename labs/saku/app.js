@@ -958,6 +958,7 @@
       if (ev.target.closest('button')) return;
       startX = ev.clientX; startY = ev.clientY; startT = performance.now();
       dx = 0; dragging = true; moved = false;
+      face.classList.add('dragging');
       face.setPointerCapture && face.setPointerCapture(ev.pointerId);
       longTimer = setTimeout(function () {
         if (moved) return;
@@ -978,6 +979,7 @@
 
     function end(ev) {
       clearTimeout(longTimer);
+      face.classList.remove('dragging');
       if (!dragging) { face.style.transform = ''; return; }
       dragging = false;
       var dt = Math.max(1, performance.now() - startT);
@@ -991,7 +993,9 @@
     }
     face.addEventListener('pointerup', end);
     face.addEventListener('pointercancel', end);
-    face.addEventListener('lostpointercapture', function () { dragging = false; face.style.transform = ''; });
+    face.addEventListener('lostpointercapture', function () {
+      dragging = false; face.style.transform = ''; face.classList.remove('dragging');
+    });
   }
 
   function removeEntry(r) {
@@ -1016,6 +1020,7 @@
   var FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), ' +
     'textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
   var sheetOpener = null;
+  var sheetOpenerEntry = null;
   var SHEET_IDS = { scrim: 1, entrySheet: 1, conflictSheet: 1, snackbar: 1 };
 
   /* aria-modal alone is a promise the page has to keep: while a sheet is open the
@@ -1039,6 +1044,10 @@
   function openSheet(sheet) {
     var opener = document.activeElement;
     sheetOpener = (opener && opener !== document.body && document.contains(opener)) ? opener : null;
+    /* the inbox re-renders on every drain, so remember WHICH row opened this,
+       not just the button node — otherwise focus restore lands on a detached element */
+    var row = sheetOpener && sheetOpener.closest ? sheetOpener.closest('.entry[data-id]') : null;
+    sheetOpenerEntry = row ? row.getAttribute('data-id') : null;
     $('scrim').hidden = false;
     sheet.hidden = false;
     sheet.style.height = '62dvh';
@@ -1055,10 +1064,18 @@
     $('conflictSheet').hidden = true;
     document.body.classList.remove('sheet-open');
     setBackgroundInert(false);
-    if (was && sheetOpener && document.contains(sheetOpener)) {
-      try { sheetOpener.focus({ preventScroll: true }); } catch (e) { try { sheetOpener.focus(); } catch (e2) {} }
+    if (was) {
+      var target = null;
+      if (sheetOpener && document.contains(sheetOpener)) target = sheetOpener;
+      else if (sheetOpenerEntry) {
+        var row = document.querySelector('.entry[data-id="' + sheetOpenerEntry.replace(/"/g, '\\"') + '"]');
+        target = row ? row.querySelector('.entry-actions .btn') : null;
+      }
+      if (!target) target = $('view-' + current);   // never drop the user at <body>
+      try { target.focus({ preventScroll: true }); } catch (e) { try { target.focus(); } catch (e2) {} }
     }
     sheetOpener = null;
+    sheetOpenerEntry = null;
   }
 
   $('scrim').addEventListener('click', closeSheets);

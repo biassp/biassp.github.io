@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<!--
+  Rekam — part of the biassp.github.io portfolio
+  Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+  Not open source. Readable for evaluation only — copying, modification,
+  re-branding or redistribution is not permitted. See /LICENSE.
+  https://biassp.github.io/
+-->
+<html lang="id" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <!--
+      connect-src 'none' is what actually enforces the no-upload claim: the
+      browser refuses every outbound connection regardless of what the script
+      asks for. worker-src is spelled out because without it worker-src falls
+      back to default-src 'self', which does not match blob:.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; worker-src 'self' blob:; form-action 'none'; base-uri 'none'; object-src 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Rekam — sistem informasi klinik</title>
+    <meta name="description" content="Demo sistem informasi klinik: No. RM, antrian dengan mesin status, rekam medis SOAP berkode ICD-10, resep dengan telaah interaksi dan alergi, serta jejak audit berantai-hash. Seluruh data fiktif dan tidak pernah meninggalkan tab ini.">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2032%2032%22%3E%3Crect%20width=%2232%22%20height=%2232%22%20rx=%227%22%20fill=%22%236366f1%22/%3E%3Cpath%20d=%22M9%2023V9h5.4c2.6%200%204.1%201.4%204.1%203.7%200%201.7-.8%202.9-2.3%203.4L19%2023h-3.2l-2.4-6h-1.5v6z%20M11.9%2014.6h2c1.1%200%201.7-.6%201.7-1.6s-.6-1.6-1.7-1.6h-2z%22%20fill=%22%23fff%22/%3E%3Cpath%20d=%22M21%2016h5v2h-5z%20M22.5%2014.5h2v5h-2z%22%20fill=%22%2322d3ee%22/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="app.css">
+    <script src="guard.js"></script>
+</head>
+
+<body>
+    <a class="skip" href="#main">Lompat ke konten</a>
+
+    <header class="top">
+        <div class="brand">
+            <span class="mark" aria-hidden="true">RM</span>
+            <div>
+                <h1>Rekam</h1>
+                <p class="sub">Sistem informasi klinik — antrian, rekam medis SOAP, resep, kasir. Semuanya tetap di tab ini.</p>
+            </div>
+        </div>
+        <div class="top-actions">
+            <span class="netbadge" id="netBadge" title="percobaan fetch / XMLHttpRequest / WebSocket / sendBeacon oleh halaman ini sejak dimuat">
+                <span class="dot" aria-hidden="true"></span><span id="netCount">panggilan jaringan: 0</span>
+            </span>
+            <button type="button" id="themeBtn" class="btn ghost" aria-label="Ganti tema">Terang</button>
+            <a class="btn ghost" href="../../">CV</a>
+        </div>
+    </header>
+
+    <p class="demo-banner">
+        <span class="tag">DATA FIKTIF</span>
+        <span>
+            <b>Seluruh pasien, dokter, diagnosis dan resep di halaman ini dibuat oleh algoritma.</b>
+            Tidak ada data pasien nyata, tidak ada NIK, tidak ada nomor BPJS yang berlaku — kolom identitas
+            sengaja diisi string bertanda <code>FIKTIF</code> yang tidak mungkin valid di sistem mana pun.
+            Data tersimpan di IndexedDB peramban Anda sendiri dan tidak pernah dikirim ke mana pun.
+        </span>
+    </p>
+
+    <div id="storeWarn" hidden></div>
+
+    <main id="main">
+
+        <div class="rolebar">
+            <span class="lbl">Masuk sebagai</span>
+            <div class="roleopts" id="roleOpts" role="group" aria-label="Peran pengguna"></div>
+            <span class="who" id="whoAmI"></span>
+        </div>
+
+        <div class="summary" id="summary" aria-label="Ringkasan klinik hari ini"></div>
+
+        <nav class="tabs" id="tabs" role="tablist" aria-label="Modul klinik">
+            <button role="tab" id="tab-antrian" aria-controls="panel-antrian" aria-selected="true" class="tab">Antrian</button>
+            <button role="tab" id="tab-pendaftaran" aria-controls="panel-pendaftaran" aria-selected="false" tabindex="-1" class="tab">Pendaftaran</button>
+            <button role="tab" id="tab-rekam" aria-controls="panel-rekam" aria-selected="false" tabindex="-1" class="tab">Rekam Medis</button>
+            <button role="tab" id="tab-konsultasi" aria-controls="panel-konsultasi" aria-selected="false" tabindex="-1" class="tab">Konsultasi</button>
+            <button role="tab" id="tab-farmasi" aria-controls="panel-farmasi" aria-selected="false" tabindex="-1" class="tab">Farmasi</button>
+            <button role="tab" id="tab-kasir" aria-controls="panel-kasir" aria-selected="false" tabindex="-1" class="tab">Kasir</button>
+            <button role="tab" id="tab-audit" aria-controls="panel-audit" aria-selected="false" tabindex="-1" class="tab">Jejak Audit</button>
+            <button role="tab" id="tab-uji" aria-controls="panel-uji" aria-selected="false" tabindex="-1" class="tab">Uji</button>
+        </nav>
+
+        <div class="panels">
+            <section id="panel-antrian" role="tabpanel" aria-labelledby="tab-antrian" tabindex="0" class="panel"></section>
+            <section id="panel-pendaftaran" role="tabpanel" aria-labelledby="tab-pendaftaran" tabindex="0" class="panel" hidden></section>
+            <section id="panel-rekam" role="tabpanel" aria-labelledby="tab-rekam" tabindex="0" class="panel" hidden></section>
+            <section id="panel-konsultasi" role="tabpanel" aria-labelledby="tab-konsultasi" tabindex="0" class="panel" hidden></section>
+            <section id="panel-farmasi" role="tabpanel" aria-labelledby="tab-farmasi" tabindex="0" class="panel" hidden></section>
+            <section id="panel-kasir" role="tabpanel" aria-labelledby="tab-kasir" tabindex="0" class="panel" hidden></section>
+            <section id="panel-audit" role="tabpanel" aria-labelledby="tab-audit" tabindex="0" class="panel" hidden></section>
+            <section id="panel-uji" role="tabpanel" aria-labelledby="tab-uji" tabindex="0" class="panel" hidden></section>
+        </div>
+
+        <footer class="foot">
+            <p>
+                <b>Mengapa privasi adalah fiturnya, bukan hiasannya.</b>
+                Data kesehatan adalah <i>data pribadi yang bersifat spesifik</i> menurut UU 27/2022 tentang
+                Pelindungan Data Pribadi, dengan kewajiban yang lebih berat daripada data biasa. Sebuah demo
+                portofolio tidak punya alasan sah untuk menyentuh data pasien nyata dan tidak punya alasan sah
+                untuk mengirim apa pun ke server. Halaman ini menegakkan hal itu dengan
+                <code>connect-src 'none'</code> di dalam tag
+                <code>&lt;meta http-equiv="Content-Security-Policy"&gt;</code> pada sumbernya sendiri: peramban
+                menolak setiap koneksi keluar apa pun yang diminta JavaScript. Penghitung di kepala halaman
+                membungkus <code>fetch</code>, <code>XMLHttpRequest</code>, <code>WebSocket</code> dan
+                <code>sendBeacon</code> lalu menampilkan berapa kali dicoba. Buka DevTools, lihat tab Network
+                tetap kosong. Ini pernyataan tentang <em>halaman ini</em> — beranda CV memang memanggil API
+                GitHub untuk daftar repositorinya.
+            </p>
+            <p class="small">
+                Dibangun tanpa framework, bundler, dependensi dan build step:
+                <code>guard.js</code>, <code>icd10.js</code>, <code>drugs.js</code>, <code>domain.js</code>,
+                <code>audit.js</code>, <code>clinic.js</code>, <code>seed.js</code>, <code>store.js</code>,
+                <code>tests.js</code>, <code>app.js</code>, <code>app.css</code>.
+                <a href="README.md">README</a>
+            </p>
+        </footer>
+    </main>
+
+    <script src="icd10.js"></script>
+    <script src="drugs.js"></script>
+    <script src="domain.js"></script>
+    <script src="audit.js"></script>
+    <script src="clinic.js"></script>
+    <script src="seed.js"></script>
+    <script src="store.js"></script>
+    <script src="tests.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

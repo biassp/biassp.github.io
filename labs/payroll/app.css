@@ -1,0 +1,960 @@
+/*!
+ * Payroll — part of the biassp.github.io portfolio
+ * Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+ * Not open source. Readable for evaluation only. See /LICENSE.
+ * https://biassp.github.io/
+ */
+/* Payroll — app.css
+ * Design tokens copied from the CV and from the sibling labs (gudang, siakad,
+ * rekam) so this reads as part of the same site. Dark by default,
+ * html[data-theme="light"] overrides. No web fonts: a font request would be
+ * network egress, and this page has none.
+ *
+ * THE LIGHT-THEME RULE, learned the hard way three times on this site: EVERY
+ * accent token that carries TEXT must be redefined in the light block. Three
+ * sibling labs shipped a dark-surface cyan left in place on a white card at
+ * 1.6–1.8:1. Here the light block redefines every accent, every status colour
+ * and every money-class colour, and the contrast ratio each one was chosen for
+ * is written next to it. The ratios were measured, not eyeballed.
+ */
+
+:root {
+    --bg: #0b1020;
+    --bg-soft: #10162b;
+    --card: #141b33;
+    --card-2: #182142;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --text: #eaeefb;
+    --muted: #9aa6c4;
+    --faint: #7f8aad;
+    --accent: #6366f1;
+    --accent-2: #22d3ee;
+    --accent-3: #c084fc;
+    /* Solid-fill buttons carry white text, so they get their own token: white
+       on --accent #6366f1 is 4.47:1, which misses AA in BOTH themes. */
+    --accent-solid: #4f46e5;
+    --accent-solid-hover: #4338ca;
+    --link: #22d3ee;
+    --focus: #22d3ee;
+    /* The brand mark carries WHITE TEXT on this gradient, so every stop has to
+       clear AA against white on its own. The site's display gradient runs
+       #6366f1 -> #a855f7 -> #22d3ee, and white on that cyan end is 1.81:1 — the
+       lettering disappears into the right-hand third of the chip. These are the
+       same three hues one step darker: white measures 7.90:1, 7.10:1 and 7.27:1
+       across them. Used for .mark only. */
+    --grad: linear-gradient(120deg, #4338ca 0%, #6d28d9 50%, #155e75 100%);
+    --shadow: 0 18px 50px -24px rgba(0, 0, 0, 0.85);
+    --shadow-sm: 0 8px 24px -16px rgba(0, 0, 0, 0.8);
+    --radius: 16px;
+
+    --ok: #34d399;
+    --warn: #eab308;
+    /* #f43f5e measures 4.28:1 on --card-2, which is the background of a hovered
+       or selected table row — under AA for the 12,5px monospace a deduction
+       column is set in. One step lighter clears it at 5.84:1 there and 6.32:1 on
+       the plain card. A dark theme wants its accents brighter, not darker; this
+       is the mirror of the fix the light block makes. */
+    --bad: #fb7185;
+    --info: #38bdf8;
+
+    /* The three payroll columns, given three colours and three words. An
+       earning, a deduction and an employer cost must never be mistaken for one
+       another at a glance, and colour is never the only channel: every badge
+       and every column header also carries its label. */
+    --uang-plus: #34d399;      /* pendapatan */
+    --uang-minus: #fb7185;     /* potongan pekerja — 5,84:1 on --card-2 */
+    --uang-pemberi: #c084fc;   /* beban pemberi kerja */
+    --uang-pajak: #38bdf8;     /* PPh 21 */
+    --uang-nol: #7f8aad;
+
+    /* TER month versus annual-recomputation month. The December slip looks
+       different from the other eleven because it IS different. */
+    --metode-ter: #38bdf8;
+    --metode-setahun: #eab308;
+
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+html[data-theme="light"] {
+    --bg: #f5f7fc;
+    --bg-soft: #eef1f9;
+    --card: #ffffff;
+    --card-2: #f4f6fd;
+    --border: rgba(15, 23, 42, 0.09);
+    --border-strong: rgba(15, 23, 42, 0.18);
+    --text: #131a2e;
+    --muted: #55618a;
+    /* #7f8aad measures 4.45:1 on the tinted --bg-soft, a fail; this clears it
+       at 5.01:1 there and 5.66:1 on white. */
+    --faint: #5c6688;
+    /* --accent carries the NIP, the run id and the active tab label, all of
+       them text. Left at #6366f1 it read 3.70:1 on white. #4338ca is 7.55:1. */
+    --accent: #4338ca;
+    /* --accent-2 is the colour of every rupiah figure in a stat tile and every
+       TER rate. The dark theme's #22d3ee measures 1.60:1 on white; #155e75
+       keeps the same cyan family at 7.27:1. */
+    --accent-2: #155e75;
+    --accent-3: #7e22ce;      /* 7.11:1 on white */
+    --accent-solid: #4338ca;
+    --accent-solid-hover: #3730a3;
+    --link: #0e7490;          /* 5.28:1 */
+    --focus: #045981;
+    --shadow: 0 18px 50px -30px rgba(30, 41, 90, 0.35);
+    --shadow-sm: 0 10px 26px -20px rgba(30, 41, 90, 0.4);
+
+    --ok: #047857;            /* 4.79:1 on white; #34d399 was 1.80:1 */
+    /* #a16207 measured 4.92:1 on white but only 4.32:1 on its OWN 10% wash —
+       which is where .pill.setahun actually sits, on the correction row of the
+       PPh ladder — and 4.36:1 on --bg-soft. Both under AA. One step darker
+       clears every surface it is used on: 6.85:1 on white, 6.34:1 on --card-2,
+       6.06:1 on --bg-soft, 5.49:1 on its own wash. */
+    --warn: #854d0e;
+    --bad: #be123c;           /* 6.16:1;          #f43f5e was 3.53:1 */
+    --info: #0369a1;          /* 5.72:1;          #38bdf8 was 2.16:1 */
+
+    /* All five money classes are TEXT COLOURS ON A WHITE CARD, so all five are
+       redefined. This is the exact bug the sibling labs shipped. */
+    --uang-plus: #047857;
+    --uang-minus: #be123c;
+    --uang-pemberi: #7e22ce;
+    --uang-pajak: #0369a1;
+    --uang-nol: #5c6688;
+
+    --metode-ter: #0369a1;
+    --metode-setahun: #854d0e;   /* same measurement as --warn above */
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    font-size: 15px;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(720px 420px at 12% -6%, rgba(99, 102, 241, 0.18), transparent 60%),
+        radial-gradient(640px 420px at 100% 0%, rgba(34, 211, 238, 0.12), transparent 55%);
+}
+
+h1, h2, h3, h4 {
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+}
+
+a { color: var(--link); }
+
+code, pre, .mono {
+    font-family: var(--mono);
+    font-size: 0.86em;
+}
+
+:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.skip {
+    position: absolute;
+    left: -999px;
+    top: 8px;
+    background: var(--card);
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    z-index: 99;
+}
+
+.skip:focus { left: 8px; }
+
+/* ------------------------------------------------------------------ shell */
+
+main {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 18px 60px;
+}
+
+.top {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+.mark {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: .04em;
+    padding: 9px 10px;
+    border-radius: 12px;
+    background: var(--grad);
+    color: #fff;
+    flex: none;
+}
+
+.brand h1 { font-size: 21px; }
+.sub { color: var(--muted); font-size: 13px; }
+
+.top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.btn {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 7px 13px;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .18s ease, border-color .18s ease;
+}
+
+.btn:hover { background: var(--card-2); border-color: var(--accent); }
+.btn.primary { background: var(--accent-solid); border-color: var(--accent-solid); color: #fff; }
+.btn.primary:hover { background: var(--accent-solid-hover); border-color: var(--accent-solid-hover); }
+.btn.ghost { background: transparent; }
+.btn.small { padding: 4px 9px; font-size: 12px; }
+.btn[aria-pressed="true"] { background: var(--accent-solid); border-color: var(--accent-solid); color: #fff; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.netbadge, .testbadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    background: var(--card);
+    border-radius: 999px;
+    padding: 5px 12px;
+}
+
+.netbadge .dot, .testbadge .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, .18);
+    flex: none;
+}
+
+.netbadge.bad .dot, .testbadge.bad .dot { background: var(--bad); box-shadow: 0 0 0 3px rgba(251, 113, 133, .22); }
+.testbadge.busy .dot { background: var(--warn); box-shadow: 0 0 0 3px rgba(234, 179, 8, .2); }
+.testbadge { background: none; border-color: var(--border); cursor: pointer; }
+
+/* --------------------------------------------------------------- context */
+
+.ctxbar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 14px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    /* Flex items default to min-width:auto, so a <select> holding a long
+       employee name refuses to shrink and pushes the whole document sideways on
+       a phone. min-width:0 lets it shrink; max-width:100% caps the control. */
+    min-width: 0;
+    max-width: 100%;
+}
+
+.field > select, .field > input { max-width: 100%; text-overflow: ellipsis; }
+
+/* THE LABEL ONLY, not whatever the control happens to be.
+   field() renders <label class="field"><span>caption</span>{control}</label>,
+   and the control is often a <span> too — a .perchip, a .pill, a .mono figure.
+   Written as `.field > span` this rule out-specified every one of those
+   single-class styles (0,0,1,1 beats 0,0,1,0), so the year chip in the context
+   bar was being painted in --faint on its own indigo tint: 4,19:1 in the light
+   theme and 4,06:1 in the dark one, both under AA, and set in 10,5px uppercase
+   into the bargain. Pinning the rule to the first child leaves the caption
+   exactly as it was and hands every control span its own colour back. */
+.field > span:first-child {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--faint);
+}
+
+input[type=text], input[type=number], input[type=search], input[type=date], select, textarea {
+    background: var(--bg-soft);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: 9px;
+    padding: 6px 10px;
+    font: inherit;
+    font-size: 13px;
+    max-width: 100%;
+}
+
+select { cursor: pointer; }
+input[type="date"] { color-scheme: dark; }
+html[data-theme="light"] input[type="date"] { color-scheme: light; }
+
+.ctx-note { margin-left: auto; font-size: 12px; color: var(--muted); max-width: 420px; }
+
+/* The role chip is TEXT, and --accent is a border/focus hue: #6366f1 on the
+   context bar measured 3.81:1, under AA. The chip keeps the indigo as its
+   outline and tint and takes its text colour from --text, which passes in both
+   themes without inventing a fourth accent token. */
+.perchip {
+    font-size: 11px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    color: var(--text);
+    white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ tabs */
+
+.tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+    scrollbar-width: thin;
+    /* Room for the 2px focus ring of the first and last tab, which otherwise
+       sits flush against the edge of the scroll port at 390px. */
+    scroll-padding-inline: 8px;
+}
+
+.tab {
+    background: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 13.5px;
+    padding: 9px 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    border-radius: 8px 8px 0 0;
+}
+
+.tab:hover { color: var(--text); background: var(--card); }
+.tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+
+.panel { min-height: 240px; }
+
+/* ----------------------------------------------------------------- cards */
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+}
+
+.card > h3 { font-size: 15px; margin-bottom: 4px; }
+.card > .note, .note { color: var(--muted); font-size: 12.5px; margin-bottom: 12px; }
+.note b, .hint b { color: var(--text); }
+.hint { color: var(--muted); font-size: 12.5px; }
+.small { font-size: 12px; }
+
+.row-between { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px; }
+
+.summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin: 0 0 16px;
+}
+
+.stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 11px 13px;
+    min-width: 0;
+}
+
+.stat .k { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--faint); }
+.stat .v { font-size: 18px; font-weight: 650; font-family: var(--mono); overflow-wrap: anywhere; }
+.stat .n { font-size: 11.5px; color: var(--muted); }
+.stat.plus .v { color: var(--uang-plus); }
+.stat.minus .v { color: var(--uang-minus); }
+.stat.pemberi .v { color: var(--uang-pemberi); }
+.stat.pajak .v { color: var(--uang-pajak); }
+
+.callout {
+    font-size: 12.5px;
+    color: var(--text);
+    background: var(--card-2);
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 9px 12px;
+    margin-bottom: 12px;
+}
+
+.callout.warn { border-left-color: var(--warn); }
+.callout.bad { border-left-color: var(--bad); }
+.callout.ok { border-left-color: var(--ok); }
+.callout.pajak { border-left-color: var(--uang-pajak); }
+.callout b { color: var(--text); }
+
+.empty {
+    color: var(--muted);
+    font-size: 13.5px;
+    padding: 26px 16px;
+    text-align: center;
+    border: 1px dashed var(--border-strong);
+    border-radius: 12px;
+}
+
+/* ---------------------------------------------------------------- tables */
+
+.tbl-wrap { overflow-x: auto; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    min-width: 520px;
+}
+
+th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+
+th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--faint);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    background: var(--card);
+    z-index: 1;
+}
+
+td.num, th.num { text-align: right; font-family: var(--mono); }
+tbody tr:hover { background: var(--card-2); }
+tr.sel { background: var(--card-2); }
+tr.total-row td { border-top: 2px solid var(--border-strong); font-weight: 650; background: var(--bg-soft); }
+
+.mini-tabel td, .mini-tabel th { padding: 4px 7px; }
+.mini-tabel table { min-width: 0; }
+
+.linkbtn {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--link);
+    font: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+
+.linkbtn:hover { text-decoration: underline; }
+
+/* ----------------------------------------------------------------- pills */
+
+.pill {
+    display: inline-block;
+    font-size: 10.5px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    color: var(--muted);
+    font-family: var(--mono);
+    white-space: nowrap;
+}
+
+.pill.ok { color: var(--ok); border-color: currentColor; }
+.pill.warn { color: var(--warn); border-color: currentColor; }
+.pill.bad { color: var(--bad); border-color: currentColor; }
+.pill.info { color: var(--info); border-color: currentColor; }
+.pill.ter { color: var(--metode-ter); border-color: currentColor; }
+.pill.setahun { color: var(--metode-setahun); border-color: currentColor; font-weight: 700; }
+.pill.pemberi { color: var(--uang-pemberi); border-color: currentColor; }
+
+.pillbig {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-strong);
+}
+
+.pillbig.pass { color: var(--ok); border-color: currentColor; }
+.pillbig.fail { color: var(--bad); border-color: currentColor; }
+
+/* ------------------------------------------------------------------ tests */
+
+.test-summary { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.tgroup { margin-bottom: 12px; }
+.tgroup > h4 { font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
+
+.tcase {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 12.5px;
+    padding: 2px 0;
+    border-bottom: 1px dotted var(--border);
+}
+
+.tcase .mk { font-family: var(--mono); font-weight: 700; flex: none; }
+.tcase.ok .mk { color: var(--ok); }
+.tcase.no .mk { color: var(--bad); }
+.tcase .msg { color: var(--bad); font-family: var(--mono); font-size: 11px; }
+/* The live-invariant card prints a sentence next to a check that PASSED as well
+   as one that failed, and a passing figure must not be in the failure colour. */
+.tcase.ok .msg { color: var(--faint); }
+
+/* ------------------------------------------------------------------ misc */
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.grid-side { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 14px; align-items: start; }
+
+/* Grid tracks default to min-width:auto exactly like flex items do, so a
+   table's min-width escapes its own .tbl-wrap and pushes the WHOLE document
+   into horizontal scroll on a phone as soon as a row exists. A sibling lab
+   shipped exactly that: 846px of scrollWidth against a 390px viewport, the
+   moment the cart was non-empty. Every grid in this file gets the rule. */
+.grid2 > *, .grid3 > *, .grid-side > *, .summary > *, .kv2 > *, .banding > * { min-width: 0; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+
+.chip {
+    font-size: 11.5px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-soft);
+    color: var(--muted);
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.chip[aria-pressed="true"] { border-color: var(--accent); color: var(--text); background: var(--card-2); }
+
+.kv2 {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 3px 12px;
+    font-size: 12.5px;
+    margin-top: 6px;
+}
+
+.kv2 dt { color: var(--faint); }
+.kv2 dd { font-family: var(--mono); overflow-wrap: anywhere; }
+
+.stack { display: flex; flex-direction: column; gap: 3px; }
+.wrap-normal { white-space: normal; }
+.grow { flex: 1 1 auto; }
+
+.foot {
+    margin-top: 34px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12.5px;
+}
+
+.foot p + p { margin-top: 8px; }
+.foot code { color: var(--text); }
+
+.banner {
+    background: var(--card-2);
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid var(--warn);
+    border-radius: 10px;
+    padding: 9px 13px;
+    font-size: 12.5px;
+    margin-bottom: 14px;
+}
+
+.banner b { color: var(--warn); }
+
+.tolak {
+    border-left: 3px solid var(--bad);
+    background: color-mix(in srgb, var(--bad) 8%, transparent);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 12.5px;
+    margin-top: 8px;
+}
+
+.tolak b { color: var(--bad); }
+
+.terima-ok {
+    border-left: 3px solid var(--ok);
+    background: color-mix(in srgb, var(--ok) 8%, transparent);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 12.5px;
+    margin-top: 8px;
+}
+
+.terima-ok b { color: var(--ok); }
+
+/* ------------------------------------------------------- payroll-specific */
+
+/* Money is always monospace and always right-aligned. A column of rupiah that
+   does not line up cannot be scanned, and scanning a column for the one figure
+   that looks wrong is most of what a payroll officer actually does. */
+.rp { font-family: var(--mono); text-align: right; white-space: nowrap; }
+.rp.plus { color: var(--uang-plus); }
+.rp.minus { color: var(--uang-minus); }
+.rp.pemberi { color: var(--uang-pemberi); }
+.rp.pajak { color: var(--uang-pajak); }
+.rp.nol { color: var(--uang-nol); }
+
+td.plus, td.rp-plus { color: var(--uang-plus); }
+td.minus, td.rp-minus { color: var(--uang-minus); }
+td.pemberi { color: var(--uang-pemberi); }
+td.pajak { color: var(--uang-pajak); }
+
+.nip { font-family: var(--mono); font-size: 11.5px; color: var(--accent-2); }
+.rahasia { font-family: var(--mono); font-size: 11px; color: var(--faint); letter-spacing: .02em; }
+
+/* The three-column payslip: earnings, deductions, employer cost. On a phone
+   these stack, and the headings carry the words so the colour is never doing
+   the work alone. */
+.slip-kolom { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.slip-kolom > * { min-width: 0; }
+
+.kol-blok {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    background: var(--bg-soft);
+}
+
+.kol-blok h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 8px; }
+.kol-blok.pendapatan h4 { color: var(--uang-plus); }
+.kol-blok.potongan h4 { color: var(--uang-minus); }
+.kol-blok.pemberi h4 { color: var(--uang-pemberi); }
+
+.kol-baris {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 12.5px;
+    padding: 3px 0;
+    border-bottom: 1px dashed var(--border);
+}
+
+.kol-baris:last-child { border-bottom: 0; }
+.kol-baris .n { font-family: var(--mono); white-space: nowrap; }
+.kol-baris .l { color: var(--muted); overflow-wrap: anywhere; }
+.kol-baris.jumlah { border-bottom: 0; border-top: 2px solid var(--border-strong); margin-top: 5px; padding-top: 7px; font-weight: 650; }
+.kol-baris.jumlah .l { color: var(--text); }
+
+.neto-blok {
+    background: var(--card-2);
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    padding: 14px;
+    margin-top: 12px;
+}
+
+.neto-blok .besar {
+    font-family: var(--mono);
+    font-size: 26px;
+    color: var(--accent-2);
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+}
+
+.neto-blok .rumus { font-size: 12px; color: var(--muted); font-family: var(--mono); overflow-wrap: anywhere; }
+
+/* The tax working. A twelve-row ladder with the correction month called out,
+   because "which month absorbed the difference" is the question. */
+/* Four columns of monospace rupiah, and the third one holds a whole sentence of
+   arithmetic ("setahun Rp58.784.750 − sudah Rp60.433.372"). An `auto` track
+   cannot shrink below its nowrap content, so at 390px this row pushed the WHOLE
+   document to 468px — the exact class of bug a sibling lab shipped. Both 1fr
+   tracks are minmax(0,1fr) and every child gets min-width:0, so the row is
+   allowed to shrink; the mobile block below then stacks the two wide cells. */
+.ter-baris {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) auto auto;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 12px;
+    padding: 4px 6px;
+    border-radius: 7px;
+}
+
+.ter-baris > * { min-width: 0; }
+
+.ter-baris:nth-child(odd) { background: var(--card-2); }
+.ter-baris .n { font-family: var(--mono); white-space: nowrap; }
+.ter-baris.koreksi { border-left: 3px solid var(--metode-setahun); background: color-mix(in srgb, var(--metode-setahun) 10%, transparent); font-weight: 600; }
+/* --muted, not --faint: the correction row carries a 10% amber wash, and
+   #7f8aad on it measures 3,85:1 in the dark theme. --muted clears AA at
+   5,41:1 there and 5,0:1 on the light theme's wash. */
+.ter-baris .bl { color: var(--muted); font-family: var(--mono); }
+
+/* The reconciliation block: every line of the identity, with the difference
+   spelled out rather than implied. */
+.rekon { display: flex; flex-direction: column; gap: 0; margin-top: 8px; }
+
+.rekon-baris {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 5px 2px;
+    border-bottom: 1px dashed var(--border);
+    font-size: 12.5px;
+}
+
+.rekon-baris .l { color: var(--muted); overflow-wrap: anywhere; }
+.rekon-baris .n { font-family: var(--mono); white-space: nowrap; }
+.rekon-baris.total { border-bottom: 0; border-top: 2px solid var(--border-strong); margin-top: 4px; padding-top: 8px; font-weight: 600; }
+.rekon-baris.total .l { color: var(--text); }
+.rekon-baris.sisa .n { color: var(--ok); }
+.rekon-baris.sisa.rusak .n { color: var(--bad); }
+.rekon-baris.kurang .n { color: var(--uang-minus); }
+
+/* The BPJS ceiling demonstration: a wage sweep with the cap drawn as a wall. */
+.plafon-bar {
+    position: relative;
+    height: 10px;
+    border-radius: 5px;
+    background: var(--card-2);
+    overflow: hidden;
+    min-width: 60px;
+}
+
+.plafon-bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent) 0%, var(--accent-3) 100%); }
+.plafon-bar > i.kena { background: linear-gradient(90deg, var(--warn) 0%, var(--bad) 100%); }
+
+.banding { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+
+.kat-kartu {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    background: var(--bg-soft);
+}
+
+.kat-kartu.aktif { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.kat-kartu h4 { font-size: 13px; margin-bottom: 6px; }
+.kat-kartu .angka { font-family: var(--mono); font-size: 19px; color: var(--accent-2); }
+.kat-kartu .kecil { font-size: 11.5px; color: var(--faint); }
+
+/* The numeric fields are input[type=text] with inputmode="numeric", not
+   type=number: every keystroke re-renders the panel and Chromium refuses
+   selectionStart/setSelectionRange on a number field, so the caret could not be
+   restored and typing "30" produced 3 (see numInput in app.js). The rule is
+   written for both spellings — the class alone is (0,1,0) and used to lose to
+   the (0,1,1) element+attribute selector, which left the padding and
+   font-family as dead declarations and clipped a nine-digit salary. */
+input.nilai-input,
+input[type=number].nilai-input {
+    width: 110px;
+    text-align: right;
+    font-family: var(--mono);
+    padding: 4px 7px;
+    font-size: 12px;
+}
+
+input.nilai-input.sempit, input[type=number].nilai-input.sempit { width: 56px; }
+input.nilai-input.diubah, input[type=number].nilai-input.diubah { border-color: var(--accent-3); color: var(--accent-3); }
+
+.jalur { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 11.5px; font-family: var(--mono); color: var(--muted); }
+.jalur .titik { padding: 2px 8px; border-radius: 7px; background: var(--card-2); border: 1px solid var(--border); }
+.jalur .titik.aktif { border-color: var(--accent); color: var(--text); }
+.jalur .anak { color: var(--faint); }
+
+/* --------------------------------------------------------------- payslip */
+
+/* The printable payslip. On screen it is a card; on A4 it is the only thing on
+   the sheet, and every column survives. */
+.slip {
+    background: var(--card);
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    padding: 18px;
+}
+
+.slip-head { display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; border-bottom: 2px solid var(--border-strong); padding-bottom: 10px; margin-bottom: 12px; }
+.slip-head h3 { font-size: 16px; }
+.slip-head .kecil { font-size: 11.5px; color: var(--faint); }
+.slip-id { font-family: var(--mono); font-size: 11.5px; color: var(--accent-2); text-align: right; }
+
+@media print {
+    .top, .tabs, .ctxbar, .foot, .no-print, .banner { display: none !important; }
+
+    /* Redefine the PALETTE, not just body. Printing from the default dark theme
+       otherwise put --ok #34d399 and --warn #eab308 straight onto white paper at
+       1.9:1, which made the totals the faintest thing on the sheet. Both themes
+       are overridden, so it does not matter which one the reader printed from. */
+    :root,
+    html[data-theme="dark"],
+    html[data-theme="light"] {
+        --bg: #fff;
+        --bg-soft: #fff;
+        --card: #fff;
+        --card-2: #fff;
+        --border: #b9bfcf;
+        --border-strong: #8b93a6;
+        --text: #000;
+        --muted: #333;
+        --faint: #444;
+        --link: #0b4f73;
+        --accent: #2f2a8f;
+        --accent-2: #0b4f73;
+        --accent-3: #5b21b6;
+        --ok: #065f46;
+        --warn: #7a4a00;
+        --bad: #8b1030;
+        --info: #0b4f73;
+        --uang-plus: #065f46;
+        --uang-minus: #8b1030;
+        --uang-pemberi: #4c1d95;
+        --uang-pajak: #0b4f73;
+        --uang-nol: #444;
+        --metode-ter: #0b4f73;
+        --metode-setahun: #7a4a00;
+        --shadow: none;
+        --shadow-sm: none;
+    }
+
+    body { background: #fff; color: #000; font-size: 11px; }
+    body::before { display: none; }
+    main { padding: 0; max-width: none; }
+
+    /* A4 is 794 CSS px wide. Tables carry a min-width for the screen, and
+       inside `overflow-x:auto` there is no scrollbar on paper — the overflowing
+       columns are simply cut off the sheet. Let them reflow instead. */
+    .tbl-wrap { overflow: visible !important; }
+    table { min-width: 0 !important; width: 100% !important; font-size: 9.5px; }
+    th, td { padding: 3px 4px !important; white-space: normal; }
+
+    /* The payslip is the only thing worth printing, so on paper everything else
+       gets out of the way. This is an ALLOW-LIST, not a list of things to hide,
+       because the deny-list version in a sibling lab missed two blocks that are
+       not `.panel > .card` — the fabrication banner and the message box — and
+       together they burned most of a sheet before the document began. Anything
+       added to a panel later cannot leak onto the paper either. */
+    main > *, .panels > *, .panel > * { display: none !important; }
+    main > .panels { display: block !important; }
+    .panels > .panel:not([hidden]) { display: block !important; }
+    .panel > .slip-wrap { display: block !important; }
+    /* The second artefact a payroll officer actually prints: the 1721-A1-shaped
+       annual recap on the Laporan tab. */
+    .panel > .cetak-laporan { display: block !important; border: 0; padding: 0; box-shadow: none; }
+    /* And a print-only line so that printing from a tab with nothing printable
+       on it explains itself instead of emitting a blank sheet. */
+    .panel > .no-slip-print { display: block !important; }
+
+    .slip { border: 0; padding: 0; margin: 0; box-shadow: none; page-break-inside: avoid; }
+    .slip-kolom { grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .kol-blok { border: 1px solid #b9bfcf; background: #fff; break-inside: avoid; }
+    .neto-blok { background: #fff; border: 2px solid #000; break-inside: avoid; }
+    .neto-blok .besar { font-size: 20px; }
+    .card, .slip, .kv2, .rekon, tr { break-inside: avoid; }
+    .slip h3, .slip h4 { break-inside: avoid; break-after: avoid; }
+    .ter-baris { grid-template-columns: 34px 1fr auto auto; break-inside: avoid; }
+}
+
+/* Hidden on screen; the print block above reveals it. */
+.no-slip-print { display: none; }
+
+/* A month carrying more than one document gets an explicit subtotal row, so the
+   month's real figure is stated rather than left to be inferred from two rows. */
+tr.sub-row > td {
+    background: var(--card-2);
+    color: var(--muted);
+    border-top: 1px dashed var(--border-strong);
+}
+
+.slip-koreksi { margin-bottom: 12px; }
+
+@media (max-width: 900px) {
+    .grid2, .grid-side { grid-template-columns: 1fr; }
+    .ctx-note { margin-left: 0; max-width: none; }
+    /* Two monospace rupiah cards side by side have no give in them, and forcing
+       them is what pushed a sibling lab's document into horizontal scroll. */
+    .banding { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+    body { font-size: 14px; }
+    .top { padding: 14px 12px; }
+    main { padding: 0 12px 48px; }
+    .brand h1 { font-size: 18px; }
+    .sub { font-size: 12.5px; }
+    .card { padding: 13px; }
+    .slip { padding: 13px; }
+    .summary { grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); }
+    .ctxbar { padding: 10px; }
+    .field > span { font-size: 10px; }
+    .kv2 { grid-template-columns: 1fr; }
+    .kv2 dd { margin-bottom: 4px; }
+    /* Two columns only, and BOTH wide cells drop to their own full-width row
+       with wrapping restored. Moving only :last-child was not enough: the third
+       cell was still an un-shrinkable `auto` track carrying the arithmetic
+       sentence, and it was that cell, not the last one, that blew the row out. */
+    .ter-baris { grid-template-columns: 34px minmax(0, 1fr); row-gap: 2px; }
+    .ter-baris > :nth-child(3),
+    .ter-baris > :nth-child(4) { grid-column: 1 / -1; text-align: right; }
+    .ter-baris .n,
+    .ter-baris .bl { white-space: normal; overflow-wrap: anywhere; }
+    .neto-blok .besar { font-size: 21px; }
+    .slip-head .slip-id { text-align: left; }
+    input.nilai-input, input[type=number].nilai-input { width: 96px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+        animation: none !important;
+        scroll-behavior: auto !important;
+    }
+}

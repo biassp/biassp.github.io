@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'none'; object-src 'none'">
+<title>Saku — offline-first capture engine</title>
+<meta name="description" content="An installable offline-first PWA whose service worker answers the OS share-sheet POST itself: FormData is parsed, written to IndexedDB in one atomic transaction, and answered with a 303 redirect. No server, no network, no framework.">
+<meta name="theme-color" content="#0b1020">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="stylesheet" href="./app.css">
+<script src="./theme.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="brand">
+    <img src="./icon-192.png" alt="" width="36" height="36" class="brand-icon">
+    <div class="brand-text">
+      <strong>Saku</strong>
+      <span>offline-first capture engine · service worker + IndexedDB</span>
+    </div>
+  </div>
+  <div class="top-actions">
+    <span class="pill" id="pillNet" title="Network status">online</span>
+    <span class="pill" id="pillSW" title="Service worker state">sw: checking…</span>
+    <button type="button" class="btn ghost" id="installBtn" hidden>Install</button>
+    <button type="button" class="btn ghost" id="themeBtn" aria-pressed="false">
+      <span aria-hidden="true">◐</span><span class="lbl">Theme</span>
+    </button>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Views">
+  <button type="button" class="tab" id="tab-engine" role="tab" aria-selected="true" aria-controls="view-engine" data-view="engine">Engine</button>
+  <button type="button" class="tab" id="tab-inbox" role="tab" aria-selected="false" aria-controls="view-inbox" data-view="inbox">Inbox <span class="count" id="inboxCount">0</span></button>
+  <button type="button" class="tab" id="tab-capture" role="tab" aria-selected="false" aria-controls="view-capture" data-view="capture">Capture</button>
+</nav>
+
+<div class="banner" id="updateBanner" hidden>
+  <span>A new version of Saku is installed and waiting. Nothing was swapped under your fingers.</span>
+  <button type="button" class="btn small" id="updateBtn">Reload to apply</button>
+</div>
+
+<main id="main">
+
+<!-- ============================ ENGINE ============================ -->
+<section id="view-engine" class="view" role="tabpanel" aria-labelledby="tab-engine" tabindex="-1">
+
+  <article class="card hero">
+    <header class="card-head">
+      <h1>The share handler, provable on this device</h1>
+      <p class="lede">
+        Saku declares <code>share_target</code> with <code>method: POST</code>. On Android, picking
+        Saku from the OS share sheet makes the operating system send a real
+        <code>multipart/form-data</code> POST at <code>./share</code> — with the app closed and the
+        network off. GitHub Pages would answer that POST with <strong>405</strong>. It never gets
+        there: the service worker controlling this scope intercepts it, parses the FormData, writes
+        the row to IndexedDB and replies <strong>303</strong> to a GET URL.
+      </p>
+      <p class="lede">
+        That path is Chromium-on-Android-only and needs an install, so the button below fires the
+        <em>same POST at the same endpoint</em> from this page. Same worker, same
+        <code>FormData</code> parse, same atomic write, same 303 — on your laptop, right now.
+      </p>
+    </header>
+
+    <div class="share-controls">
+      <label class="field">
+        <span>Payload (what the OS would hand over as <code>text</code>)</span>
+        <select id="sharePreset"></select>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="sharePhoto">
+        <span>Attach a generated receipt photo (exercises the worker-side downscale)</span>
+      </label>
+      <div class="row">
+        <button type="button" class="btn primary" id="shareFetchBtn">Simulate a share</button>
+        <button type="button" class="btn" id="shareNavBtn">Simulate as a real navigation</button>
+      </div>
+      <p class="hint" id="shareHint"></p>
+    </div>
+
+    <form id="shareForm" action="./share" method="POST" enctype="multipart/form-data" hidden>
+      <input type="hidden" name="title" value="Shared to Saku">
+      <input type="hidden" name="text" id="shareFormText" value="">
+      <input type="hidden" name="url" value="">
+    </form>
+
+    <div class="trace-wrap">
+      <h2 class="mini">Pipeline trace</h2>
+      <p class="status" id="shareStatus" role="status" aria-live="polite">Idle. Nothing has been shared yet this session.</p>
+      <ol class="trace" id="shareTrace" aria-live="polite"><li class="empty">The worker reports each step here as it happens.</li></ol>
+    </div>
+  </article>
+
+  <div class="grid">
+
+    <article class="card" id="capsCard">
+      <h2>What this exact browser supports</h2>
+      <p class="sub">Detected live, not assumed. A red row is a platform limit, not a bug.</p>
+      <table class="caps"><tbody id="capsBody"></tbody></table>
+    </article>
+
+    <article class="card">
+      <h2>Service worker</h2>
+      <table class="kv"><tbody id="swBody"></tbody></table>
+      <div class="row">
+        <button type="button" class="btn small" id="swRefresh">Re-read state</button>
+        <button type="button" class="btn small" id="swUnregister">Unregister</button>
+      </div>
+      <p class="note" id="swNote"></p>
+    </article>
+
+    <article class="card">
+      <h2>IndexedDB</h2>
+      <table class="kv"><tbody id="idbBody"></tbody></table>
+      <h3 class="mini">Migration log</h3>
+      <ul class="log" id="migrationLog"></ul>
+    </article>
+
+    <article class="card">
+      <h2>Outbox <span class="badge warn">simulated peer — local only</span></h2>
+      <p class="sub">
+        The "peer" is a second IndexedDB store in this origin. No request leaves the page. What is
+        real: idempotency keys, exponential backoff with jitter, cross-tab claim leases, and a
+        Lamport-ordered field-level merge that produces genuine conflicts.
+      </p>
+      <table class="kv"><tbody id="outboxBody"></tbody></table>
+      <div class="row">
+        <button type="button" class="btn small primary" id="drainBtn">Drain now</button>
+        <button type="button" class="btn small" id="autoDrainBtn" aria-pressed="true">Auto-drain: on</button>
+      </div>
+      <ul class="log" id="syncLog"></ul>
+    </article>
+
+    <article class="card">
+      <h2>Storage</h2>
+      <div class="quota" aria-hidden="true"><div class="quota-fill" id="quotaFill"></div></div>
+      <p class="status" id="quotaText">measuring…</p>
+      <table class="kv"><tbody id="storageBody"></tbody></table>
+      <div class="row">
+        <button type="button" class="btn small" id="persistBtn">Request persistent storage</button>
+      </div>
+      <p class="note">Browser storage is evictable. iOS in particular can clear a PWA's storage after
+        about a week of non-use — which is exactly why Export exists.</p>
+    </article>
+
+    <article class="card">
+      <h2>Chaos console</h2>
+      <p class="sub">Force the failures that are normally impossible to demo.</p>
+      <div class="chaos">
+        <label class="check"><input type="checkbox" id="chaosOffline"><span>Peer unreachable (simulated offline)</span></label>
+        <label class="check"><input type="checkbox" id="chaosDuplicate"><span>Deliver every op twice (at-least-once delivery)</span></label>
+        <label class="check"><input type="checkbox" id="chaosQuota"><span>Inject <code>QuotaExceededError</code> mid-transaction</span></label>
+        <label class="check"><input type="checkbox" id="chaosSwThrow"><span>Throw inside the service worker fetch handler</span></label>
+        <label class="field">
+          <span>Peer failure rate: <output id="failRateOut">0%</output></span>
+          <input type="range" id="chaosFailRate" min="0" max="100" step="10" value="0">
+        </label>
+        <label class="field">
+          <span>Peer latency: <output id="latencyOut">250 ms</output></span>
+          <input type="range" id="chaosLatency" min="0" max="3000" step="250" value="250">
+        </label>
+        <div class="row">
+          <button type="button" class="btn small" id="divergeBtn">Peer edits your newest entry</button>
+        </div>
+      </div>
+      <p class="note" id="chaosNote">The quota error is injected, not a real 12 MP photo blowing the
+        budget — but the abort path it triggers is the real one, and the check below proves nothing
+        was half-written.</p>
+    </article>
+
+    <article class="card">
+      <h2>Your data, and only yours</h2>
+      <p class="sub">Everything lives in this origin's IndexedDB. There is no endpoint to upload to.</p>
+      <div class="row">
+        <button type="button" class="btn small" id="exportBtn">Export JSON</button>
+        <label class="btn small file-btn">Import<input type="file" id="importInput" accept="application/json,.json"></label>
+        <button type="button" class="btn small danger" id="wipeBtn">Wipe everything</button>
+        <button type="button" class="btn small" id="seedBtn">Load 5 sample entries</button>
+      </div>
+      <p class="note">Wipe clears IndexedDB, deletes every cache and unregisters the service worker,
+        so the cold-start experience can be replayed from zero.</p>
+    </article>
+
+    <article class="card">
+      <h2>What this proves, and what it does not</h2>
+      <ul class="claims">
+        <li class="yes">A service worker answering an OS-generated multipart POST with no server in the path.</li>
+        <li class="yes">One IndexedDB transaction spanning entries + outbox + the Lamport counter, aborting rather than half-writing.</li>
+        <li class="yes">POST/Redirect/GET inside a worker, so the back button cannot duplicate an entry.</li>
+        <li class="yes">Versioned schema migration, quota reporting, backoff with jitter, cross-tab claim leases.</li>
+        <li class="no">Not a backend. The sync peer is an IndexedDB store in this page, labelled as such everywhere it appears.</li>
+        <li class="no">Not Flutter, Dart, a native build or a store release. This is web-platform engineering and is filed as exactly that.</li>
+        <li class="no">Not Web Push. Server push needs a push service and VAPID keys; neither can exist on static hosting, so it is not shipped.</li>
+        <li class="no">"No network" is a claim about this page only. It makes zero requests after load — the CV's own home page does call the GitHub API.</li>
+      </ul>
+    </article>
+
+  </div>
+</section>
+
+<!-- ============================ INBOX ============================ -->
+<section id="view-inbox" class="view" role="tabpanel" aria-labelledby="tab-inbox" tabindex="-1" hidden>
+  <div class="conflict-banner" id="conflictBanner" hidden>
+    <span id="conflictText"></span>
+    <button type="button" class="btn small" id="conflictBtn">Resolve</button>
+  </div>
+  <div class="list-head">
+    <h1>Inbox</h1>
+    <p class="sub" id="inboxSummary"></p>
+  </div>
+  <ul class="entries" id="entryList"></ul>
+  <div class="empty-state" id="inboxEmpty">
+    <h2>Nothing captured yet</h2>
+    <p>Fire <strong>Simulate a share</strong> in the Engine view, paste a bank alert in Capture, or
+      load the sample entries. Every path writes through the same atomic transaction.</p>
+    <button type="button" class="btn primary" data-goto="capture">Capture something</button>
+  </div>
+</section>
+
+<!-- ============================ CAPTURE ============================ -->
+<section id="view-capture" class="view" role="tabpanel" aria-labelledby="tab-capture" tabindex="-1" hidden>
+  <div class="list-head">
+    <h1>Capture</h1>
+    <p class="sub">Paste a bank SMS or push notification. The parser is a rule table — no model, no
+      API key, no request. It shows you which rule fired and how the confidence was scored.</p>
+  </div>
+
+  <div class="capture-grid">
+    <article class="card">
+      <h2>Paste</h2>
+      <label class="field">
+        <span class="sr-only">Bank notification text</span>
+        <textarea id="pasteText" rows="4" placeholder="BCA: Trf Rp1.250.000,00 ke TOKOPEDIA 12/09/26 Ref 88213"></textarea>
+      </label>
+      <div class="row">
+        <button type="button" class="btn small" id="sampleBtn">Insert a sample</button>
+        <button type="button" class="btn small" id="clearPasteBtn">Clear</button>
+      </div>
+
+      <div class="parse-out" id="parseOut" hidden>
+        <h3 class="mini">Parse result</h3>
+        <table class="kv"><tbody id="parseBody"></tbody></table>
+        <h3 class="mini">Confidence</h3>
+        <ul class="signals" id="signalList"></ul>
+      </div>
+
+      <fieldset class="edit" id="editFields">
+        <legend>Correct anything before saving — corrections train the local merchant map</legend>
+        <div class="two">
+          <label class="field"><span>Amount</span><input type="number" id="fAmount" step="0.01" inputmode="decimal"></label>
+          <label class="field"><span>Currency</span><input type="text" id="fCurrency" maxlength="4" size="4"></label>
+        </div>
+        <label class="field"><span>Merchant</span><input type="text" id="fMerchant"></label>
+        <div class="two">
+          <label class="field"><span>Direction</span>
+            <select id="fDirection"><option value="out">Money out</option><option value="in">Money in</option></select>
+          </label>
+          <label class="field"><span>Category</span>
+            <select id="fCategory">
+              <option value="">(none)</option><option>Food</option><option>Transport</option>
+              <option>Shopping</option><option>Bills</option><option>Income</option><option>Other</option>
+            </select>
+          </label>
+        </div>
+        <label class="field"><span>Date</span><input type="date" id="fDate"></label>
+        <div class="row">
+          <button type="button" class="btn primary" id="saveEntryBtn">Commit entry + outbox job</button>
+        </div>
+        <p class="hint">One transaction, three object stores. If it aborts, neither row survives.</p>
+      </fieldset>
+    </article>
+
+    <article class="card">
+      <h2>Photo</h2>
+      <p class="sub">Uses <code>&lt;input capture="environment"&gt;</code>, so on a phone this opens the
+        camera and on a desktop it opens the file picker. Decoding, downscaling and re-encoding all
+        happen in this page; the bytes never touch a network.</p>
+      <label class="btn file-btn">Take / choose a photo
+        <input type="file" id="photoInput" accept="image/*" capture="environment">
+      </label>
+      <div class="photo-out" id="photoOut" hidden>
+        <img id="photoPreview" alt="Captured receipt preview">
+        <p class="status" id="photoStatus"></p>
+      </div>
+      <h3 class="mini">Merchant → category map</h3>
+      <p class="sub">Learned from your corrections and re-applied to the next match.</p>
+      <ul class="log" id="merchantList"><li class="empty">No corrections learned yet.</li></ul>
+    </article>
+
+    <article class="card">
+      <h2>The rule table</h2>
+      <p class="sub">Tried in order; the first match wins.</p>
+      <table class="rules"><tbody id="ruleBody"></tbody></table>
+    </article>
+  </div>
+</section>
+
+</main>
+
+<!-- sheets -->
+<div class="scrim" id="scrim" hidden></div>
+
+<section class="sheet" id="entrySheet" role="dialog" aria-modal="true" aria-labelledby="entrySheetTitle" hidden>
+  <div class="sheet-grip" id="entryGrip" role="separator" aria-label="Drag or press arrow keys to resize the sheet" tabindex="0"></div>
+  <header class="sheet-head">
+    <h2 id="entrySheetTitle">Entry</h2>
+    <button type="button" class="btn small" id="entryClose">Close</button>
+  </header>
+  <div class="sheet-body" id="entryBody"></div>
+</section>
+
+<section class="sheet" id="conflictSheet" role="dialog" aria-modal="true" aria-labelledby="conflictSheetTitle" hidden>
+  <div class="sheet-grip" id="conflictGrip" role="separator" aria-label="Drag or press arrow keys to resize the sheet" tabindex="0"></div>
+  <header class="sheet-head">
+    <h2 id="conflictSheetTitle">Conflict</h2>
+    <button type="button" class="btn small" id="conflictClose">Close</button>
+  </header>
+  <div class="sheet-body" id="conflictBody"></div>
+</section>
+
+<div class="snackbar" id="snackbar" role="status" aria-live="polite" hidden>
+  <span id="snackText"></span>
+  <button type="button" class="btn small" id="snackAction" hidden></button>
+</div>
+
+<footer class="foot">
+  <p>Saku · a lab from <a href="../../">biassp.github.io</a>. Vanilla HTML/CSS/JS, no build step, no
+     dependencies. <a href="./README.md">README</a></p>
+</footer>
+
+<script src="./store.js"></script>
+<script src="./parse.js"></script>
+<script src="./sync.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

@@ -53,7 +53,13 @@
     ['XVI', 'Kondisi Perinatal', 'P00', 'P96'],
     ['XVII', 'Malformasi Kongenital', 'Q00', 'Q99'],
     ['XVIII', 'Gejala & Temuan Klinis', 'R00', 'R99'],
-    ['XIX', 'Cedera, Keracunan & Sebab Luar', 'S00', 'T98'],
+    ['XIX', 'Cedera, Keracunan & Akibat Sebab Luar Tertentu', 'S00', 'T98'],
+    // Chapter XX was missing entirely, so every external-cause code answered
+    // chapterOf() with "Tidak terklasifikasi". In Indonesian practice this is
+    // the chapter that decides who pays: a traffic injury routes to Jasa
+    // Raharja and a work injury to BPJS Ketenagakerjaan before BPJS Kesehatan
+    // capitation is touched at all.
+    ['XX', 'Sebab Luar Morbiditas & Mortalitas', 'V01', 'Y98'],
     ['XXI', 'Faktor Status Kesehatan', 'Z00', 'Z99']
   ];
 
@@ -77,7 +83,13 @@
     ['A01.0', 'Typhoid fever', 'Demam tifoid', 'tifus typhus salmonella'],
     ['A06.0', 'Acute amoebic dysentery', 'Disentri amuba akut', 'amubiasis entamoeba'],
     ['A08.4', 'Viral intestinal infection, unspecified', 'Infeksi usus virus', 'gastroenteritis viral rotavirus'],
-    ['A09', 'Diarrhoea and gastroenteritis of presumed infectious origin', 'Diare & gastroenteritis infeksi', 'mencret berak cair gastroenteritis'],
+    /* A09 carried its PRE-2010 title. The 2010 revision — the edition this set
+     * claims to follow, and the one Indonesian coders work from — retitles the
+     * category and subdivides it, which is why A09.0 and A09.9 are here: a
+     * coder on ICD-10 2010 picks one of those, not the bare category. */
+    ['A09', 'Other gastroenteritis and colitis of infectious and unspecified origin', 'Gastroenteritis & kolitis lain, infeksi maupun tidak spesifik', 'mencret berak cair gastroenteritis diare'],
+    ['A09.0', 'Other and unspecified gastroenteritis and colitis of infectious origin', 'Gastroenteritis & kolitis infeksi', 'diare infeksi mencret berak cair'],
+    ['A09.9', 'Gastroenteritis and colitis of unspecified origin', 'Gastroenteritis & kolitis penyebab tidak spesifik', 'diare tidak spesifik mencret'],
     ['A15.0', 'Tuberculosis of lung, confirmed by microscopy', 'TB paru BTA positif', 'tuberkulosis tbc paru bta'],
     ['A16.2', 'Tuberculosis of lung, without bacteriological confirmation', 'TB paru klinis (BTA negatif)', 'tuberkulosis tbc paru'],
     ['A16.9', 'Respiratory tuberculosis unspecified', 'TB pernapasan tidak spesifik', 'tuberkulosis tbc'],
@@ -209,7 +221,9 @@
     ['K12.0', 'Recurrent oral aphthae', 'Stomatitis aftosa rekuren', 'sariawan'],
     ['K21.9', 'Gastro-oesophageal reflux disease without oesophagitis', 'GERD tanpa esofagitis', 'asam lambung naik gerd heartburn'],
     ['K29.7', 'Gastritis, unspecified', 'Gastritis', 'maag lambung perih'],
-    ['K30', 'Functional dyspepsia', 'Dispepsia fungsional', 'maag kembung begah dispepsia'],
+    // WHO's title is plain "Dyspepsia"; "Functional dyspepsia" is the
+    // ICD-10-CM wording, which is a different classification.
+    ['K30', 'Dyspepsia', 'Dispepsia', 'maag kembung begah dispepsia fungsional'],
     ['K35.8', 'Acute appendicitis, other and unspecified', 'Apendisitis akut', 'usus buntu radang'],
     ['K40.9', 'Unilateral inguinal hernia, without obstruction or gangrene', 'Hernia inguinalis unilateral', 'hernia turun berok'],
     ['K52.9', 'Noninfective gastroenteritis and colitis, unspecified', 'Gastroenteritis non-infeksi', 'diare non infeksi'],
@@ -279,6 +293,12 @@
     ['P59.9', 'Neonatal jaundice, unspecified', 'Ikterus neonatorum', 'bayi kuning'],
 
     /* --- R gejala -------------------------------------------------------- */
+    /* R03.0 exists precisely so that ONE raised office reading does not become
+     * a diagnosis of essential hypertension. Auto-coding I10 from a single
+     * triage measurement inflates the FKTP hypertension prevalence that BPJS
+     * reports against, which is why the vitals engine suggests this code and
+     * offers I10 only for a patient who already carries it. */
+    ['R03.0', 'Elevated blood-pressure reading, without diagnosis of hypertension', 'Tekanan darah tinggi pada pengukuran, tanpa diagnosis hipertensi', 'td tinggi sekali ukur belum hipertensi'],
     ['R05', 'Cough', 'Batuk', 'batuk'],
     ['R07.4', 'Chest pain, unspecified', 'Nyeri dada', 'nyeri dada'],
     ['R10.1', 'Pain localized to upper abdomen', 'Nyeri perut atas', 'nyeri ulu hati epigastrium'],
@@ -305,6 +325,18 @@
     ['T78.2', 'Anaphylactic shock, unspecified', 'Syok anafilaktik', 'anafilaksis syok alergi'],
     ['T78.4', 'Allergy, unspecified', 'Alergi tanpa spesifikasi', 'alergi'],
 
+    /* --- V/W/X/Y sebab luar (bab XX) -------------------------------------
+     * An injury rubric alone does not say how the injury happened, and in
+     * Indonesia that second code is what routes the bill: a traffic case goes
+     * to Jasa Raharja and a work accident to BPJS Ketenagakerjaan before BPJS
+     * Kesehatan capitation applies at all. */
+    ['V89.2', 'Person injured in unspecified motor-vehicle accident, traffic', 'Cedera kecelakaan lalu lintas bermotor', 'kecelakaan lalu lintas tabrakan motor mobil laka'],
+    ['W01', 'Fall on same level from slipping, tripping and stumbling', 'Terjatuh di permukaan datar (terpeleset/tersandung)', 'jatuh terpeleset tersandung'],
+    ['W19', 'Unspecified fall', 'Terjatuh tanpa spesifikasi', 'jatuh'],
+    ['W54', 'Bitten or struck by dog', 'Digigit / diserang anjing', 'gigitan anjing rabies'],
+    ['W57', 'Bitten or stung by nonvenomous insect and other nonvenomous arthropods', 'Gigitan / sengatan serangga tak berbisa', 'digigit serangga semut nyamuk'],
+    ['X50', 'Overexertion and strenuous or repetitive movements', 'Kelelahan otot akibat gerakan berlebih atau berulang', 'terlalu berat angkat beban gerakan berulang'],
+
     /* --- Z status -------------------------------------------------------- */
     ['Z00.0', 'General medical examination', 'Pemeriksaan kesehatan umum', 'medical check up mcu'],
     ['Z00.1', 'Routine child health examination', 'Pemeriksaan kesehatan anak rutin', 'imunisasi tumbuh kembang posyandu'],
@@ -326,7 +358,7 @@
   // usage prior decides correctly, and a clinic picker that puts secondary
   // hypertension above essential hypertension gets closed and never reopened.
   var COMMON = {
-    'J06.9': 1, 'I10': 1, 'K29.7': 1, 'K30': 1, 'M79.1': 1, 'A09': 1, 'R50.9': 1,
+    'J06.9': 1, 'I10': 1, 'K29.7': 1, 'K30': 1, 'M79.1': 1, 'A09': 1, 'A09.9': 1, 'R50.9': 1,
     'J00': 1, 'J02.9': 1, 'J45.9': 1, 'E11.9': 1, 'M10.9': 1, 'L23.9': 1, 'L30.9': 1,
     'N39.0': 1, 'K02.9': 1, 'K04.0': 1, 'R51': 1, 'M54.5': 1, 'E78.5': 1, 'A91': 1,
     'H61.2': 1, 'B86': 1, 'J30.4': 1, 'K21.9': 1, 'Z34.9': 1, 'D50.9': 1, 'R05': 1,

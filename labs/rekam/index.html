@@ -40,7 +40,8 @@
             <span class="netbadge" id="netBadge" title="percobaan fetch / XMLHttpRequest / WebSocket / sendBeacon oleh halaman ini sejak dimuat">
                 <span class="dot" aria-hidden="true"></span><span id="netCount">panggilan jaringan: 0</span>
             </span>
-            <button type="button" id="themeBtn" class="btn ghost" aria-label="Ganti tema">Terang</button>
+            <button type="button" id="themeBtn" class="btn ghost">Terang</button>
+            <span id="themeLive" class="vh" role="status" aria-live="polite"></span>
             <a class="btn ghost" href="../../">CV</a>
         </div>
     </header>
@@ -65,7 +66,7 @@
             <span class="who" id="whoAmI"></span>
         </div>
 
-        <div class="summary" id="summary" aria-label="Ringkasan klinik hari ini"></div>
+        <div class="summary" id="summary" role="group" aria-label="Ringkasan klinik hari ini"></div>
 
         <nav class="tabs" id="tabs" role="tablist" aria-label="Modul klinik">
             <button role="tab" id="tab-antrian" aria-controls="panel-antrian" aria-selected="true" class="tab">Antrian</button>

@@ -37,10 +37,29 @@
   var DB_NAME = 'rekam-db';
   var DB_VERSION = 1;
 
+  /* This tab's identity, and the reason it needs one.
+   *
+   * Two tabs of this app on one browser profile each hold their own Clinic,
+   * their own RM counter and their own idea of how much of the chain is on
+   * disk. Left alone they reissue the same No. RM to two different people,
+   * overwrite each other's snapshot wholesale, and interleave their writes
+   * into the shared `audit` store until the persisted chain is a mixture of
+   * two — at which point a third tab boots straight into "Rantai PUTUS" after
+   * entirely ordinary use, with nothing on screen saying why.
+   *
+   * A single-tab demo cannot merge two divergent clinics, and pretending to
+   * would be worse than refusing. So it detects instead: the tab that owns the
+   * database stamps its id on every save, and a tab that finds someone else's
+   * id stops writing and says so. */
+  var TAB_ID = 'tab-' + Math.random().toString(36).slice(2, 10) + '-' + Date.now().toString(36);
+
   var state = {
     available: null,   // null = untested, true/false after the first open
     reason: '',
-    persistedAudit: 0  // how many chain entries are already on disk
+    persistedAudit: 0, // how many chain entries are already on disk
+    owner: null,       // tab id last seen owning the database
+    locked: false,     // another tab owns it; this tab is memory-only
+    lockReason: ''
   };
 
   var dbp = null;
@@ -135,22 +154,66 @@
    * the caller answers by seeding fresh data.
    */
   function load() {
-    return tx(['snapshot', 'audit'], 'readonly', function (t) {
-      var out = { snap: null, audit: [] };
+    return tx(['snapshot', 'audit', 'meta'], 'readonly', function (t) {
+      var out = { snap: null, audit: [], owner: null };
       reqp(t.objectStore('snapshot').get('state')).then(function (v) { out.snap = v; });
+      reqp(t.objectStore('meta').get('owner')).then(function (v) { out.owner = v || null; });
       t.objectStore('audit').openCursor().onsuccess = function (ev) {
         var c = ev.target.result;
         if (c) { out.audit.push(c.value); c.continue(); }
       };
       return out;
     }).then(function (out) {
-      if (!out.snap || !out.snap.data) return { ok: false, reason: 'empty' };
+      // A recent stamp from a DIFFERENT tab id means that tab is live and
+      // owns the database. Stale stamps (a tab that was simply closed) are
+      // taken over, otherwise the app would lock itself out forever.
+      if (out.owner && out.owner.tab && out.owner.tab !== TAB_ID &&
+          Date.now() - (out.owner.at || 0) < OWNER_TTL) {
+        state.locked = true;
+        state.owner = out.owner.tab;
+        state.lockReason = 'Klinik ini sudah terbuka di tab lain pada peramban yang sama.';
+      }
+      if (!out.snap || !out.snap.data) return { ok: false, reason: 'empty', locked: state.locked };
       // Cursor order over an integer key path is ascending, but sort anyway:
       // the verifier's contiguity check must fail because of tampering, never
       // because of an ordering assumption made here.
       out.audit.sort(function (a, b) { return a.seq - b.seq; });
       state.persistedAudit = out.audit.length;
-      return { ok: true, state: out.snap.data, auditEntries: out.audit };
+      return { ok: true, state: out.snap.data, auditEntries: out.audit, locked: state.locked };
+    }).catch(function (e) {
+      return { ok: false, reason: (e && e.message) || String(e) };
+    });
+  }
+
+  // A tab that has not stamped the database for this long is presumed gone,
+  // so a browser that was simply closed does not lock the clinic out forever.
+  var OWNER_TTL = 15000;
+
+  /**
+   * heartbeat() — refresh this tab's ownership stamp, and notice if someone
+   * else has taken it. Called on a timer by the app, because ownership that is
+   * only refreshed on save would expire during a quiet afternoon and let a
+   * second tab claim a database that is still very much in use.
+   */
+  function heartbeat() {
+    return tx(['meta'], 'readwrite', function (t) {
+      var store = t.objectStore('meta');
+      var out = { stolenBy: null };
+      reqp(store.get('owner')).then(function (v) {
+        if (v && v.tab && v.tab !== TAB_ID && Date.now() - (v.at || 0) < OWNER_TTL) {
+          out.stolenBy = v.tab;
+          if (!state.locked) {
+            state.locked = true;
+            state.owner = v.tab;
+            state.lockReason = 'Tab lain mengambil alih basis data klinik ini.';
+          }
+          return;
+        }
+        if (!state.locked) store.put({ k: 'owner', tab: TAB_ID, at: Date.now() });
+      });
+      return out;
+    }).then(function (out) {
+      return { ok: true, locked: state.locked, stolenBy: out.stolenBy };
     }).catch(function (e) {
       return { ok: false, reason: (e && e.message) || String(e) };
     });
@@ -162,10 +225,17 @@
    * as well as in memory.
    */
   function save(clinic) {
-    var snap, entries;
+    if (state.locked) {
+      return Promise.resolve({
+        ok: false, locked: true,
+        reason: state.lockReason + ' Tab ini berjalan dari memori dan sengaja tidak menulis ke basis data — dua tab yang menulis bergantian akan menerbitkan ulang No. RM yang sama dan memutus rantai audit yang tersimpan.'
+      });
+    }
+    var snap, entries, head;
     try {
       snap = JSON.parse(JSON.stringify(clinic.snapshot()));
       entries = clinic.chain.entries;
+      head = clinic.chain.head();
     } catch (e) {
       return Promise.resolve({ ok: false, reason: 'Gagal menyalin state: ' + e.message });
     }
@@ -175,10 +245,17 @@
       for (var i = state.persistedAudit; i < entries.length; i++) {
         store.put(JSON.parse(JSON.stringify(entries[i])));
       }
-      t.objectStore('meta').put({ k: 'version', value: DB_VERSION, at: Date.now() });
+      var meta = t.objectStore('meta');
+      meta.put({ k: 'version', value: DB_VERSION, at: Date.now() });
+      // The commitment that makes tail deletion visible: how long the chain is
+      // supposed to be and what it is supposed to end with, written outside
+      // the chain itself on every save.
+      meta.put({ k: 'chain', count: entries.length, head: head, at: Date.now() });
+      meta.put({ k: 'owner', tab: TAB_ID, at: Date.now() });
       return entries.length;
     }).then(function (n) {
       state.persistedAudit = n;
+      state.owner = TAB_ID;
       return { ok: true, entries: n };
     }).catch(function (e) {
       return { ok: false, reason: (e && e.message) || String(e) };
@@ -214,18 +291,55 @@
     });
   }
 
-  /** Read the audit log straight off disk, bypassing memory. */
+  /**
+   * truncate(n) — delete the n HIGHEST-seq audit records straight out of the
+   * object store, in-memory chain untouched.
+   *
+   * The counterpart to tamper(): editing a row is the expensive attack and
+   * deleting the tail is the cheap one, so both are demonstrable. This is what
+   * "delete the rows that record what I just did" looks like, and without the
+   * head commitment in `meta` the verifier used to walk the shortened chain,
+   * run out of rows and report it perfectly intact.
+   */
+  function truncate(n) {
+    var count = Math.max(1, n || 1);
+    return tx(['audit'], 'readwrite', function (t) {
+      var store = t.objectStore('audit');
+      var removed = [];
+      store.openCursor(null, 'prev').onsuccess = function (ev) {
+        var c = ev.target.result;
+        if (!c || removed.length >= count) return;
+        removed.push(c.value.seq);
+        c.delete();
+        c.continue();
+      };
+      return removed;
+    }).then(function (removed) {
+      return removed.length
+        ? { ok: true, removed: removed }
+        : { ok: false, reason: 'Tidak ada entri yang dapat dihapus.' };
+    }).catch(function (e) {
+      return { ok: false, reason: (e && e.message) || String(e) };
+    });
+  }
+
+  /** Read the audit log straight off disk, bypassing memory, together with the
+   *  length/head commitment the verifier compares it against. */
   function readAudit() {
-    return tx(['audit'], 'readonly', function (t) {
-      var rows = [];
+    return tx(['audit', 'meta'], 'readonly', function (t) {
+      var out = { rows: [], commit: null };
+      reqp(t.objectStore('meta').get('chain')).then(function (v) { out.commit = v || null; });
       t.objectStore('audit').openCursor().onsuccess = function (ev) {
         var c = ev.target.result;
-        if (c) { rows.push(c.value); c.continue(); }
+        if (c) { out.rows.push(c.value); c.continue(); }
       };
-      return rows;
-    }).then(function (rows) {
-      rows.sort(function (a, b) { return a.seq - b.seq; });
-      return { ok: true, entries: rows };
+      return out;
+    }).then(function (out) {
+      out.rows.sort(function (a, b) { return a.seq - b.seq; });
+      return {
+        ok: true, entries: out.rows,
+        expected: out.commit ? { count: out.commit.count, head: out.commit.head } : null
+      };
     }).catch(function (e) {
       return { ok: false, reason: (e && e.message) || String(e) };
     });
@@ -238,7 +352,7 @@
         try {
           req = root.indexedDB.deleteDatabase(DB_NAME);
         } catch (e) { resolve({ ok: false, reason: String(e) }); return; }
-        req.onsuccess = function () { state.persistedAudit = 0; resolve({ ok: true }); };
+        req.onsuccess = function () { state.persistedAudit = 0; state.locked = false; state.lockReason = ''; resolve({ ok: true }); };
         req.onerror = function () { resolve({ ok: false, reason: 'penghapusan gagal' }); };
         req.onblocked = function () { resolve({ ok: false, reason: 'penghapusan diblokir oleh tab lain' }); };
       }
@@ -266,9 +380,17 @@
 
   R.store = {
     DB_NAME: DB_NAME,
-    load: load, save: save, tamper: tamper, readAudit: readAudit, wipe: wipe,
+    load: load, save: save, tamper: tamper, truncate: truncate, readAudit: readAudit, wipe: wipe,
+    heartbeat: heartbeat,
     prefGet: prefGet, prefSet: prefSet,
-    status: function () { return { available: state.available, reason: state.reason, persistedAudit: state.persistedAudit }; },
+    tabId: TAB_ID,
+    isLocked: function () { return state.locked; },
+    lockInfo: function () { return { locked: state.locked, owner: state.owner, reason: state.lockReason }; },
+    // Taking over is a deliberate act by the person looking at the screen, not
+    // something the app decides on its own: whichever tab takes over wins, and
+    // the other tab's unsaved work is gone.
+    takeOver: function () { state.locked = false; state.lockReason = ''; state.persistedAudit = 0; },
+    status: function () { return { available: state.available, reason: state.reason, persistedAudit: state.persistedAudit, locked: state.locked }; },
     resetPersistedCount: function () { state.persistedAudit = 0; }
   };
 })(typeof self !== 'undefined' ? self : this);

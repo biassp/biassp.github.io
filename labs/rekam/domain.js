@@ -144,6 +144,14 @@
             if (ctx.prescription && ctx.prescription.status === 'signed') {
               return 'Kunjungan ini punya resep yang sudah ditandatangani — pasien harus melewati farmasi terlebih dahulu.';
             }
+            // A draft prescription is not a prescription. Letting the patient
+            // walk to the counter with unsigned drug lines still on the visit
+            // is how the cashier ends up charging for medicine that was never
+            // reviewed, never dispensed and never handed over.
+            if (ctx.prescription && ctx.prescription.status === 'draft' && (ctx.prescription.items || []).length) {
+              return 'Masih ada draf resep berisi ' + ctx.prescription.items.length +
+                ' item yang belum ditandatangani. Tandatangani resep lalu arahkan ke farmasi, atau kosongkan drafnya bila memang tidak jadi meresepkan — draf tidak pernah ditagihkan dan tidak pernah diserahkan.';
+            }
             return null;
           }
         }
@@ -157,6 +165,9 @@
           roles: ['apoteker'],
           guard: function (v, ctx) {
             if (!ctx.prescription) return 'Tidak ada resep pada kunjungan ini.';
+            // A prescription cancelled at the counter releases the patient:
+            // there is nothing left to hand over, and nothing to bill.
+            if (ctx.prescription.status === 'dibatalkan') return null;
             if (ctx.prescription.status !== 'diserahkan') {
               return 'Obat belum diserahkan. Status resep saat ini: ' + ctx.prescription.status + '.';
             }
@@ -229,7 +240,12 @@
   var ROLES = [
     {
       id: 'pendaftaran', label: 'Pendaftaran / Admin',
-      blurb: 'Mendaftarkan pasien, mengalokasikan No. RM, membuka kunjungan dan menutup tagihan. Tidak boleh membaca isi catatan klinis.'
+      // Deliberately precise. "Tidak boleh membaca isi catatan klinis" was
+      // more than the app delivers: an itemised bill that names the drug is
+      // clinical information, and a cashier legitimately sees a bill. What is
+      // actually enforced is the narrative — S, O, A and P — plus collapsing
+      // the drug lines on the bill to a count and a total for this role.
+      blurb: 'Mendaftarkan pasien, mengalokasikan No. RM, membuka kunjungan dan menutup tagihan. Tidak membaca narasi klinis (SOAP); pada tagihan, baris obat diringkas menjadi jumlah item tanpa nama obat.'
     },
     {
       id: 'perawat', label: 'Perawat (Triase)',
@@ -325,31 +341,119 @@
     return BMI_BANDS[BMI_BANDS.length - 1];
   }
 
-  function bpBand(sys, dia) {
+  /* PAEDIATRIC VITAL-SIGN BANDS.
+   *
+   * A heart rate of 130 and a respiratory rate of 35 are a well six-month-old
+   * and a peri-arrest adult. Reading both off the same table is not a rounding
+   * error: an infant scored against adult thresholds comes out hypotensive,
+   * tachycardic and tachypnoeic all at once, which is a textbook description of
+   * shock, and the triage suggestion that follows is "merah". The clinic seeds
+   * roughly one patient in five under 13 and runs a KIA poli, so this is half
+   * the triage desk, not an edge case.
+   *
+   * Bands below are the APLS/PALS ones a puskesmas triage card carries:
+   * `hr` and `rr` are [normal-low, normal-high, red-low, red-high]. Anything
+   * outside normal is flagged; anything outside the red pair drives an
+   * emergency acuity suggestion.
+   *
+   * Age is in completed years, which is what the record actually holds. A
+   * neonate needs age in days and is therefore NOT distinguished here — the
+   * "< 1 tahun" band is deliberately the infant band, and the UI says so.
+   */
+  var VITAL_BANDS = [
+    { maxAge: 0, label: 'bayi < 1 tahun', hr: [100, 160, 80, 190], rr: [30, 50, 20, 60] },
+    { maxAge: 2, label: 'anak 1–2 tahun', hr: [90, 150, 70, 180], rr: [25, 35, 18, 50] },
+    { maxAge: 5, label: 'anak 3–5 tahun', hr: [80, 140, 65, 170], rr: [22, 30, 15, 40] },
+    { maxAge: 11, label: 'anak 6–11 tahun', hr: [70, 120, 55, 150], rr: [18, 25, 12, 32] },
+    { maxAge: Infinity, label: 'usia ≥ 12 tahun / dewasa', hr: [60, 100, 45, 130], rr: [12, 20, 8, 24] }
+  ];
+
+  function vitalBand(age) {
+    if (age == null) return VITAL_BANDS[VITAL_BANDS.length - 1];
+    for (var i = 0; i < VITAL_BANDS.length; i++) {
+      if (age <= VITAL_BANDS[i].maxAge) return VITAL_BANDS[i];
+    }
+    return VITAL_BANDS[VITAL_BANDS.length - 1];
+  }
+
+  function isPaediatric(age) { return age != null && age < 12; }
+
+  /* Systolic hypotension threshold, PALS: < 70 in infancy, 70 + 2×age through
+   * ten, < 90 from eleven up. This is the one paediatric blood-pressure rule
+   * that can be computed without a chart, and it is the one that matters —
+   * a hypotensive child is decompensating. */
+  function hypotensionFloor(age) {
+    if (age == null || age > 10) return 90;
+    if (age < 1) return 70;
+    return 70 + 2 * age;
+  }
+
+  /**
+   * bpBand(sys, dia, age)
+   *
+   * Above the hypotension floor, paediatric blood pressure is NOT interpreted.
+   * Paediatric hypertension is defined by percentile for age, sex and height;
+   * there is no fixed 140/90 for a seven-year-old, and inventing one would be
+   * worse than declining — exactly as the BMI bands already decline.
+   */
+  function bpBand(sys, dia, age) {
     if (sys == null || dia == null) return null;
-    if (sys >= 180 || dia >= 110) return { label: 'Krisis hipertensi', tone: 'bad', icd: 'I10' };
-    if (sys >= 160 || dia >= 100) return { label: 'Hipertensi derajat 2', tone: 'bad', icd: 'I10' };
-    if (sys >= 140 || dia >= 90) return { label: 'Hipertensi derajat 1', tone: 'bad', icd: 'I10' };
+    var floor = hypotensionFloor(age);
+    if (isPaediatric(age)) {
+      if (sys < floor) {
+        return {
+          label: 'Hipotensi anak (ambang sistol < ' + floor + ' mmHg untuk usia ' + age + ' th)',
+          tone: 'bad', icd: null, pediatric: true
+        };
+      }
+      return {
+        label: 'Tidak diinterpretasi otomatis — hipertensi anak dinilai dengan kurva persentil usia/jenis kelamin/tinggi',
+        tone: 'ok', icd: null, pediatric: true, undecided: true
+      };
+    }
+    // R03.0 — and not I10 — is the code for a raised reading. A single office
+    // measurement does not diagnose essential hypertension, and auto-coding it
+    // as I10 would inflate the FKTP hypertension prevalence that BPJS reports
+    // against. I10 is offered only when the patient already carries it.
+    if (sys >= 180 || dia >= 110) return { label: 'Krisis hipertensi', tone: 'bad', icd: 'R03.0' };
+    if (sys >= 160 || dia >= 100) return { label: 'Hipertensi derajat 2', tone: 'bad', icd: 'R03.0' };
+    if (sys >= 140 || dia >= 90) return { label: 'Hipertensi derajat 1', tone: 'bad', icd: 'R03.0' };
     if (sys >= 130 || dia >= 85) return { label: 'Normal tinggi (pra-hipertensi)', tone: 'warn', icd: null };
     if (sys < 90 || dia < 60) return { label: 'Hipotensi', tone: 'warn', icd: null };
     return { label: 'Normal', tone: 'ok', icd: null };
   }
 
   /**
-   * flagVitals(t, patientAge) -> [{ key, label, value, tone, note }]
+   * flagVitals(t, patientAge, opts) -> [{ key, label, value, tone, note }]
    * Flags only what is outside range; a normal set produces an empty list, so
    * the UI shows abnormalities rather than a wall of green.
+   *
+   * opts.knownHypertension flips the blood-pressure suggestion from R03.0
+   * (raised reading, no diagnosis) to I10 (the patient already carries it).
    */
-  function flagVitals(t, age) {
+  function flagVitals(t, age, opts) {
     var out = [];
     if (!t) return out;
-    var bp = bpBand(t.tdSistol, t.tdDiastol);
+    opts = opts || {};
+    var band = vitalBand(age);
+    var ped = isPaediatric(age);
+    var forAge = ped ? ' (normal ' : ' (normal dewasa ';
+
+    var bp = bpBand(t.tdSistol, t.tdDiastol, age);
     if (bp && bp.tone !== 'ok') {
-      out.push({ key: 'td', label: 'Tekanan darah', value: t.tdSistol + '/' + t.tdDiastol + ' mmHg', tone: bp.tone, note: bp.label, suggestIcd: bp.icd });
+      out.push({
+        key: 'td', label: 'Tekanan darah', value: t.tdSistol + '/' + t.tdDiastol + ' mmHg',
+        tone: bp.tone, note: bp.label,
+        suggestIcd: bp.icd === 'R03.0' && opts.knownHypertension ? 'I10' : bp.icd
+      });
     }
     if (t.nadi != null) {
-      if (t.nadi > 100) out.push({ key: 'nadi', label: 'Nadi', value: t.nadi + ' x/menit', tone: 'warn', note: 'Takikardia' });
-      else if (t.nadi < 60) out.push({ key: 'nadi', label: 'Nadi', value: t.nadi + ' x/menit', tone: 'warn', note: 'Bradikardia' });
+      var hrNote = forAge + band.hr[0] + '–' + band.hr[1] + ' x/menit untuk ' + band.label + ')';
+      if (t.nadi > band.hr[1]) {
+        out.push({ key: 'nadi', label: 'Nadi', value: t.nadi + ' x/menit', tone: t.nadi > band.hr[3] ? 'bad' : 'warn', note: 'Takikardia' + hrNote });
+      } else if (t.nadi < band.hr[0]) {
+        out.push({ key: 'nadi', label: 'Nadi', value: t.nadi + ' x/menit', tone: t.nadi < band.hr[2] ? 'bad' : 'warn', note: 'Bradikardia' + hrNote });
+      }
     }
     if (t.suhu != null) {
       if (t.suhu >= 40) out.push({ key: 'suhu', label: 'Suhu', value: t.suhu + ' °C', tone: 'bad', note: 'Hiperpireksia', suggestIcd: 'R50.9' });
@@ -358,9 +462,11 @@
       else if (t.suhu < 36) out.push({ key: 'suhu', label: 'Suhu', value: t.suhu + ' °C', tone: 'warn', note: 'Hipotermia' });
     }
     if (t.rr != null) {
-      if (t.rr > 24) out.push({ key: 'rr', label: 'Frekuensi napas', value: t.rr + ' x/menit', tone: 'bad', note: 'Takipnea' });
-      else if (t.rr > 20) out.push({ key: 'rr', label: 'Frekuensi napas', value: t.rr + ' x/menit', tone: 'warn', note: 'Napas cepat' });
-      else if (t.rr < 12) out.push({ key: 'rr', label: 'Frekuensi napas', value: t.rr + ' x/menit', tone: 'warn', note: 'Bradipnea' });
+      var rrNote = forAge + band.rr[0] + '–' + band.rr[1] + ' x/menit untuk ' + band.label + ')';
+      if (t.rr > band.rr[3]) out.push({ key: 'rr', label: 'Frekuensi napas', value: t.rr + ' x/menit', tone: 'bad', note: 'Takipnea' + rrNote });
+      else if (t.rr > band.rr[1]) out.push({ key: 'rr', label: 'Frekuensi napas', value: t.rr + ' x/menit', tone: 'warn', note: 'Napas cepat' + rrNote });
+      else if (t.rr < band.rr[2]) out.push({ key: 'rr', label: 'Frekuensi napas', value: t.rr + ' x/menit', tone: 'bad', note: 'Bradipnea' + rrNote });
+      else if (t.rr < band.rr[0]) out.push({ key: 'rr', label: 'Frekuensi napas', value: t.rr + ' x/menit', tone: 'warn', note: 'Bradipnea' + rrNote });
     }
     if (t.spo2 != null) {
       if (t.spo2 < 90) out.push({ key: 'spo2', label: 'SpO₂', value: t.spo2 + ' %', tone: 'bad', note: 'Hipoksemia berat' });
@@ -371,12 +477,59 @@
     // 6-year-old would be wrong, so paediatric anthropometry is deliberately
     // left to a growth chart this demo does not ship.
     if (b != null && (age == null || age >= 18)) {
-      var band = bmiBand(b);
-      if (band.tone !== 'ok') {
-        out.push({ key: 'imt', label: 'IMT', value: b + ' kg/m²', tone: band.tone, note: band.label, suggestIcd: b >= 25 ? 'E66.9' : null });
+      var bband = bmiBand(b);
+      if (bband.tone !== 'ok') {
+        out.push({ key: 'imt', label: 'IMT', value: b + ' kg/m²', tone: bband.tone, note: bband.label, suggestIcd: b >= 25 ? 'E66.9' : null });
       }
     }
     return out;
+  }
+
+  /* PLAUSIBILITY BOUNDS for what a nurse can type.
+   *
+   * These are not clinical ranges — they are the outer edge of what a human
+   * being can measure. A SpO₂ of 500 %, a temperature of 999 °C and a height
+   * of 1.7 (a nurse typing metres, which then reports an IMT of 242 214) are
+   * all data-entry slips, and a triage screen that stores them and then
+   * confidently interprets them is worse than one that refuses. Clinical
+   * abnormality is the flagVitals job; this is the typo guard in front of it.
+   */
+  var VITAL_RANGES = {
+    tdSistol: { min: 50, max: 300, label: 'Sistol', unit: 'mmHg' },
+    tdDiastol: { min: 20, max: 200, label: 'Diastol', unit: 'mmHg' },
+    nadi: { min: 20, max: 250, label: 'Nadi', unit: 'x/menit' },
+    suhu: { min: 25, max: 45, label: 'Suhu', unit: '°C' },
+    rr: { min: 4, max: 80, label: 'Frekuensi napas', unit: 'x/menit' },
+    spo2: { min: 50, max: 100, label: 'SpO₂', unit: '%' },
+    bb: { min: 0.5, max: 300, label: 'Berat badan', unit: 'kg' },
+    tb: { min: 30, max: 250, label: 'Tinggi badan', unit: 'cm' }
+  };
+
+  /**
+   * checkVitalRanges(t) -> null | { field, reason }
+   * Returns the FIRST offending field, named, so the refusal can point at it.
+   */
+  function checkVitalRanges(t) {
+    if (!t) return null;
+    var keys = Object.keys(VITAL_RANGES);
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i], v = t[k], r = VITAL_RANGES[k];
+      if (v == null) continue;
+      if (typeof v !== 'number' || !isFinite(v)) {
+        return { field: k, reason: r.label + ' bukan angka yang sah.' };
+      }
+      if (v < r.min || v > r.max) {
+        return {
+          field: k,
+          reason: r.label + ' ' + v + ' ' + r.unit + ' berada di luar rentang yang mungkin diukur (' +
+            r.min + '–' + r.max + ' ' + r.unit + '). Periksa kembali satuannya — tinggi badan dalam sentimeter, bukan meter.'
+        };
+      }
+    }
+    if (t.tdSistol != null && t.tdDiastol != null && t.tdDiastol >= t.tdSistol) {
+      return { field: 'tdDiastol', reason: 'Diastol (' + t.tdDiastol + ') harus lebih kecil daripada sistol (' + t.tdSistol + ').' };
+    }
+    return null;
   }
 
   /* Triage acuity, the three-band scheme a klinik pratama actually runs (an
@@ -389,17 +542,39 @@
     { id: 'hijau', label: 'Hijau — tidak gawat', tone: 'ok', note: 'Dilayani sesuai urutan antrian.' }
   ];
 
-  function suggestAcuity(t) {
-    if (!t) return 'hijau';
+  /**
+   * suggestAcuity(t, age)
+   *
+   * Age-banded, for the same reason flagVitals is: a well toddler scored on
+   * adult thresholds comes out "merah", and a triage screen that cries wolf on
+   * every healthy child is worse than no suggestion at all.
+   *
+   * hasMeasurement() exists because an EMPTY form must not come out "hijau".
+   * Auto-downgrading a patient nobody measured is the hazard the design notes
+   * warn about; with nothing measured there is nothing to suggest, and the
+   * caller is expected to refuse the save.
+   */
+  function hasMeasurement(t) {
+    if (!t) return false;
+    var keys = ['tdSistol', 'tdDiastol', 'nadi', 'suhu', 'rr', 'spo2', 'bb', 'tb'];
+    for (var i = 0; i < keys.length; i++) if (t[keys[i]] != null) return true;
+    return false;
+  }
+
+  function suggestAcuity(t, age) {
+    if (!t || !hasMeasurement(t)) return null;
+    var band = vitalBand(age);
+    var floor = hypotensionFloor(age);
     if ((t.spo2 != null && t.spo2 < 90) ||
-        (t.tdSistol != null && (t.tdSistol >= 180 || t.tdSistol < 90)) ||
-        (t.rr != null && t.rr > 24) ||
+        (t.tdSistol != null && (t.tdSistol < floor || (!isPaediatric(age) && t.tdSistol >= 180))) ||
+        (t.rr != null && (t.rr > band.rr[3] || t.rr < band.rr[2])) ||
         (t.suhu != null && t.suhu >= 40) ||
-        (t.nadi != null && (t.nadi > 130 || t.nadi < 45))) return 'merah';
+        (t.nadi != null && (t.nadi > band.hr[3] || t.nadi < band.hr[2]))) return 'merah';
     if ((t.spo2 != null && t.spo2 < 95) ||
-        (t.tdSistol != null && t.tdSistol >= 160) ||
+        (t.tdSistol != null && !isPaediatric(age) && t.tdSistol >= 160) ||
         (t.suhu != null && t.suhu >= 38.5) ||
-        (t.nadi != null && t.nadi > 110)) return 'kuning';
+        (t.rr != null && t.rr > band.rr[1]) ||
+        (t.nadi != null && t.nadi > (isPaediatric(age) ? band.hr[1] : 110))) return 'kuning';
     return 'hijau';
   }
 
@@ -408,6 +583,22 @@
    * ===================================================================== */
 
   var TARIF_PENDAFTARAN = 15000;
+
+  /* THE EXCEPTION EVERY FKTP CASHIER MEETS WEEKLY.
+   *
+   * BPJS Kesehatan is not the first payer for an injury with an external
+   * cause. A road traffic case is Jasa Raharja's up to its ceiling; a work
+   * injury is BPJS Ketenagakerjaan's. A clinic system that quietly runs every
+   * injury through capitation is telling the clinic it has been paid for work
+   * it must actually claim somewhere else — and the chapter XX code the doctor
+   * assigns is exactly what decides which. */
+  var KECELAKAAN = [
+    { id: '', label: '(bukan kasus kecelakaan)', payer: null },
+    { id: 'lalu-lintas', label: 'Kecelakaan lalu lintas', payer: 'Jasa Raharja', hint: 'Penjamin pertama adalah Jasa Raharja sampai batas santunannya; BPJS Kesehatan baru menanggung selisih di atas plafon itu.' },
+    { id: 'kerja', label: 'Kecelakaan kerja', payer: 'BPJS Ketenagakerjaan', hint: 'Kecelakaan kerja dan penyakit akibat kerja dijamin BPJS Ketenagakerjaan, bukan kapitasi BPJS Kesehatan.' }
+  ];
+  var KECELAKAAN_BY_ID = {};
+  KECELAKAAN.forEach(function (k) { KECELAKAAN_BY_ID[k.id] = k; });
 
   var TINDAKAN = [
     { id: 'none', label: '(tanpa tindakan)', price: 0, bpjs: true },
@@ -457,34 +648,60 @@
       lines.push({ label: t.label, qty: 1, unit: t.price, amount: t.price, covered: t.bpjs, group: 'tindakan' });
     });
 
-    if (prescription && prescription.items) {
+    /* BILL WHAT LEFT THE PHARMACY, NOT WHAT WAS TYPED.
+     *
+     * A draft prescription is a doctor thinking out loud. It has not been
+     * signed, not been reviewed by the pharmacist and not been handed to
+     * anyone, so charging for it at the counter bills the patient for medicine
+     * they never received. Only 'diserahkan' produces drug lines — and the
+     * lines are the ones actually dispensed, so a pharmacist substitution
+     * (out of stock, generic swap) changes the amount as well as the label.
+     */
+    if (prescription && prescription.status === 'diserahkan' && prescription.items) {
+      var subs = {};
+      (prescription.substitutions || []).forEach(function (s) {
+        if (s && s.from && s.to) subs[s.from] = s;
+      });
       prescription.items.forEach(function (it) {
-        var d = R.rx && R.rx.drug(it.drugId);
+        var sub = subs[it.drugId];
+        var d = R.rx && R.rx.drug(sub ? sub.to : it.drugId);
         if (!d) return;
-        var qty = it.qty || 0;
+        var qty = (sub && sub.qty != null ? sub.qty : it.qty) || 0;
         lines.push({
-          label: d.name + ' ' + d.strength, qty: qty, unit: d.price,
-          amount: qty * d.price, covered: d.bpjs, group: 'obat'
+          label: d.name + ' ' + d.strength + (sub ? ' (substitusi)' : ''),
+          qty: qty, unit: d.price,
+          amount: qty * d.price, covered: d.bpjs, group: 'obat',
+          substitutedFrom: sub ? sub.from : null
         });
       });
     }
 
-    var totalTarif = 0, ditanggung = 0, dibayarPasien = 0;
+    var kec = KECELAKAAN_BY_ID[visit.kecelakaan || ''] || KECELAKAAN[0];
+    var thirdParty = !!kec.payer;
+
+    var totalTarif = 0, ditanggung = 0, dibayarPasien = 0, ditanggungLain = 0;
     lines.forEach(function (l) {
       totalTarif += l.amount;
-      if (isBpjs && l.covered) { ditanggung += l.amount; l.payer = 'bpjs'; }
+      if (thirdParty && l.covered) { ditanggungLain += l.amount; l.payer = 'penjamin-lain'; l.payerLabel = kec.payer; }
+      else if (isBpjs && l.covered) { ditanggung += l.amount; l.payer = 'bpjs'; }
       else { dibayarPasien += l.amount; l.payer = isBpjs ? 'iur' : 'pasien'; }
     });
 
     return {
       klass: visit.klass,
+      kecelakaan: kec.id || null,
+      penjaminLain: kec.payer || null,
       lines: lines,
       totalTarif: totalTarif,
       ditanggung: ditanggung,
+      ditanggungLain: ditanggungLain,
       dibayarPasien: dibayarPasien,
-      note: isBpjs
-        ? 'Pasien BPJS di FKTP: layanan yang dijamin dibayar lewat kapitasi bulanan, bukan klaim per kunjungan — pasien tidak membayar di kasir. Baris bertanda "iur biaya" berada di luar jaminan dan dibayar sendiri.'
-        : 'Pasien umum (self-pay): seluruh tarif dibayar langsung di kasir.'
+      note: thirdParty
+        ? 'Kasus ' + kec.label.toLowerCase() + ': penjamin pertama adalah ' + kec.payer + ', bukan kapitasi BPJS Kesehatan. ' + kec.hint +
+          ' Tagihan ini diajukan ke penjamin tersebut, jadi nilainya tidak boleh ikut dihitung sebagai layanan berkapitasi.'
+        : isBpjs
+          ? 'Pasien BPJS di FKTP: layanan yang dijamin dibayar lewat kapitasi bulanan, bukan klaim per kunjungan — pasien tidak membayar di kasir. Baris bertanda "iur biaya" berada di luar jaminan dan dibayar sendiri.'
+          : 'Pasien umum (self-pay): seluruh tarif dibayar langsung di kasir.'
     };
   }
 
@@ -502,14 +719,41 @@
   /* Fields that an addendum may supersede. A closed list, because "addendum
    * on any path" would let a correction rewrite the signature block or the
    * encounter id, and at that point the immutability claim is theatre. */
+  /* The `roles` field is the second half of the guarantee, and it was the
+   * missing half: "a nurse may correct a mistyped vital sign" and "a nurse may
+   * replace the coded diagnosis on a doctor's signed note" are not the same
+   * permission, and 'soap.addendum' as a single yes/no could not tell them
+   * apart. Per-path now, per-role, stated as data. */
   var ADDENDABLE = {
-    's': { label: 'Subjective (anamnesis)', kind: 'text' },
-    'o.exam': { label: 'Objective — pemeriksaan fisik', kind: 'text' },
-    'o.vitals': { label: 'Objective — tanda vital', kind: 'vitals' },
-    'a': { label: 'Assessment — diagnosis ICD-10', kind: 'assessment' },
-    'p.plan': { label: 'Plan — tata laksana', kind: 'text' },
-    'p.edukasi': { label: 'Plan — edukasi pasien', kind: 'text' }
+    's': { label: 'Subjective (anamnesis)', kind: 'text', roles: ['dokter'] },
+    'o.exam': { label: 'Objective — pemeriksaan fisik', kind: 'text', roles: ['dokter'] },
+    'o.vitals': { label: 'Objective — tanda vital', kind: 'vitals', roles: ['dokter', 'perawat'] },
+    'a': { label: 'Assessment — diagnosis ICD-10', kind: 'assessment', roles: ['dokter'] },
+    'p.plan': { label: 'Plan — tata laksana', kind: 'text', roles: ['dokter'] },
+    'p.edukasi': { label: 'Plan — edukasi pasien', kind: 'text', roles: ['dokter'] }
   };
+
+  /**
+   * canAddendum(role, path) -> { ok, reason? }
+   * Asked before the form is even drawn, so a nurse never sees a dropdown
+   * offering "Assessment — diagnosis ICD-10".
+   */
+  function canAddendum(role, path) {
+    var base = can(role, 'soap.addendum');
+    if (!base.ok) return base;
+    var spec = ADDENDABLE[path];
+    if (!spec) return { ok: false, reason: 'Bagian "' + path + '" tidak dapat diadendum.' };
+    if (spec.roles.indexOf(role) >= 0) return { ok: true };
+    return {
+      ok: false,
+      reason: 'Peran ' + roleLabel(role) + ' tidak dapat mengadendum bagian "' + spec.label + '". Bagian ini hanya dapat dikoreksi oleh: ' +
+        spec.roles.map(roleLabel).join(', ') + '. Perawat dapat mengoreksi tanda vital yang salah ketik; mengganti diagnosis berkode pada catatan yang ditandatangani dokter adalah tindakan klinis, bukan koreksi ketik.'
+    };
+  }
+
+  function addendablePathsFor(role) {
+    return Object.keys(ADDENDABLE).filter(function (p) { return canAddendum(role, p).ok; });
+  }
 
   function getPath(obj, path) {
     var parts = path.split('.'), cur = obj;
@@ -579,11 +823,16 @@
     ROLES: ROLES, ROLE_BY_ID: ROLE_BY_ID, roleLabel: roleLabel,
     PERMISSIONS: PERMISSIONS, can: can,
     bmi: bmi, bmiBand: bmiBand, bpBand: bpBand, flagVitals: flagVitals,
+    VITAL_BANDS: VITAL_BANDS, vitalBand: vitalBand, hypotensionFloor: hypotensionFloor,
+    isPaediatric: isPaediatric, hasMeasurement: hasMeasurement,
+    VITAL_RANGES: VITAL_RANGES, checkVitalRanges: checkVitalRanges,
     ACUITY: ACUITY, suggestAcuity: suggestAcuity,
     TINDAKAN: TINDAKAN, TINDAKAN_BY_ID: TINDAKAN_BY_ID,
     TARIF_PENDAFTARAN: TARIF_PENDAFTARAN,
+    KECELAKAAN: KECELAKAAN, KECELAKAAN_BY_ID: KECELAKAAN_BY_ID,
     computeBill: computeBill, rupiah: rupiah,
-    ADDENDABLE: ADDENDABLE, effectiveEncounter: effectiveEncounter, getPath: getPath,
+    ADDENDABLE: ADDENDABLE, canAddendum: canAddendum, addendablePathsFor: addendablePathsFor,
+    effectiveEncounter: effectiveEncounter, getPath: getPath,
     rng: rng, pick: pick, intBetween: intBetween
   };
 })(typeof self !== 'undefined' ? self : this);

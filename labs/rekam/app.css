@@ -23,7 +23,15 @@
     --faint: #7f8aad;
     --accent: #6366f1;
     --accent-2: #22d3ee;
-    --accent-3: #a855f7;
+    /* Text-purple, distinct from the decorative --accent-3 gradient stop:
+       #a855f7 measured 4.30:1 on the card background, under AA for the small
+       "Umum" payer pill it is used on. */
+    --accent-3: #c084fc;
+    /* SOLID BUTTON BACKGROUNDS carry white text, so they are their own token
+       rather than borrowing --accent: white on #6366f1 is 4.47:1, which misses
+       AA in BOTH themes. --accent stays as the decorative border/focus hue. */
+    --btn-solid: #4f46e5;
+    --btn-solid-hover: #4338ca;
     --link: #22d3ee;
     --focus: #22d3ee;
     --grad: linear-gradient(120deg, #6366f1 0%, #a855f7 50%, #22d3ee 100%);
@@ -56,7 +64,17 @@ html[data-theme="light"] {
     --border-strong: rgba(15, 23, 42, 0.18);
     --text: #131a2e;
     --muted: #55618a;
-    --faint: #656e8f;
+    /* 4.45:1 on the tinted --bg-soft is a fail; #5c6688 measures 5.01:1
+       there and 5.66:1 on white. */
+    --faint: #5c6688;
+    /* --accent-2 is not decorative: it is the text colour of every ICD-10 code
+       in the picker, every SOAP section heading, every coded diagnosis, the
+       No. RM in the patient header and every audit action name. Left at the
+       dark theme's #22d3ee it rendered at 1.60–1.81:1 on the light
+       backgrounds. #155e75 keeps the cyan family at 7.27:1 on white, 6.73:1 on
+       --card-2 and 6.43:1 on --bg-soft. */
+    --accent-2: #155e75;
+    --accent-3: #7e22ce;
     --link: #0e7490;
     --focus: #045981;
     --shadow: 0 18px 50px -30px rgba(30, 41, 90, 0.35);
@@ -127,6 +145,22 @@ code, pre, .mono {
     overflow: hidden;
     clip: rect(0 0 0 0);
     white-space: nowrap;
+}
+
+/* Visually hidden but present for assistive technology: the per-panel h2 that
+   keeps the heading outline descending one level at a time, and the theme
+   toggle's live announcement. */
+.vh {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
 }
 
 .skip {
@@ -214,14 +248,14 @@ main {
 }
 
 .btn.primary {
-    background: var(--accent);
-    border-color: var(--accent);
+    background: var(--btn-solid);
+    border-color: var(--btn-solid);
     color: #fff;
 }
 
 .btn.primary:hover:not(:disabled) {
-    background: var(--accent-3);
-    border-color: var(--accent-3);
+    background: var(--btn-solid-hover);
+    border-color: var(--btn-solid-hover);
 }
 
 .btn.ghost {
@@ -244,8 +278,8 @@ main {
 }
 
 .btn[aria-pressed="true"] {
-    background: var(--accent);
-    border-color: var(--accent);
+    background: var(--btn-solid);
+    border-color: var(--btn-solid);
     color: #fff;
 }
 
@@ -360,8 +394,8 @@ main {
 }
 
 .rolebtn[aria-pressed="true"] {
-    background: var(--accent);
-    border-color: var(--accent);
+    background: var(--btn-solid);
+    border-color: var(--btn-solid);
     color: #fff;
     font-weight: 600;
 }
@@ -465,6 +499,13 @@ main {
     justify-content: space-between;
     gap: 10px;
     flex-wrap: wrap;
+}
+
+/* Filter boxes sit at the right of a .row-between header; at the UA default
+   width their placeholder truncates mid-word. */
+.row-between input[type=search] {
+    flex: 0 1 265px;
+    min-width: 0;
 }
 
 .empty {
@@ -599,6 +640,24 @@ label.inline {
     gap: 0 12px;
 }
 
+/* Same reason as .rxline: let the tracks shrink, and let the controls fill
+   whatever the track ends up being. */
+.formgrid > .field {
+    min-width: 0;
+}
+
+.field > input,
+.field > select,
+.field > textarea {
+    width: 100%;
+}
+
+.controls input[type=search],
+.controls input[type=text] {
+    flex: 1 1 190px;
+    min-width: 0;
+}
+
 /* ---------------------------------------------------------------- queue */
 
 .qboard {
@@ -615,7 +674,7 @@ label.inline {
     min-width: 0;
 }
 
-.qcol > h4 {
+.qcol > h3 {
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: .07em;
@@ -897,6 +956,12 @@ td.num, th.num {
     position: relative;
 }
 
+/* The picker's own search box carries a long hint ("Cari kode atau istilah —
+   …"); at the UA default width it truncates mid-word. */
+.picker > input {
+    width: 100%;
+}
+
 .picker-results {
     border: 1px solid var(--border-strong);
     border-radius: 10px;
@@ -998,6 +1063,10 @@ td.num, th.num {
 .finding.mayor { border-left-color: var(--sev-high); }
 .finding.moderat { border-left-color: var(--sev-medium); }
 .finding.minor { border-left-color: var(--sev-low); }
+/* Not a clinical severity: a line the prescriber has not finished writing.
+   It blocks signing just as firmly, but it is greyed rather than red so the
+   four-level clinical ladder keeps its meaning. */
+.finding.kelengkapan { border-left-color: var(--sev-info); }
 
 .finding .fhead {
     display: flex;
@@ -1022,6 +1091,7 @@ td.num, th.num {
 .finding.mayor .sev { color: var(--sev-high); }
 .finding.moderat .sev { color: var(--sev-medium); }
 .finding.minor .sev { color: var(--sev-low); }
+.finding.kelengkapan .sev { color: var(--sev-info); }
 
 .finding .ftitle { font-weight: 600; }
 .finding .fwhy { color: var(--muted); }
@@ -1039,9 +1109,22 @@ td.num, th.num {
     border-bottom: 1px dotted var(--border);
 }
 
+/* A grid item's automatic minimum size is its min-content width, and an
+   <input> reports its UA default (~170px) as that. Without these two rules the
+   1fr tracks refuse to shrink and the whole row pushes the page sideways at
+   narrow widths — which it did, by 69px at 390px. */
+.rxline > * {
+    min-width: 0;
+}
+
+.rxline input {
+    width: 100%;
+}
+
 .rxline .dname {
     font-size: 12.5px;
     min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .rxline .dname small {
@@ -1237,13 +1320,18 @@ details.more > summary {
         grid-template-columns: 1fr;
     }
 
+    /* The column header row is dropped at this width, so each control grows its
+       own label — four unlabelled boxes in a row is not a prescription form.
+       The delete button gets a full column of its own rather than sharing one
+       with an input, which is how "Hari" ended up in a 34px slot. */
     .rxline {
-        grid-template-columns: 1fr 1fr 34px;
+        grid-template-columns: 1fr 1fr 1fr;
         grid-template-areas:
             "name name del"
-            "dose freq days"
-            "qty  qty  qty";
-        row-gap: 4px;
+            "dose dose dose"
+            "freq days qty";
+        row-gap: 6px;
+        padding: 9px 0;
     }
 
     .rxline .dname { grid-area: name; }
@@ -1251,8 +1339,38 @@ details.more > summary {
     .rxline .c-freq { grid-area: freq; }
     .rxline .c-days { grid-area: days; }
     .rxline .c-qty { grid-area: qty; }
-    .rxline .c-del { grid-area: del; }
-    .rxhead { display: none; }
+
+    .rxline .c-del {
+        grid-area: del;
+        justify-self: end;
+        align-self: start;
+    }
+
+    .rxline .c-dose,
+    .rxline .c-freq,
+    .rxline .c-days,
+    .rxline .c-qty {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .rxline .c-dose::before,
+    .rxline .c-freq::before,
+    .rxline .c-days::before,
+    .rxline .c-qty::before {
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--faint);
+    }
+
+    .rxline .c-dose::before { content: "Dosis"; }
+    .rxline .c-freq::before { content: "Frekuensi"; }
+    .rxline .c-days::before { content: "Hari"; }
+    .rxline .c-qty::before { content: "Jumlah"; }
+
+    .rxline.rxhead { display: none; }
 }
 
 @media (max-width: 560px) {

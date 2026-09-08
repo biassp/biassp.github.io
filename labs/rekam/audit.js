@@ -230,29 +230,67 @@
   };
 
   /**
-   * verify(entries) -> Promise<{ ok, checked, brokenAt, reason, entry }>
+   * verify(entries, expected) -> Promise<{ ok, checked, brokenAt, reason, entry }>
    *
    * Walks from the genesis link forward and stops at the FIRST break, naming
-   * the entry. Three distinct failure modes, each reported separately, because
+   * the entry. Four distinct failure modes, each reported separately, because
    * "the chain is broken" is not an actionable report:
    *   link      prevHash does not match the previous entry's hash
    *             (an entry was deleted, inserted or reordered)
    *   hash      the entry's own hash does not match its contents
    *             (an entry was edited in place)
    *   sequence  seq is not contiguous
+   *   truncated the chain is internally perfect but SHORTER than the length
+   *             committed to outside it, or ends on a different head
+   *
+   * TRUNCATION IS THE CHEAP ATTACK, and until this argument existed the chain
+   * could not see it at all. Editing entry 7 invalidates 7..n and requires
+   * recomputing all of them; deleting the last three rows requires nothing —
+   * the walk simply runs out of rows early and reports a perfect chain over
+   * what is left. "Delete the rows that record what I just did" is also the
+   * likeliest real tampering, far likelier than a wholesale rewrite.
+   *
+   * `expected` is the commitment held OUTSIDE the chain — { count, head } in
+   * the `meta` store, rewritten on every save. It is not an external anchor:
+   * whoever can delete audit rows can edit meta too. What it buys is that
+   * truncation now costs the same as editing — you must forge the commitment
+   * as well — instead of costing nothing.
    */
-  function verify(entries) {
+  function verify(entries, expected) {
     var list = entries || [];
     var i = 0;
     var expectedPrev = GENESIS;
     var expectedSeq = 1;
 
+    function finish() {
+      var head = list.length ? list[list.length - 1].hash : GENESIS;
+      if (expected && expected.count != null && list.length !== expected.count) {
+        var missing = expected.count - list.length;
+        return {
+          ok: false, checked: list.length, brokenAt: list.length, kind: 'truncated',
+          entry: list.length ? list[list.length - 1] : null, head: head,
+          reason: missing > 0
+            ? 'Rantai terpotong: seharusnya ada ' + expected.count + ' entri yang berakhir pada hash ' +
+              short(expected.head) + ', yang ditemukan hanya ' + list.length + ' (' + missing +
+              ' entri terakhir hilang). Setiap entri yang tersisa sah — justru itu masalahnya: menghapus ekor rantai tidak memerlukan perhitungan ulang apa pun, jadi tanpa komitmen panjang di luar rantai penghapusan ini tidak terlihat.'
+            : 'Rantai lebih panjang daripada komitmen tersimpan: tercatat ' + expected.count +
+              ' entri, ditemukan ' + list.length + '. Ada entri yang ditambahkan tanpa melalui aplikasi, atau basis data ini ditulis oleh lebih dari satu tab.'
+        };
+      }
+      if (expected && expected.head && head !== expected.head) {
+        return {
+          ok: false, checked: list.length, brokenAt: list.length, kind: 'truncated',
+          entry: list.length ? list[list.length - 1] : null, head: head,
+          reason: 'Hash kepala tidak cocok dengan komitmen tersimpan: tercatat ' + short(expected.head) +
+            ', dihitung ' + short(head) + '. Isi rantai konsisten dengan dirinya sendiri tetapi bukan rantai yang terakhir disimpan.'
+        };
+      }
+      return { ok: true, checked: list.length, brokenAt: -1, reason: null, entry: null, head: head };
+    }
+
     function step() {
       if (i >= list.length) {
-        return Promise.resolve({
-          ok: true, checked: list.length, brokenAt: -1,
-          reason: null, entry: null, head: list.length ? list[list.length - 1].hash : GENESIS
-        });
+        return Promise.resolve(finish());
       }
       var e = list[i];
 

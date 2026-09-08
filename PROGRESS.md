@@ -73,6 +73,28 @@ Last updated: 2026-09-08.
 - Never invent portfolio copy. A card may only claim what the repo's own GitHub metadata (or the
   owner) actually states. Private repo + no description = ask, do not guess.
 
+## Sistem Informasi Suite (decided 2026-09-08 — in progress)
+Structure agreed with the owner: build five domain systems under /labs/, present them as ONE
+suite, not five portfolio cards. Reason: 8 demos vs 10 real shipped products would invert the
+signal and bury BioAge / Radar Duit / FaceVibe / RepBout behind practice work.
+  - /labs/ gets an index page listing the suite.
+  - ONE portfolio card ("Sistem Informasi Suite — klinik, sekolah, gudang, keuangan, HR")
+    points at that index. HARvest and Saku keep their own cards (different audience: engineers).
+Order agreed: rekam (medical) -> siakad (school) -> inventory/POS -> keuangan -> HR/payroll.
+  [x] rekam   — clinic. No. RM never reused, SOAP encounters, ICD-10 subset with fuzzy search,
+                hash-chained append-only audit trail (crypto.subtle) with amend-never-delete,
+                drug interaction + allergy checks, antrian state machine, role views, BPJS/umum.
+  [x] siakad  — school. Centrepiece is a real timetable constraint solver (backtracking +
+                constraint propagation, most-constrained-variable heuristic, in a Worker):
+                hard constraints never violated or it reports infeasibility. Plus NISN vs NIS,
+                tahun ajaran/semester scoping, weighted assessment + KKM + predikat + rapor,
+                presensi H/S/I/A, PPDB with quota, SPP arrears, role-based views.
+  [ ] inventory / gudang / POS
+  [ ] keuangan / akuntansi UMKM (double-entry — must be genuinely correct or not shipped)
+  [ ] HR / payroll (PPh 21, BPJS Ketenagakerjaan)
+Every lab: synthetic seed data from a seeded PRNG, stated as fake in the UI; all storage in
+try/catch; zero network egress scoped to the lab page; copyright header in every file.
+
 ## Next / ideas (not yet done)
 - Fill in the About + Topics fields of each repo on GitHub. The CV now reads them
   live, so this is by far the cheapest way to improve how the site looks — every
@@ -112,7 +134,10 @@ Last updated: 2026-09-08.
 - SkillPath: completion certificate (PDF), instructor detail page, more seed courses.
 - Confirm PH employer naming: PDF says "Quantum Advertising Services"; CV currently uses
   "Infinix Philippines" per request for both Makati roles — change if needed.
-- CV hero location badge still "Jakarta, ID" (LinkedIn current = Colombo, Sri Lanka).
+- RESOLVED 2026-09-08: the three CV credibility leaks are fixed. Hero now says 7+ years (was 6+
+  while the stats strip said 7+); location is Colombo, LK everywhere (badge, lede, meta, contact);
+  and the Infinix/Octo overlap is real — he was retained remotely after relocating — so the dates
+  stand and the company line now says "Remote from Jul 2025" with a sentence of explanation.
 - Optional: custom domain, store assets for Play uploads.
 
 ## How to work here

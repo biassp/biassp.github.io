@@ -251,10 +251,14 @@
       if (!c) throw new Error('conflict not found');
       return S.observeClock(c.peerClock).then(function () {
         var patch = {};
+        var touched = [];
         c.fields.forEach(function (f) {
           patch[f.field] = choices[f.field] === 'theirs' ? f.theirs : f.mine;
+          touched.push(f.field);
         });
-        return S.updateEntry(c.entryId, patch);
+        // forceFields: keeping YOUR value is still a decision, and it has to
+        // carry a clock above the peer's or the merge re-conflicts forever.
+        return S.updateEntry(c.entryId, patch, { forceFields: touched });
       }).then(function () {
         return S.conflictDelete(conflictId).then(function () { return c.entryId; });
       });

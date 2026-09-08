@@ -276,7 +276,15 @@
     });
   }
 
-  function updateEntry(id, patch) {
+  /**
+   * updateEntry(id, patch, opts)
+   * opts.forceFields: bump the Lamport clock for these fields even when the
+   * value did not change. Conflict resolution needs this — "keep mine" must
+   * still overtake the peer's clock, or the same conflict is raised forever.
+   */
+  function updateEntry(id, patch, opts) {
+    opts = opts || {};
+    var force = opts.forceFields || [];
     var updated = null;
     return withStore(['entries', 'outbox', 'meta'], 'readwrite', function (tx, fail) {
       var entries = tx.objectStore('entries');
@@ -296,6 +304,7 @@
                 if (e[f] !== patch[f]) changed.push(f);
                 e[f] = patch[f];
               });
+              force.forEach(function (f) { if (changed.indexOf(f) < 0) changed.push(f); });
               e.fc = e.fc || {};
               changed.forEach(function (f) { if (TRACKED.indexOf(f) >= 0) e.fc[f] = n; });
               e.clock = n;

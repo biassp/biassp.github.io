@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; worker-src 'self' blob:; form-action 'none'; base-uri 'none'; object-src 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HARvest — reverse-engineer an API from a HAR file</title>
+    <meta name="description" content="Drop a .har file and HARvest recovers the API behind it: templated endpoints, latency percentiles, an HTTP audit, an OpenAPI 3.1 draft and an edge/security pass — entirely in the browser tab.">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%236366f1'/%3E%3Cpath d='M8 22V10h3v4.5h5V10h3v12h-3v-4.7h-5V22z' fill='%23fff'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="app.css">
+    <script src="guard.js"></script>
+</head>
+
+<body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="top">
+        <div class="brand">
+            <span class="mark" aria-hidden="true">HAR</span>
+            <div>
+                <h1>HARvest</h1>
+                <p class="sub">Reverse-engineer an API from its own traffic. Nothing leaves this tab.</p>
+            </div>
+        </div>
+        <div class="top-actions">
+            <span class="netbadge" id="netBadge" title="fetch / XMLHttpRequest / WebSocket / sendBeacon attempts made by this page since load">
+                <span class="dot" aria-hidden="true"></span><span id="netCount">network calls from this page: 0</span>
+            </span>
+            <button type="button" id="themeBtn" class="btn ghost" aria-label="Switch theme">Light</button>
+            <a class="btn ghost" href="../../">CV</a>
+        </div>
+    </header>
+
+    <main id="main">
+
+        <section class="ingest" aria-labelledby="ingest-h">
+            <h2 id="ingest-h" class="sr-only">Load a trace</h2>
+            <div class="ingest-grid">
+                <div>
+                    <div class="drop" id="drop" tabindex="0" role="button" aria-describedby="capture-hint">
+                        <strong>Drop a .har file here</strong>
+                        <span>or <span class="link">choose a file</span> — it is read with FileReader and never uploaded</span>
+                        <input type="file" id="file" accept=".har,.json,application/json" aria-label="Choose a HAR file">
+                    </div>
+                    <p class="hint" id="capture-hint">
+                        <b>Capturing a useful HAR:</b> in Chrome DevTools open <b>Network</b>, tick
+                        <b>Preserve log</b>, then right-click the request list and choose
+                        <b>Save all as HAR with content</b>. The plain &ldquo;Save all as HAR&rdquo; option omits
+                        response bodies, and without bodies schema inference degrades to a header-only spec
+                        (the coverage meter on the Spec tab will tell you when that has happened).
+                    </p>
+                </div>
+                <div class="samples">
+                    <p class="samples-label">or start with an embedded trace</p>
+                    <div class="sample-btns" id="sampleBtns"></div>
+                    <p class="hint small">
+                        Both samples are synthetic and generated in <code>samples.js</code>: no real hosts,
+                        no real credentials.
+                    </p>
+                </div>
+            </div>
+            <p class="status" id="status" role="status" aria-live="polite"></p>
+        </section>
+
+        <section class="summary" id="summary" aria-label="Trace summary"></section>
+
+        <nav class="tabs" id="tabs" role="tablist" aria-label="Analysis views">
+            <button role="tab" id="tab-trace" aria-controls="panel-trace" aria-selected="true" class="tab">Trace</button>
+            <button role="tab" id="tab-endpoints" aria-controls="panel-endpoints" aria-selected="false" tabindex="-1" class="tab">Endpoints</button>
+            <button role="tab" id="tab-findings" aria-controls="panel-findings" aria-selected="false" tabindex="-1" class="tab">Findings</button>
+            <button role="tab" id="tab-latency" aria-controls="panel-latency" aria-selected="false" tabindex="-1" class="tab">Latency</button>
+            <button role="tab" id="tab-spec" aria-controls="panel-spec" aria-selected="false" tabindex="-1" class="tab">Spec</button>
+            <button role="tab" id="tab-edge" aria-controls="panel-edge" aria-selected="false" tabindex="-1" class="tab">Edge / Security</button>
+            <button role="tab" id="tab-tests" aria-controls="panel-tests" aria-selected="false" tabindex="-1" class="tab">Tests</button>
+        </nav>
+
+        <div class="panels">
+            <section id="panel-trace" role="tabpanel" aria-labelledby="tab-trace" tabindex="0" class="panel"></section>
+            <section id="panel-endpoints" role="tabpanel" aria-labelledby="tab-endpoints" tabindex="0" class="panel" hidden></section>
+            <section id="panel-findings" role="tabpanel" aria-labelledby="tab-findings" tabindex="0" class="panel" hidden></section>
+            <section id="panel-latency" role="tabpanel" aria-labelledby="tab-latency" tabindex="0" class="panel" hidden></section>
+            <section id="panel-spec" role="tabpanel" aria-labelledby="tab-spec" tabindex="0" class="panel" hidden></section>
+            <section id="panel-edge" role="tabpanel" aria-labelledby="tab-edge" tabindex="0" class="panel" hidden></section>
+            <section id="panel-tests" role="tabpanel" aria-labelledby="tab-tests" tabindex="0" class="panel" hidden></section>
+        </div>
+
+        <footer class="foot">
+            <p>
+                <b>How the no-upload claim is enforced.</b> This page ships
+                <code>connect-src 'none'</code> in a <code>&lt;meta http-equiv="Content-Security-Policy"&gt;</code>
+                tag in its own source, so the browser refuses every outbound connection regardless of what
+                the JavaScript asks for. The counter in the header wraps
+                <code>fetch</code>, <code>XMLHttpRequest</code>, <code>WebSocket</code> and
+                <code>sendBeacon</code> and shows how many were attempted. View source, or open DevTools and
+                watch the Network tab stay empty. This is a statement about <em>this page</em> — the CV
+                homepage does fetch the GitHub API for its repository list.
+            </p>
+            <p class="small">
+                Built with no framework, no bundler, no dependency and no build step:
+                <code>guard.js</code>, <code>analyze.js</code>, <code>edge.js</code>, <code>samples.js</code>,
+                <code>tests.js</code>, <code>app.js</code>, <code>app.css</code>.
+                <a href="README.md">README</a>
+            </p>
+        </footer>
+    </main>
+
+    <script src="analyze.js"></script>
+    <script src="edge.js"></script>
+    <script src="samples.js"></script>
+    <script src="tests.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

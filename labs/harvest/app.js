@@ -64,6 +64,8 @@
     return (n / 1048576).toFixed(2) + ' MB';
   }
   function pct(v) { return Math.round(v * 100) + '%'; }
+  // "1 findings" is the kind of thing a reviewer notices before anything else.
+  function plural(n, word, pluralWord) { return n + ' ' + (n === 1 ? word : (pluralWord || word + 's')); }
 
   /* -------------------------------------------------------------- state */
 
@@ -76,6 +78,7 @@
     specHost: null,
     specFormat: 'yaml',
     filter: '',
+    traceNote: '',
     openRow: null,
     highlight: null,
     engine: 'pending',
@@ -103,7 +106,13 @@
   $('themeBtn').addEventListener('click', function () {
     var next = currentTheme() === 'light' ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', next);
-    save('harvest.theme', next);
+    // Raw string, NOT save(): save() JSON-encodes, and guard.js (plus the CV's own
+    // index.html) reads this key raw. Both keys are written so the preference
+    // travels in both directions between the lab and the CV.
+    try {
+      localStorage.setItem('harvest.theme', next);
+      localStorage.setItem('theme', next);
+    } catch (e) { /* site data blocked - the toggle still works for this pageview */ }
     paintThemeBtn();
   });
   paintThemeBtn();
@@ -231,6 +240,7 @@
     state.name = name;
     state.openRow = null;
     state.highlight = null;
+    state.traceNote = '';
     state.specHost = null;
     state.rate.result = null;
     setStatus('Analysing ' + name + '…');
@@ -242,8 +252,9 @@
       var where = state.engine === 'worker'
         ? 'analysed in a Web Worker'
         : 'analysed on the main thread' + (state.engineNote ? ' — Worker unavailable: ' + state.engineNote : '');
-      setStatus(name + ': ' + res.overall.requests + ' requests, ' + res.endpoints.length +
-        ' endpoints, ' + res.findings.length + ' findings (' + Math.round(t1 - t0) + ' ms, ' + where + ')');
+      setStatus(name + ': ' + plural(res.overall.requests, 'request') + ', ' +
+        plural(res.endpoints.length, 'endpoint') + ', ' + plural(res.findings.length, 'finding') +
+        ' (' + Math.round(t1 - t0) + ' ms, ' + where + ')');
       render();
     });
   }
@@ -416,6 +427,17 @@
 
   function statusClass(s) { return s >= 500 ? 'st5' : s >= 400 ? 'st4' : s >= 300 ? 'st3' : 'st2'; }
 
+  // Hard cap on rendered rows: a 20k-entry HAR would otherwise build 20k buttons.
+  var ROW_CAP = 600;
+
+  // One definition of "does this row match the filter box", shared by renderTrace
+  // and jumpTo, so a jump can tell whether the filter is hiding its target.
+  function matchesFilter(e, filter) {
+    var f = String(filter || '').trim().toLowerCase();
+    if (!f) return true;
+    return (e.method + ' ' + e.url + ' ' + e.status).toLowerCase().indexOf(f) >= 0;
+  }
+
   function renderTrace(panel) {
     var r = state.result;
     if (!r) { panel.appendChild(h('div', { class: 'empty', text: 'Load a HAR or pick a sample trace.' })); return; }
@@ -429,7 +451,23 @@
         h('input', {
           type: 'text', id: 'traceFilter', placeholder: 'filter by method, path or status', value: state.filter,
           'aria-label': 'Filter requests',
-          oninput: function (ev) { state.filter = ev.target.value; renderPanelOnly('trace', function () { $('traceFilter').focus(); }); }
+          // The panel is rebuilt on every keystroke, which destroys this input and
+          // builds a fresh one. Without restoring the selection the caret lands at 0
+          // and every further character is inserted at the FRONT of the string
+          // ("orders" typed one key at a time became "sredro"), and Backspace does
+          // nothing because there is no text to its left. So: carry the caret over.
+          oninput: function (ev) {
+            var start = ev.target.selectionStart, end = ev.target.selectionEnd;
+            state.filter = ev.target.value;
+            state.traceNote = '';
+            renderPanelOnly('trace', function () {
+              var el = $('traceFilter');
+              if (!el) return;
+              try { el.focus({ preventScroll: true }); } catch (err) { el.focus(); }
+              try { el.setSelectionRange(start == null ? el.value.length : start, end == null ? el.value.length : end); }
+              catch (err2) { /* some input types refuse setSelectionRange */ }
+            });
+          }
         }),
         h('label', { class: 'inline' },
           h('input', {
@@ -439,22 +477,43 @@
           'Redact credential values'))));
     card.appendChild(h('p', { class: 'note', text: 'Bars are drawn from the HAR timings, positioned on the trace clock. Click a row for headers, cookies and the response body. Redaction is on by default because a HAR from your own browser contains live session tokens.' }));
 
-    var f = state.filter.trim().toLowerCase();
-    var shown = entries.filter(function (e) {
-      if (!f) return true;
-      return (e.method + ' ' + e.url + ' ' + e.status).toLowerCase().indexOf(f) >= 0;
-    });
+    if (state.traceNote) card.appendChild(h('p', { class: 'jump-note', role: 'status', text: state.traceNote }));
+
+    var shown = entries.filter(function (e) { return matchesFilter(e, state.filter); });
+
+    // The display cap keeps a 20k-entry HAR from freezing the tab, but a jump
+    // target past row 600 used to fall off the end and silently do nothing, so
+    // the window slides to contain whatever we were asked to highlight.
+    var pos = -1;
+    if (state.highlight != null) {
+      for (var p = 0; p < shown.length; p++) { if (shown[p].i === state.highlight) { pos = p; break; } }
+    }
+    var from = 0;
+    if (shown.length > ROW_CAP && pos >= ROW_CAP) from = Math.min(shown.length - ROW_CAP, pos - Math.floor(ROW_CAP / 2));
+    var slice = shown.slice(from, from + ROW_CAP);
 
     var wf = h('div', { class: 'wf' });
     wf.appendChild(timeRuler(span));
-    var limit = Math.min(shown.length, 600);
-    for (var i = 0; i < limit; i++) {
-      wf.appendChild(traceRow(shown[i], span));
-      if (state.openRow === shown[i].i) wf.appendChild(traceDetail(shown[i]));
+    for (var i = 0; i < slice.length; i++) {
+      wf.appendChild(traceRow(slice[i], span));
+      if (state.openRow === slice[i].i) wf.appendChild(traceDetail(slice[i]));
     }
     card.appendChild(wf);
-    if (shown.length > limit) card.appendChild(h('p', { class: 'hint', text: 'Showing the first ' + limit + ' of ' + shown.length + ' matching requests.' }));
-    if (!shown.length) card.appendChild(h('div', { class: 'empty', text: 'No request matches "' + state.filter + '".' }));
+    if (shown.length > slice.length) {
+      card.appendChild(h('p', {
+        class: 'hint',
+        text: 'Showing rows ' + (from + 1) + '–' + (from + slice.length) + ' of ' + shown.length +
+          ' matching requests (' + ROW_CAP + '-row display cap).'
+      }));
+    }
+    if (!shown.length) {
+      card.appendChild(h('div', {
+        class: 'empty',
+        text: !entries.length
+          ? 'This HAR contains no entries — there is nothing to draw.'
+          : 'No request matches "' + state.filter + '".'
+      }));
+    }
 
     var legend = h('div', { class: 'legend' });
     TSEGS.forEach(function (s) {
@@ -474,19 +533,23 @@
   }
 
   function timeRuler(span) {
-    var ruler = h('div', { class: 'wf-ruler' }, h('span', {}), h('span', { class: 'small', style: { color: 'var(--faint)' }, text: 'trace clock' }));
+    var ruler = h('div', { class: 'wf-ruler' }, h('span', { class: 'wf-idx' }), h('span', { class: 'wf-rlabel small', text: 'trace clock' }));
     var axis = h('div', { class: 'wf-axis' });
-    var ticks = 5;
+    // Five labels, and the two quarter marks carry .hideable so the <=860px
+    // stylesheet can drop them: six labels crammed into a 110px track rendered
+    // as overprinted glyph soup on a phone.
+    var ticks = 4;
     for (var i = 0; i <= ticks; i++) {
       var at = (span / ticks) * i;
+      var cls = i === 0 ? ' first' : i === ticks ? ' last' : i === ticks / 2 ? ' mid' : ' hideable';
       axis.appendChild(h('span', {
-        class: 'wf-tick' + (i === 0 ? ' first' : (i === ticks ? ' last' : '')),
+        class: 'wf-tick' + cls,
         style: { left: ((i / ticks) * 100) + '%' },
         text: ms(at)
       }));
     }
     ruler.appendChild(axis);
-    ruler.appendChild(h('span', {}));
+    ruler.appendChild(h('span', { class: 'wf-rtail' }));
     return ruler;
   }
 
@@ -505,7 +568,10 @@
     var name = h('span', { class: 'wf-name' });
     name.appendChild(h('span', { class: 'method ' + e.method, text: e.method }));
     name.appendChild(h('span', { class: 'status-pill ' + statusClass(e.status), text: e.status || '—' }));
-    name.appendChild(h('span', { class: 'wf-path', text: e.path + (e.query.length ? '?' + e.query.map(function (q) { return q.name; }).join('&') : ''), title: e.url }));
+    // redactUrl, not e.url: the tooltip is the most-hovered surface on the page and
+    // a raw title= would put a live api_key or JWT into the DOM of every row while
+    // the checkbox claims the values are redacted.
+    name.appendChild(h('span', { class: 'wf-path', text: e.path + (e.query.length ? '?' + e.query.map(function (q) { return q.name; }).join('&') : ''), title: redactUrl(e) }));
     row.appendChild(name);
 
     var track = h('div', { class: 'wf-track' });
@@ -579,13 +645,36 @@
     return d;
   }
 
+  // Every jump affordance in the app routes through here: evidence chips, the JWT
+  // "Show request" buttons, rate-limit trip chips and the endpoint table. It used
+  // to no-op whenever an active filter or the row cap meant the target row was not
+  // in the DOM, so the promise "click one to jump to that request" quietly failed.
   function jumpTo(idx) {
     state.openRow = idx;
     state.highlight = idx;
+    state.traceNote = '';
+
+    var r = state.result;
+    var target = null;
+    if (r) {
+      for (var i = 0; i < r.trace.entries.length; i++) {
+        if (r.trace.entries[i].i === idx) { target = r.trace.entries[i]; break; }
+      }
+    }
+    if (!target) {
+      state.traceNote = 'Request #' + idx + ' is not in this trace.';
+    } else if (state.filter.trim() && !matchesFilter(target, state.filter)) {
+      state.traceNote = 'Cleared the filter “' + state.filter.trim() + '” so request #' + idx + ' could be shown.';
+      state.filter = '';
+    }
+
     showTab('trace');
     setTimeout(function () {
       var el = $('row-' + idx);
-      if (el) { el.scrollIntoView({ block: 'center' }); el.focus(); }
+      if (el) { el.scrollIntoView({ block: 'center' }); el.focus(); return; }
+      // Belt and braces: if it still is not rendered, say so rather than doing nothing.
+      state.traceNote = 'Could not show request #' + idx + ' in the waterfall.';
+      renderPanelOnly('trace');
     }, 30);
   }
 
@@ -607,7 +696,7 @@
     if (!r) { panel.appendChild(h('div', { class: 'empty', text: 'Load a trace first.' })); return; }
 
     var card = h('div', { class: 'card' });
-    card.appendChild(h('h3', { text: r.endpoints.length + ' recovered endpoints' }));
+    card.appendChild(h('h3', { text: plural(r.endpoints.length, 'recovered endpoint') }));
     card.appendChild(h('p', { class: 'note', text: 'Requests are grouped by a trie over path segments. Each sibling set is classified literal-or-parameter from token shape plus cardinality; the reasoning for every decision is below the table, and every decision can be overridden.' }));
 
     var tbl = h('table');
@@ -619,8 +708,15 @@
     r.endpoints.forEach(function (ep) {
       var codes = {};
       ep.methods.forEach(function (m) { Object.keys(ep.ops[m].statuses).forEach(function (c) { codes[c] = (codes[c] || 0) + ep.ops[m].statuses[c].count; }); });
+      var jump = ep.entryIdx.length
+        ? h('button', {
+          type: 'button', class: 'tpl-btn',
+          'aria-label': 'Jump to the first request for ' + ep.host + '/' + ep.segments.map(function (s) { return s.text; }).join('/'),
+          onclick: function () { jumpTo(ep.entryIdx[0]); }
+        }, tplNode(ep))
+        : tplNode(ep);
       var tr = h('tr', {},
-        h('td', {}, tplNode(ep)),
+        h('td', {}, jump),
         h('td', {}, ep.methods.map(function (m) { return h('span', { class: 'method ' + m, text: m, style: { marginRight: '4px' } }); })),
         h('td', { class: 'num', text: String(ep.reqCount) }),
         h('td', { class: 'num', text: ms(ep.latency.p50) }),
@@ -628,7 +724,12 @@
         h('td', {}, Object.keys(codes).sort().map(function (c) {
           return h('span', { class: 'status-pill ' + statusClass(Number(c)), text: c + '×' + codes[c], style: { marginRight: '4px' } });
         })));
-      tr.addEventListener('click', function () { if (ep.entryIdx.length) jumpTo(ep.entryIdx[0]); });
+      // The row stays clickable for mice; the button above is the keyboard and
+      // screen-reader path (a bare <tr> click handler reaches neither).
+      tr.addEventListener('click', function (ev) {
+        if (ev.target && ev.target.closest && ev.target.closest('.tpl-btn')) return;
+        if (ep.entryIdx.length) jumpTo(ep.entryIdx[0]);
+      });
       tb.appendChild(tr);
     });
     tbl.appendChild(tb);
@@ -709,7 +810,7 @@
     var r = state.result;
     if (!r) { panel.appendChild(h('div', { class: 'empty', text: 'Load a trace first.' })); return; }
     var card = h('div', { class: 'card' });
-    card.appendChild(h('h3', { text: r.findings.length + ' findings, ranked by severity' }));
+    card.appendChild(h('h3', { text: plural(r.findings.length, 'finding') + ', ranked by severity' }));
     card.appendChild(h('p', { class: 'note', text: 'Each finding names the request indices that produced it — click one to jump to that request in the trace. Rules that are judgement calls rather than facts carry a "heuristic" badge.' }));
     panel.appendChild(card);
     if (!r.findings.length) {

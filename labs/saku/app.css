@@ -382,7 +382,9 @@ fieldset.edit legend { font-size: 12px; color: var(--faint); padding: 0 6px; }
   background: var(--card-2); color: var(--text);
   border: 1px solid var(--border-strong); border-radius: 14px;
   padding: 8px 10px 8px 16px; box-shadow: var(--shadow); font-size: 13.5px;
-  max-width: min(92vw, 480px);
+  /* left:50% alone shrink-to-fits into the right half of the viewport, which made
+     a one-line message stack three lines tall over the content beneath it */
+  width: max-content; max-width: min(92vw, 480px);
   /* it floats over live controls, so it must never eat a click meant for one */
   pointer-events: none;
 }

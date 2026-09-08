@@ -1,7 +1,7 @@
 # PROGRESS — biassp.github.io (CV) & SkillPath
 
 Cross-device handoff. Read this first when resuming on any device.
-Last updated: 2026-09-07.
+Last updated: 2026-09-08.
 
 ## Live
 - CV:        https://biassp.github.io/   (repo: biassp/biassp.github.io, branch master)
@@ -23,7 +23,47 @@ Last updated: 2026-09-07.
   Files: index.html, assets/css/styles.css, assets/js/data.js, assets/js/app.js.
   Verified: node --check, data schema (0 problems), CSS class cross-check, QA agent ok.
 
+- 2026-09-08 — Repos section is now a LIVE GitHub feed (still one file, still zero deps).
+  - GET api.github.com/users/biassp/repos?per_page=100&sort=pushed, cached in
+    localStorage under `gh_repos_v1` = {at, repos}, 6h TTL. Fresh cache paints first,
+    the network then refreshes behind it.
+  - Filters out forks / archived / private, plus a HIDE list (currently ['biassp']).
+    A CURATED map (keyed by lowercase repo name) overrides title + description and
+    sets sort weight; anything NOT in it still renders — title-cased from the slug,
+    described by GitHub — so new repos appear with no code change.
+    Sort: weight desc, stars desc, pushed_at desc.
+  - Cards reuse .proj/.proj-body/.proj-tags: title, description, up to 3 topics,
+    then language (colour dot) + stars + forks + "x ago". Zero metrics are hidden.
+    Everything from the API goes through an HTML escaper before innerHTML.
+  - New counter strip (reuses .stats/.stat/.num/.lbl) and language filter chips built
+    from whatever the payload contains, with aria-pressed state and per-language counts.
+  - FALLBACK: the nine hardcoded cards stay in the HTML, are stashed before the
+    skeleton, and are restored verbatim on 403 / offline / weird payload. Their
+    "reveal" class was removed — restored elements never get .in from the
+    IntersectionObserver, so they would have been invisible forever.
+  - Fixed alongside: unescaped & in the Google Fonts URL + <title>/og:title -> &amp;,
+    and the theme toggle's localStorage calls are now try/catch'd (an unguarded read
+    there killed the whole <script> block when a browser blocks site data — which
+    also took down the reveal fallback and blanked the page).
+  - Verified: node --check on all inline <script> content; parse5 0 errors;
+    html-validate 0 errors 0 warnings; Nu (vnu) 0 errors; tidy's 2 ampersand warnings
+    gone with no new warnings; 14/14 jsdom tests green (test/repos.test.js);
+    Chromium render checked for live, 403-fallback, light theme, <900px and print.
+  - Dev-only: `npm install jsdom && node test/repos.test.js`. node_modules is gitignored;
+    the site itself still ships as a single dependency-free index.html.
+
 ## Next / ideas (not yet done)
+- Fill in the About + Topics fields of each repo on GitHub. The CV now reads them
+  live, so this is by far the cheapest way to improve how the site looks — every
+  repo without a description renders a generic placeholder line, and repos with no
+  topics render no tag row at all. Worst offenders right now: wordpress, wp1,
+  billy-kill-1, traffic ("traffic"), guest-room-reservation ("hans"),
+  crudsqlite ("Java-Mobile"), AutomationScreenShoot, webgudang, jadwal-kuliah.
+- Create the biassp/biassp profile repo (README shown on the GitHub profile page).
+  Note: it is already on the feed's HIDE list, so it will not show up as a CV card.
+- Heads-up from the feed going live: Blocking-DDoS-Attacks-Cloudflare-WAF-Rules and
+  CareerHigh-Android are FORKS on GitHub, so the fork filter drops them — they now
+  only appear in the offline fallback. Detach/recreate them, or decide to let them go.
 - SkillPath: completion certificate (PDF), instructor detail page, more seed courses.
 - Confirm PH employer naming: PDF says "Quantum Advertising Services"; CV currently uses
   "Infinix Philippines" per request for both Makati roles — change if needed.

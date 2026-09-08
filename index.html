@@ -1554,8 +1554,10 @@
             var TTL = 6 * 60 * 60 * 1000;          // 6 hours
             var STALE_OK = 30 * 24 * 60 * 60 * 1000; // last resort before the hardcoded cards
 
-            // never shown, whatever the API says (lowercase repo names)
-            var HIDE = ['biassp'];
+            // never shown, whatever the API says (lowercase repo names).
+            // 'biassp' is the profile repo; the rest are scratch repos that are
+            // still public but do not belong on a CV.
+            var HIDE = ['biassp', 'wp1', 'wordpress'];
 
             // Hand-written titles/descriptions beat GitHub's metadata, because most
             // of my repos have an empty About field. Anything NOT listed here still

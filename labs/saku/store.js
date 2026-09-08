@@ -1,3 +1,10 @@
+/*!
+ * Saku — part of the biassp.github.io portfolio
+ * Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+ * Not open source. Readable for evaluation only — copying, modification,
+ * re-branding or redistribution is not permitted. See /LICENSE.
+ * https://biassp.github.io/
+ */
 /* Saku — store.js
  * IndexedDB layer. Deliberately scope-agnostic: this file is loaded by the page
  * with <script src> AND by the service worker with importScripts(), because the

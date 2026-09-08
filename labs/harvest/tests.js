@@ -1,3 +1,10 @@
+/*!
+ * HARvest — part of the biassp.github.io portfolio
+ * Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+ * Not open source. Readable for evaluation only — copying, modification,
+ * re-branding or redistribution is not permitted. See /LICENSE.
+ * https://biassp.github.io/
+ */
 /* HARvest - tests.js
  * Assertions against the pure engines in analyze.js and edge.js. They run in the
  * page (Tests tab) and under node, from the same source, so what a visitor sees

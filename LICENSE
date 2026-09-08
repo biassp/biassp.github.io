@@ -1,0 +1,59 @@
+Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+
+This repository contains the source of https://biassp.github.io/ — a personal
+curriculum vitae and portfolio, including the demo applications under /labs/.
+
+                        NO LICENSE IS GRANTED
+
+This is not open-source software. It is published so that it can be read and
+evaluated, not so that it can be reused.
+
+YOU MAY:
+  - View the site in a browser.
+  - Read the source for the purpose of evaluating the author's work — for
+    example, as part of a hiring, contracting or due-diligence process.
+  - Quote short excerpts with attribution and a link back to this repository.
+
+YOU MAY NOT, without prior written permission from the author:
+  - Copy, reproduce, republish, mirror, or redistribute this repository or the
+    site it produces, in whole or in part.
+  - Modify, adapt, translate, or create derivative works from it.
+  - Re-brand, re-skin, re-host, or re-publish any part of it as your own work
+    or as another party's work. This includes replacing the author's name,
+    branding, colours, or copy while retaining the underlying implementation.
+  - Use it, or any portion of it, in a commercial product or service.
+  - Train a machine-learning model on it, or use it to generate substantially
+    similar work.
+
+PERSONAL INFORMATION
+  The author's name, photograph, employment history, education, and project
+  descriptions are personal information. They are not licensed for reuse of any
+  kind and must not be reproduced, scraped, or repurposed.
+
+TRADEMARKS
+  Nothing here grants any right to any trademark, product name, logo, or brand
+  shown, whether the author's or a third party's.
+
+THE DEMO APPLICATIONS (/labs/)
+  The applications under /labs/ are original works by the author. Their source
+  is readable because a static web application must send its code to the
+  browser in order to run — that is a technical necessity, not an invitation to
+  copy. All restrictions above apply to them in full.
+
+NO WARRANTY
+  This material is provided "as is", without warranty of any kind, express or
+  implied. The author is not liable for any claim, damage, or other liability
+  arising from it or its use.
+
+PERMISSION AND ENFORCEMENT
+  To request permission, contact the author via the links on the site. If you
+  find this work republished elsewhere without permission, the author would
+  like to know.
+
+NOTE ON GITHUB
+  GitHub's Terms of Service permit any GitHub user to view and fork a public
+  repository. That platform-level permission is outside the author's control
+  and is not affected by this notice. It does not grant any right to reuse,
+  modify, re-brand, or republish this work beyond GitHub itself.
+
+This notice states the author's terms. It is not legal advice.

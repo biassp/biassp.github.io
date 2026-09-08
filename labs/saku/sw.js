@@ -1,3 +1,10 @@
+/*!
+ * Saku — part of the biassp.github.io portfolio
+ * Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+ * Not open source. Readable for evaluation only — copying, modification,
+ * re-branding or redistribution is not permitted. See /LICENSE.
+ * https://biassp.github.io/
+ */
 /* Saku — sw.js
  * The whole point of the app lives in this file.
  *

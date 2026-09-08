@@ -52,18 +52,45 @@ Last updated: 2026-09-08.
   - Dev-only: `npm install jsdom && node test/repos.test.js`. node_modules is gitignored;
     the site itself still ships as a single dependency-free index.html.
 
+## Standing rules (decided 2026-09-08 — apply without asking again)
+- NOTHING black-hat, gambling-adjacent, or legally grey goes on this CV. No portfolio card, no
+  repos-feed entry. That work stays PRIVATE and uncarded. This covers the gambling/AMP/SEO cluster
+  (daman-*, tiranga-*, 62club-*, 91.club, ok-win, basant-club, kubet*, cheatgacor, cheatslot,
+  wp-xclub, bharatclubamp, diuwin-amp, Pak-Games), the SEO-manipulation repos (tunneling-keywords-,
+  random-sub-domain-article, article-generate), and `documentation` (described "injek shell").
+  All are already private — keep them that way.
+- Consequence for the live feed: public repos matching the rule go in the HIDE array in index.html.
+  Currently HIDE = ['biassp', 'wp1', 'wordpress', 'traffic', 'billy-kill-1'].
+- Never invent portfolio copy. A card may only claim what the repo's own GitHub metadata (or the
+  owner) actually states. Private repo + no description = ask, do not guess.
+
 ## Next / ideas (not yet done)
 - Fill in the About + Topics fields of each repo on GitHub. The CV now reads them
   live, so this is by far the cheapest way to improve how the site looks — every
   repo without a description renders a generic placeholder line, and repos with no
-  topics render no tag row at all. Worst offenders right now: wordpress, wp1,
-  billy-kill-1, traffic ("traffic"), guest-room-reservation ("hans"),
-  crudsqlite ("Java-Mobile"), AutomationScreenShoot, webgudang, jadwal-kuliah.
+  topics render no tag row at all. Worth doing for the public repos the feed still
+  shows: guest-room-reservation ("hans"), crudsqlite ("Java-Mobile"), webgudang,
+  jadwal-kuliah ("Jav Mobile Programming"), reservasi, silang-bulat-silang,
+  AutomationScreenShoot, anniversary, content-ops-starter.
+  (wordpress, wp1, traffic and billy-kill-1 are HIDE-listed now — do not bother.)
 - Create the biassp/biassp profile repo (README shown on the GitHub profile page).
   Note: it is already on the feed's HIDE list, so it will not show up as a CV card.
 - Heads-up from the feed going live: Blocking-DDoS-Attacks-Cloudflare-WAF-Rules and
   CareerHigh-Android are FORKS on GitHub, so the fork filter drops them — they now
   only appear in the offline fallback. Detach/recreate them, or decide to let them go.
+- VERIFY: biassp/Movie-API looks EMPTY (created_at == updated_at == 2021-04-29T15:16:58Z, no
+  language, no description). The Movieca portfolio card calls it "the backend foundation feeding
+  the Movieca movie-discovery experience" and the CURATED map ranks it weight 60. If it really has
+  no commits, drop both claims — a recruiter who clicks learns something worse than nothing.
+- Portfolio expansion (2026-09-08 planning run) — decided:
+  * EXCLUDED under the standing rule: penyidik / selingkuh-detector (infidelity detector),
+    sports-khel (live-cricket rights + betting-affiliate risk), the-predix, kindfans.
+  * netflex -> fold into the existing Movieca card as "Movieca Web". Never use the name "Netflex"
+    or "Netflix-style" on the CV — one character off a trademark.
+  * claude-sync -> do NOT make public just for a CV line; it holds config + memory files.
+  * Still unanswered, needed before any card: what are fitclash, company-vault,
+    website-cloner-skills, my-claude-marketplace? Is selingkuh-detector the Flutter client for
+    penyidik.co? Is login-portal the code behind login.ac.pk or login.net.pk (both already carded)?
 - SkillPath: completion certificate (PDF), instructor detail page, more seed courses.
 - Confirm PH employer naming: PDF says "Quantum Advertising Services"; CV currently uses
   "Infinix Philippines" per request for both Makati roles — change if needed.

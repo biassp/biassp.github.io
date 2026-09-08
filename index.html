@@ -1554,10 +1554,13 @@
             var TTL = 6 * 60 * 60 * 1000;          // 6 hours
             var STALE_OK = 30 * 24 * 60 * 60 * 1000; // last resort before the hardcoded cards
 
-            // never shown, whatever the API says (lowercase repo names).
-            // 'biassp' is the profile repo; the rest are scratch repos that are
-            // still public but do not belong on a CV.
-            var HIDE = ['biassp', 'wp1', 'wordpress'];
+            // Never shown, whatever the API says (lowercase repo names).
+            // 'biassp' is the profile repo. The rest are public repos deliberately
+            // kept off the CV: scratch work, or work whose subject matter does not
+            // belong on a professional profile. Standing rule — nothing black-hat,
+            // gambling-adjacent or legally grey goes on this CV; that work stays
+            // private and uncarded.
+            var HIDE = ['biassp', 'wp1', 'wordpress', 'traffic', 'billy-kill-1'];
 
             // Hand-written titles/descriptions beat GitHub's metadata, because most
             // of my repos have an empty About field. Anything NOT listed here still

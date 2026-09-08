@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<!--
+  SIAKAD — part of the biassp.github.io portfolio
+  Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+  Not open source. Readable for evaluation only — copying, modification,
+  re-branding or redistribution is not permitted. See /LICENSE.
+  https://biassp.github.io/
+-->
+<html lang="id" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; worker-src 'self' blob:; form-action 'none'; base-uri 'none'; object-src 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SIAKAD — sistem informasi akademik sekolah</title>
+    <meta name="description" content="Demo sistem informasi akademik SMP: penyusunan jadwal sebagai constraint satisfaction problem dengan solver backtracking, penilaian terbobot, rapor, presensi, PPDB dan SPP. Seluruh data fabrikasi, tidak ada yang dikirim ke mana pun.">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2032%2032%22%3E%3Crect%20width=%2232%22%20height=%2232%22%20rx=%227%22%20fill=%22%236366f1%22/%3E%3Cpath%20d=%22M6%2012.5L16%208l10%204.5-10%204.5z%22%20fill=%22%23fff%22/%3E%3Cpath%20d=%22M10%2016v5c0%201.7%202.7%203%206%203s6-1.3%206-3v-5l-6%202.7z%22%20fill=%22%23fff%22%20opacity=%22.72%22/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="app.css">
+    <script src="guard.js"></script>
+</head>
+
+<body>
+    <a class="skip" href="#main">Lompat ke konten</a>
+
+    <header class="top">
+        <div class="brand">
+            <span class="mark" aria-hidden="true">SIA</span>
+            <div>
+                <h1>SIAKAD</h1>
+                <p class="sub">Sistem informasi akademik SMP — penjadwalan, penilaian, rapor. Data fabrikasi, tidak keluar dari tab ini.</p>
+            </div>
+        </div>
+        <div class="top-actions">
+            <button type="button" class="testbadge" id="testBadge" title="Buka hasil uji">
+                <span class="dot" aria-hidden="true"></span><span id="testText">uji: menunggu…</span>
+            </button>
+            <span class="netbadge" id="netBadge" title="Percobaan fetch / XMLHttpRequest / WebSocket / sendBeacon dari halaman ini sejak dimuat">
+                <span class="dot" aria-hidden="true"></span><span id="netCount">panggilan jaringan: 0</span>
+            </span>
+            <button type="button" id="themeBtn" class="btn ghost" aria-label="Ganti tema">Terang</button>
+            <a class="btn ghost" href="../../">CV</a>
+        </div>
+    </header>
+
+    <main id="main">
+        <p class="banner" id="fabricBanner">
+            <b>Seluruh data di halaman ini fabrikasi.</b> Nama peserta didik, guru dan orang tua disusun
+            suku-kata demi suku-kata dari pola fonotaktik buatan; NISN diambil dari blok sintetis
+            <code>99xxxxxxxx</code> yang diterbitkan oleh kode ini sendiri; tidak ada NIK sama sekali.
+            Tidak satu pun merujuk anak, guru atau sekolah yang nyata. Semuanya dibangun ulang dari satu
+            bilangan seed setiap kali halaman dimuat.
+        </p>
+
+        <div class="ctxbar" id="ctxbar"></div>
+
+        <nav class="tabs" id="tabs" role="tablist" aria-label="Modul">
+            <button type="button" role="tab" id="tab-beranda" aria-controls="panel-beranda" aria-selected="true" class="tab">Beranda</button>
+            <button type="button" role="tab" id="tab-siswa" aria-controls="panel-siswa" aria-selected="false" tabindex="-1" class="tab">Peserta Didik</button>
+            <button type="button" role="tab" id="tab-guru" aria-controls="panel-guru" aria-selected="false" tabindex="-1" class="tab">Guru</button>
+            <button type="button" role="tab" id="tab-rombel" aria-controls="panel-rombel" aria-selected="false" tabindex="-1" class="tab">Rombel</button>
+            <button type="button" role="tab" id="tab-jadwal" aria-controls="panel-jadwal" aria-selected="false" tabindex="-1" class="tab">Jadwal</button>
+            <button type="button" role="tab" id="tab-presensi" aria-controls="panel-presensi" aria-selected="false" tabindex="-1" class="tab">Presensi</button>
+            <button type="button" role="tab" id="tab-penilaian" aria-controls="panel-penilaian" aria-selected="false" tabindex="-1" class="tab">Penilaian</button>
+            <button type="button" role="tab" id="tab-rapor" aria-controls="panel-rapor" aria-selected="false" tabindex="-1" class="tab">Rapor</button>
+            <button type="button" role="tab" id="tab-ppdb" aria-controls="panel-ppdb" aria-selected="false" tabindex="-1" class="tab">PPDB</button>
+            <button type="button" role="tab" id="tab-spp" aria-controls="panel-spp" aria-selected="false" tabindex="-1" class="tab">SPP</button>
+            <button type="button" role="tab" id="tab-uji" aria-controls="panel-uji" aria-selected="false" tabindex="-1" class="tab">Uji</button>
+        </nav>
+
+        <div class="panels">
+            <section id="panel-beranda" role="tabpanel" aria-labelledby="tab-beranda" tabindex="0" class="panel"></section>
+            <section id="panel-siswa" role="tabpanel" aria-labelledby="tab-siswa" tabindex="0" class="panel" hidden></section>
+            <section id="panel-guru" role="tabpanel" aria-labelledby="tab-guru" tabindex="0" class="panel" hidden></section>
+            <section id="panel-rombel" role="tabpanel" aria-labelledby="tab-rombel" tabindex="0" class="panel" hidden></section>
+            <section id="panel-jadwal" role="tabpanel" aria-labelledby="tab-jadwal" tabindex="0" class="panel" hidden></section>
+            <section id="panel-presensi" role="tabpanel" aria-labelledby="tab-presensi" tabindex="0" class="panel" hidden></section>
+            <section id="panel-penilaian" role="tabpanel" aria-labelledby="tab-penilaian" tabindex="0" class="panel" hidden></section>
+            <section id="panel-rapor" role="tabpanel" aria-labelledby="tab-rapor" tabindex="0" class="panel" hidden></section>
+            <section id="panel-ppdb" role="tabpanel" aria-labelledby="tab-ppdb" tabindex="0" class="panel" hidden></section>
+            <section id="panel-spp" role="tabpanel" aria-labelledby="tab-spp" tabindex="0" class="panel" hidden></section>
+            <section id="panel-uji" role="tabpanel" aria-labelledby="tab-uji" tabindex="0" class="panel" hidden></section>
+        </div>
+
+        <footer class="foot">
+            <p>
+                <b>Mengapa angka jaringan itu penting di sini.</b> Ini catatan anak. Halaman ini memasang
+                <code>connect-src 'none'</code> di dalam tag
+                <code>&lt;meta http-equiv="Content-Security-Policy"&gt;</code> pada sumbernya sendiri, jadi
+                peramban menolak setiap koneksi keluar apa pun yang diminta JavaScript-nya. Penghitung di
+                header membungkus <code>fetch</code>, <code>XMLHttpRequest</code>, <code>WebSocket</code> dan
+                <code>sendBeacon</code>. Buka DevTools, tab Network akan tetap kosong. Yang tersimpan hanya
+                suntingan Anda, di IndexedDB, di peramban ini. Ini pernyataan tentang <em>halaman ini</em> —
+                beranda CV di biassp.github.io memang memanggil GitHub API untuk daftar repositorinya.
+            </p>
+            <p class="small">
+                Tanpa framework, tanpa bundler, tanpa dependensi, tanpa build step:
+                <code>guard.js</code>, <code>domain.js</code>, <code>data.js</code>, <code>solver.js</code>,
+                <code>solver.worker.js</code>, <code>akademik.js</code>, <code>store.js</code>,
+                <code>tests.js</code>, <code>app.js</code>, <code>app.css</code>.
+                <a href="README.md">README</a>
+            </p>
+        </footer>
+    </main>
+
+    <script src="domain.js"></script>
+    <script src="data.js"></script>
+    <script src="solver.js"></script>
+    <script src="akademik.js"></script>
+    <script src="store.js"></script>
+    <script src="tests.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

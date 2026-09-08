@@ -1,0 +1,1446 @@
+/*!
+ * Buku — part of the biassp.github.io portfolio
+ * Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+ * Not open source. Readable for evaluation only. See /LICENSE.
+ * https://biassp.github.io/
+ */
+/* Buku — app.css
+ * Design tokens shared with the CV and with the sibling labs (gudang, rekam,
+ * siakad) so this reads as part of the same site. Dark by default,
+ * html[data-theme="light"] overrides. No web fonts: a font request would be
+ * network egress and this page has none.
+ *
+ * THE LIGHT-THEME RULE, learned the hard way three times on this site: EVERY
+ * accent token that carries TEXT must be redefined in the light block. Three
+ * sibling labs shipped with a dark-surface cyan left in place on a white card,
+ * at 1.6–1.8:1. Here the light block redefines every accent, status and
+ * statement-line colour, and the measured contrast each one was chosen for is
+ * written next to it. The figures below were measured, not estimated.
+ *
+ * The one thing this file adds over its siblings: a financial statement is a
+ * COLUMN OF FIGURES, and a column that does not line up cannot be scanned. So
+ * every rupiah figure is monospace, right-aligned, tabular-nums, and the total
+ * lines carry the single and double rules an accountant reads as structure
+ * rather than decoration.
+ */
+
+:root {
+    --bg: #0b1020;
+    --bg-soft: #10162b;
+    --card: #141b33;
+    --card-2: #182142;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --text: #eaeefb;
+    --muted: #9aa6c4;
+    --faint: #7f8aad;
+    --accent: #6366f1;
+    --accent-2: #22d3ee;
+    --accent-3: #c084fc;
+    /* Solid-fill buttons carry white text, so they get their own token: white
+       on --accent #6366f1 is 4.47:1, which misses AA in BOTH themes. */
+    --accent-solid: #4f46e5;
+    --accent-solid-hover: #4338ca;
+    --link: #22d3ee;
+    --focus: #22d3ee;
+    /* The logo chip's background, and it carries WHITE TEXT — so every colour the
+       gradient passes through has to hold white at AA. The sibling labs' three-stop
+       indigo→purple→CYAN ended at #22d3ee, where white measures 1.70:1: the "BKU"
+       was unreadable on the right-hand third of its own chip, in both themes, and
+       an eyeball check never caught it because the left end looks fine. Measured
+       on this two-stop ramp: white on #4f46e5 is 6.29:1, on the #653ad6 midpoint
+       6.55:1, on #7e22ce 6.98:1. */
+    --grad: linear-gradient(120deg, #4f46e5 0%, #7e22ce 100%);
+    --shadow: 0 18px 50px -24px rgba(0, 0, 0, 0.85);
+    --shadow-sm: 0 8px 24px -16px rgba(0, 0, 0, 0.8);
+    --radius: 16px;
+
+    --ok: #34d399;
+    --warn: #eab308;
+    /* --bad is the refusal message, the failed-assertion mark and the imbalance
+       verdict — all text, and all of it can land on a hovered table row. #f43f5e
+       measures 4.28:1 on --card-2, a fail; #fb7185 clears it at 5.84:1 and keeps
+       the same rose. */
+    --bad: #fb7185;
+    --info: #38bdf8;
+
+
+
+    /* A TEXT-SAFE indigo, and its own token on purpose. --accent #6366f1 is a
+       border-and-focus hue: measured as text it is 3.81:1 on --card and 3.52:1 on
+       the hovered --card-2, both under AA. Document numbers are text and are the
+       most-clicked thing on the page, so they get a colour that passes where they
+       actually sit. In the light block this collapses back to --accent's value,
+       which already measures 6.99:1 at worst. */
+    --accent-teks: #a5b4fc;
+
+    /* Statement figures. Green for a positive movement, red for a negative one,
+       and every figure also carries its sign or its parentheses, so colour is
+       reinforcement rather than the only channel.
+       Measured against the DARKEST surface these sit on, --card-2 #182142, which
+       is what a hovered table row and a group header use — the surface the first
+       pass forgot, and where #f43f5e came in at 4.28:1. */
+    --pos: #34d399;          /* 8.18:1 on --card-2 */
+    --neg: #fb7185;          /* 5.84:1 — #f43f5e was 4.28:1 there, a fail */
+
+    /* The five account types. Each badge carries its word as well as its hue. */
+    --t-aset: #38bdf8;       /* 7.34:1 on --card-2 */
+    --t-liabilitas: #eab308; /* 8.20:1 */
+    --t-ekuitas: #c084fc;    /* 5.95:1 */
+    --t-pendapatan: #34d399; /* 8.18:1 */
+    --t-beban: #fb7185;      /* 5.84:1 */
+
+    /* Journal kinds. */
+    --j-sesuai: #eab308;     /* 8.20:1 */
+    --j-tutup: #c084fc;      /* 5.95:1 */
+    --j-balik: #fb7185;      /* 5.84:1 */
+    --j-koreksi: #38bdf8;    /* 7.34:1 */
+    --j-awal: #9aa6c4;       /* 6.46:1 */
+
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+html[data-theme="light"] {
+    --bg: #f5f7fc;
+    --bg-soft: #eef1f9;
+    --card: #ffffff;
+    --card-2: #f4f6fd;
+    --border: rgba(15, 23, 42, 0.09);
+    --border-strong: rgba(15, 23, 42, 0.18);
+    --text: #131a2e;
+    --muted: #55618a;
+    /* #7f8aad measures 4.45:1 on the tinted --bg-soft, a fail; this clears it
+       at 5.01:1 there and 5.66:1 on white. */
+    --faint: #5c6688;
+    /* --accent is the SKU code, the document number and the active tab label,
+       all of them text. Left at #6366f1 it read 3.7:1 on white. */
+    --accent: #4338ca;
+    /* --accent-2 is the colour of every rupiah figure in a header, every
+       barcode and every cost-layer key. The dark theme's #22d3ee measures
+       1.60:1 on white; #155e75 keeps the same cyan family at 7.27:1. */
+    --accent-2: #155e75;
+    --accent-3: #7e22ce;
+    --accent-solid: #4338ca;
+    --accent-solid-hover: #3730a3;
+    --link: #0e7490;
+    --focus: #045981;
+    --shadow: 0 18px 50px -30px rgba(30, 41, 90, 0.35);
+    --shadow-sm: 0 10px 26px -20px rgba(30, 41, 90, 0.4);
+
+    --ok: #047857;
+    /* #a16207 measures 4.36:1 on the tinted --bg-soft, a fail; this clears it at
+       5.13:1 there and 5.80:1 on white. --warn is the fabrication banner's bold
+       text and every warning callout's leading word, so it is genuinely text. */
+    --warn: #92580a;
+    --bad: #be123c;
+    --info: #0369a1;
+
+
+    /* Text-safe indigo again, here just --accent's own value: 7.90:1 on white,
+       6.99:1 on the tinted --bg-soft. */
+    --accent-teks: #4338ca;
+
+    /* Every one of the twelve tokens below is TEXT on a white or near-white
+       surface, so every one of them is redefined — the dark values measure
+       1.6–2.2:1 there. The figure quoted is the WORST of the four light surfaces
+       (--card #ffffff, --bg-soft #eef1f9, --card-2 #f4f6fd, --bg #f5f7fc), not the
+       flattering one on white: amber #a16207 passes on white at 4.92:1 and FAILS
+       on --bg-soft at 4.36:1, which is exactly the kind of near-miss an
+       eyeball check waves through. */
+    --pos: #047857;          /* worst 4.85:1 — dark #34d399 is 1.80:1 on white */
+    --neg: #be123c;          /* worst 5.56:1 — dark #fb7185 is 2.51:1 on white */
+    --t-aset: #0369a1;       /* worst 5.25:1 — dark #38bdf8 is 2.16:1 */
+    --t-liabilitas: #92580a; /* worst 5.13:1 — #a16207 measured 4.36:1 on --bg-soft */
+    --t-ekuitas: #7e22ce;    /* worst 6.18:1 — dark #c084fc is 2.53:1 */
+    --t-pendapatan: #047857; /* worst 4.85:1 */
+    --t-beban: #be123c;      /* worst 5.56:1 */
+    --j-sesuai: #92580a;     /* worst 5.13:1 */
+    --j-tutup: #7e22ce;      /* worst 6.18:1 */
+    --j-balik: #be123c;      /* worst 5.56:1 */
+    --j-koreksi: #0369a1;    /* worst 5.25:1 */
+    --j-awal: #55618a;       /* worst 5.37:1 */
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    font-size: 15px;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(720px 420px at 12% -6%, rgba(99, 102, 241, 0.18), transparent 60%),
+        radial-gradient(640px 420px at 100% 0%, rgba(34, 211, 238, 0.12), transparent 55%);
+}
+
+h1, h2, h3, h4 {
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+}
+
+a { color: var(--link); }
+
+code, pre, .mono {
+    font-family: var(--mono);
+    font-size: 0.86em;
+}
+
+:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.skip {
+    position: absolute;
+    left: -999px;
+    top: 8px;
+    background: var(--card);
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    z-index: 99;
+}
+
+.skip:focus { left: 8px; }
+
+/* ------------------------------------------------------------------ shell */
+
+main {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 18px 60px;
+}
+
+.top {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mark {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: .04em;
+    padding: 9px 10px;
+    border-radius: 12px;
+    background: var(--grad);
+    color: #fff;
+}
+
+.brand h1 { font-size: 21px; }
+
+.sub {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.top-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 7px 13px;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .18s ease, border-color .18s ease;
+}
+
+.btn:hover {
+    background: var(--card-2);
+    border-color: var(--accent);
+}
+
+.btn.primary {
+    background: var(--accent-solid);
+    border-color: var(--accent-solid);
+    color: #fff;
+}
+
+.btn.ghost { background: transparent; }
+
+.btn.small {
+    padding: 4px 9px;
+    font-size: 12px;
+}
+
+.btn[aria-pressed="true"] {
+    background: var(--accent-solid);
+    border-color: var(--accent-solid);
+    color: #fff;
+}
+
+.btn:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.netbadge, .testbadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    background: var(--card);
+    border-radius: 999px;
+    padding: 5px 12px;
+}
+
+.netbadge .dot, .testbadge .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, .18);
+    flex: none;
+}
+
+.netbadge.bad .dot, .testbadge.bad .dot {
+    background: var(--bad);
+    box-shadow: 0 0 0 3px rgba(244, 63, 94, .2);
+}
+
+.testbadge.busy .dot {
+    background: var(--warn);
+    box-shadow: 0 0 0 3px rgba(234, 179, 8, .2);
+}
+
+.testbadge {
+    background: none;
+    border-color: var(--border);
+    cursor: pointer;
+    font-family: var(--mono);
+}
+
+/* --------------------------------------------------------------- context */
+
+.ctxbar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 14px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    /* Flex items default to min-width:auto, so a <select> with long option text
+       refuses to shrink and pushes the whole document sideways on a phone.
+       min-width:0 lets it shrink; max-width:100% on the control caps it. */
+    min-width: 0;
+    max-width: 100%;
+}
+
+.field > select,
+.field > input {
+    max-width: 100%;
+    text-overflow: ellipsis;
+}
+
+.field > span {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--faint);
+}
+
+input[type=text], input[type=number], input[type=search], select, textarea {
+    background: var(--bg-soft);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: 9px;
+    padding: 6px 10px;
+    font: inherit;
+    font-size: 13px;
+    max-width: 100%;
+}
+
+select { cursor: pointer; }
+
+.ctx-note {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--muted);
+    max-width: 420px;
+}
+
+.perchip {
+    font-size: 11.5px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    color: var(--accent-2);
+}
+
+/* ------------------------------------------------------------------ tabs */
+
+.tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+    scrollbar-width: thin;
+}
+
+.tab {
+    background: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 13.5px;
+    padding: 9px 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    border-radius: 8px 8px 0 0;
+}
+
+.tab:hover {
+    color: var(--text);
+    background: var(--card);
+}
+
+.tab[aria-selected="true"] {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+}
+
+.panel { min-height: 240px; }
+
+/* ----------------------------------------------------------------- cards */
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+}
+
+.card > h3 {
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.card > .note, .note {
+    color: var(--muted);
+    font-size: 12.5px;
+    margin-bottom: 12px;
+}
+
+.note b, .hint b { color: var(--text); }
+
+.hint {
+    color: var(--muted);
+    font-size: 12.5px;
+}
+
+.small { font-size: 12px; }
+
+.row-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 12px;
+}
+
+/* THE STAT-TILE OVERFLOW, found by measurement at 414px and worth spelling out
+   because it is invisible at the width everyone tests.
+   `repeat(auto-fit, minmax(140px, 1fr))` asks the browser to fit as many 140px
+   tracks as it can. At 414px it fits three, ~121px each. But a grid ITEM has an
+   implied `min-width: auto`, and each tile holds an unbreakable monospace figure
+   like "Rp1.465.894.024" whose min-content width is ~175px — so every track was
+   forced to 175px and the DOCUMENT went to 433px against a 414px viewport. It
+   passed at 390px only because two tracks happened to fit there.
+   Three changes, together:
+     - `min(100%, 172px)` as the floor: never ask for a track narrower than the
+       widest figure, and on a viewport too narrow for even one such track the
+       floor collapses to 100% and it becomes a single column instead of
+       overflowing.
+     - `min-width: 0` on the tile, so the implied auto minimum stops fighting.
+     - `overflow-wrap: anywhere` on the figure as the last resort, so a rupiah
+       value longer than anything in the demo book wraps rather than pushing the
+       page sideways. Breaking a number mid-digit is ugly; horizontal scroll on a
+       phone is worse. */
+.summary {
+    display: grid;
+    /* The floor has to hold the widest figure this app ever shows in a stat card
+       — a fourteen-digit rupiah string like Rp2.978.050.000 — or the number wraps
+       mid-thousands-separator, which reads as a different number. min(100%, …)
+       keeps it collapsible to a single column on a phone. */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+    gap: 10px;
+    margin: 0 0 16px;
+}
+
+.stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 11px 13px;
+    min-width: 0;
+}
+
+.stat .k {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--faint);
+}
+
+.stat .v {
+    font-size: 17px;
+    font-weight: 650;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    /* Last resort only: a rupiah figure broken across two lines is worse than a
+       small one, so the track floor above is sized to make this unnecessary. */
+    overflow-wrap: anywhere;
+}
+
+.stat .n {
+    font-size: 11.5px;
+    color: var(--muted);
+}
+
+.callout {
+    font-size: 12.5px;
+    color: var(--text);
+    background: var(--card-2);
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 9px 12px;
+    margin-bottom: 12px;
+}
+
+.callout.warn { border-left-color: var(--warn); }
+.callout.bad { border-left-color: var(--bad); }
+.callout.ok { border-left-color: var(--ok); }
+
+.empty {
+    color: var(--muted);
+    font-size: 13.5px;
+    padding: 26px 16px;
+    text-align: center;
+    border: 1px dashed var(--border-strong);
+    border-radius: 12px;
+}
+
+/* ---------------------------------------------------------------- tables */
+
+.tbl-wrap { overflow-x: auto; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    min-width: 520px;
+}
+
+th, td {
+    text-align: left;
+    padding: 7px 9px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--faint);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    background: var(--card);
+    z-index: 1;
+}
+
+td.num, th.num {
+    text-align: right;
+    font-family: var(--mono);
+}
+
+tbody tr:hover { background: var(--card-2); }
+
+tr.sel { background: var(--card-2); }
+
+.linkbtn {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--link);
+    font: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+
+.linkbtn:hover { text-decoration: underline; }
+
+/* ----------------------------------------------------------------- pills */
+
+.pill {
+    display: inline-block;
+    font-size: 10.5px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    color: var(--muted);
+    font-family: var(--mono);
+}
+
+.pill.ok { color: var(--ok); border-color: currentColor; }
+.pill.warn { color: var(--warn); border-color: currentColor; }
+.pill.bad { color: var(--bad); border-color: currentColor; }
+.pill.info { color: var(--info); border-color: currentColor; }
+
+.pillbig {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-strong);
+}
+
+.pillbig.pass { color: var(--ok); border-color: currentColor; }
+.pillbig.fail { color: var(--bad); border-color: currentColor; }
+
+/* ------------------------------------------------------------------ tests */
+
+.test-summary {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.test-summary > * { min-width: 0; overflow-wrap: anywhere; }
+
+.tgroup { margin-bottom: 12px; }
+
+.tgroup > h4 {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 4px;
+}
+
+.tcase {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 12.5px;
+    padding: 2px 0;
+    border-bottom: 1px dotted var(--border);
+    /* min-width:0 on the flex children, because an assertion name carries
+       unbreakable tokens — `divRound(-1500,1000)`, `Rp2.978.050.000`, an account
+       code — and a flex item defaults to min-width:auto, so one such token
+       refuses to shrink and takes the whole document sideways. Measured: 320px
+       viewport, 333px document, on the Uji tab alone. */
+    min-width: 0;
+}
+
+.tcase > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.tcase .mk {
+    font-family: var(--mono);
+    font-weight: 700;
+    flex: none;
+    overflow-wrap: normal;
+}
+
+.tcase.ok .mk { color: var(--ok); }
+.tcase.no .mk { color: var(--bad); }
+
+.tcase .msg {
+    color: var(--bad);
+    font-family: var(--mono);
+    font-size: 11px;
+}
+
+/* The live-book card prints a sentence next to a check that PASSED as well as
+   one that failed, and a passing figure must not be rendered in the failure
+   colour. */
+.tcase.ok .msg { color: var(--faint); }
+
+/* ------------------------------------------------------------------ misc */
+
+.grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.grid-side {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+    gap: 14px;
+    align-items: start;
+}
+
+/* The numeric fields are input[type=text] with inputmode="numeric", not
+   type=number: every keystroke re-renders the panel and Chromium refuses
+   selectionStart/setSelectionRange on a number field, so the caret could not be
+   restored and typing "30" produced 3 (see numInput in app.js). The rule is
+   written for both spellings — the class alone is (0,1,0) and used to lose to
+   the (0,1,1) element+attribute selector, which left the padding, font-size and
+   font-family as dead declarations and clipped a three-digit figure. */
+input.nilai-input,
+input[type=number].nilai-input {
+    width: 68px;
+    text-align: right;
+    font-family: var(--mono);
+    padding: 3px 6px;
+    font-size: 12px;
+}
+
+input.nilai-input.edited,
+input[type=number].nilai-input.edited {
+    border-color: var(--accent-3);
+    color: var(--accent-3);
+}
+
+.foot {
+    margin-top: 34px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12.5px;
+}
+
+.foot p + p { margin-top: 8px; }
+.foot code { color: var(--text); }
+
+.banner {
+    background: var(--card-2);
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid var(--warn);
+    border-radius: 10px;
+    padding: 9px 13px;
+    font-size: 12.5px;
+    margin-bottom: 14px;
+}
+
+.banner b { color: var(--warn); }
+
+.stack { display: flex; flex-direction: column; gap: 3px; }
+
+
+
+/* ----------------------------------------------------------- buku-specific */
+
+/* Money. Monospace, right-aligned, tabular figures. A financial statement is a
+   column of numbers, and scanning that column for the one figure that looks
+   wrong is most of what a bookkeeper actually does — so the digits must sit in
+   the same place on every row. font-variant-numeric matters even in a monospace
+   stack, because some system monospace faces still render lining figures at
+   proportional widths inside a <span>. */
+.rp {
+    font-family: var(--mono);
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.rp.plus { color: var(--pos); }
+.rp.minus { color: var(--neg); }
+.rp.nol { color: var(--faint); }
+
+td.num, th.num, .num { font-variant-numeric: tabular-nums; }
+
+.kode {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--accent-2);
+    white-space: nowrap;
+}
+
+/* A document number is TEXT, and the most-clicked text on the page. It takes
+   --accent-teks, never --accent: the latter is 3.52:1 on a hovered row in the
+   dark theme. */
+.dok {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--accent-teks);
+    white-space: nowrap;
+}
+
+/* Account-type badges. Five types, five hues, and every badge also carries its
+   word — colour is reinforcement, never the only channel. */
+.tipe {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+    font-family: var(--mono);
+    letter-spacing: .02em;
+}
+
+.tipe.Aset { color: var(--t-aset); }
+.tipe.Liabilitas { color: var(--t-liabilitas); }
+.tipe.Ekuitas { color: var(--t-ekuitas); }
+.tipe.Pendapatan { color: var(--t-pendapatan); }
+.tipe.Beban { color: var(--t-beban); }
+
+.jns {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+    font-family: var(--mono);
+}
+
+.jns.umum { color: var(--muted); }
+.jns.penyesuaian { color: var(--j-sesuai); }
+.jns.penutup { color: var(--j-tutup); }
+.jns.pembalik { color: var(--j-balik); }
+.jns.koreksi { color: var(--j-koreksi); }
+/* NOT `.jns['saldo-awal']` — that is attribute-selector syntax applied to a
+   class, it is invalid, and an invalid selector anywhere in a selector LIST
+   invalidates the WHOLE rule. Written that way, the saldo-awal badge silently
+   lost its colour AND took `.jns.saldoawal` down with it. The class the JS
+   actually emits is the jenis id with its hyphen stripped. */
+.jns.saldoawal { color: var(--j-awal); }
+
+/* ---------------------------------------------------- editor jurnal */
+
+/* The entry editor. A journal line is account / debit / credit / note, and the
+   two amount columns must be the same width or the eye cannot compare them. */
+.jbaris {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 116px 116px 28px;
+    gap: 8px;
+    align-items: center;
+    padding: 4px 0;
+}
+
+/* Grid tracks default to min-width:auto exactly like flex items do, so a long
+   <option> label refuses to shrink and pushes the whole document sideways on a
+   phone. A sibling lab shipped 846px of scrollWidth against a 390px viewport for
+   exactly this reason, one grid it had missed. */
+.jbaris > * { min-width: 0; }
+/* Explicit grid placement by class, not by nth-child: the row now also carries
+   two per-row labels for the narrow layout, and counting children would have made
+   the phone layout depend on how many decorative spans happened to precede a
+   control. */
+.jbaris > .j-akun { grid-column: 1; }
+.jbaris > .j-debit { grid-column: 2; }
+.jbaris > .j-kredit { grid-column: 3; }
+.jbaris > .j-hapus { grid-column: 4; }
+.jbaris > .jlbl { display: none; }
+.jbaris select { width: 100%; }
+.jbaris input { width: 100%; text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.jbaris .hapus { padding: 2px 7px; font-size: 12px; }
+
+.jhead {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 116px 116px 28px;
+    gap: 8px;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--faint);
+    padding-bottom: 3px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+}
+
+.jhead > :nth-child(2), .jhead > :nth-child(3) { text-align: right; }
+
+/* The live balance readout. This is the one control in the app that has to be
+   impossible to miss: it is the difference between an entry that can be posted
+   and one that cannot. */
+.timbang {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: baseline;
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid var(--ok);
+}
+
+.timbang.pincang { border-left-color: var(--bad); }
+.timbang .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--faint); }
+.timbang .angka { font-family: var(--mono); font-size: 15px; font-variant-numeric: tabular-nums; }
+.timbang .verdict { font-family: var(--mono); font-size: 13px; font-weight: 700; margin-left: auto; min-width: 0; overflow-wrap: anywhere; }
+.timbang > div { min-width: 0; }
+.timbang.pincang .verdict { color: var(--bad); }
+.timbang .verdict.ok { color: var(--ok); }
+
+/* --------------------------------------------------- laporan keuangan */
+
+/* A statement is a list of rows, not a table: the labels wrap, the figures do
+   not, and the rules between sections carry meaning. */
+.lap { max-width: 720px; }
+.lap.lebar { max-width: none; }
+
+.lap-judul { text-align: center; margin-bottom: 2px; }
+.lap-judul h4 { font-size: 15px; }
+.lap-judul .sub2 { font-size: 12px; color: var(--muted); }
+.lap-judul .std { font-size: 11px; color: var(--faint); margin-top: 2px; }
+
+.lbaris {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 14px;
+    padding: 3px 0;
+    font-size: 13px;
+}
+
+.lbaris .t { min-width: 0; }
+.lbaris .n {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    flex: none;
+    min-width: 116px;
+    text-align: right;
+}
+
+.lbaris.rinci { padding-left: 16px; color: var(--muted); font-size: 12.5px; }
+.lbaris.rinci2 { padding-left: 32px; color: var(--faint); font-size: 12px; }
+
+.lbaris.sub {
+    border-top: 1px solid var(--border-strong);
+    margin-top: 3px;
+    padding-top: 5px;
+    font-weight: 600;
+}
+
+/* The double rule under a bottom line. Two borders, because that is what an
+   accountant looks for to know a figure is final. */
+.lbaris.total {
+    border-top: 3px double var(--border-strong);
+    margin-top: 5px;
+    padding-top: 7px;
+    font-weight: 700;
+    font-size: 13.5px;
+}
+
+.lbaris.judul {
+    font-weight: 650;
+    margin-top: 12px;
+    color: var(--text);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.lbaris.judul:first-child { margin-top: 0; }
+.lbaris .n.pos { color: var(--pos); }
+.lbaris .n.neg { color: var(--neg); }
+.lbaris.kunci .n { color: var(--accent-2); font-weight: 700; }
+
+/* The tie-through markers: the same figure appearing in three statements is
+   marked in all three, so a reader can see the tie rather than take it. */
+.tie {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    padding: 0 5px;
+    border-radius: 999px;
+    border: 1px solid var(--accent-3);
+    color: var(--accent-3);
+    margin-left: 6px;
+    vertical-align: 1px;
+    white-space: nowrap;
+}
+
+/* The reconciliation block. Every line of the identity, with the difference
+   spelled out rather than implied — and shown even when it is zero, because a
+   zero a reader can see is worth more than a zero they have to assume. */
+.rekon { display: flex; flex-direction: column; gap: 0; margin-top: 8px; }
+
+.rekon-baris {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 5px 2px;
+    border-bottom: 1px dashed var(--border);
+    font-size: 12.5px;
+}
+
+.rekon-baris > :first-child { min-width: 0; overflow-wrap: anywhere; }
+.rekon-baris > .n { flex: none; }
+
+.rekon-baris.total {
+    border-bottom: 0;
+    border-top: 2px solid var(--border-strong);
+    margin-top: 4px;
+    padding-top: 8px;
+    font-weight: 600;
+}
+
+.rekon-baris .n { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rekon-baris.sisa .n { color: var(--ok); }
+.rekon-baris.sisa.rusak .n { color: var(--bad); }
+
+/* Two statements side by side, which is the only way to see that a figure in one
+   is the figure in the other. */
+.duaLap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    align-items: start;
+}
+
+.duaLap > * { min-width: 0; }
+
+/* ------------------------------------------------------ neraca saldo */
+
+/* Three-stage trial balance: before adjustment, after adjustment, after
+   closing — in one table so the reader can follow one account across all three
+   and watch a nominal account go to zero. */
+.tigaKolom table { min-width: 720px; }
+
+tr.nolbaris td { color: var(--faint); }
+tr.nolbaris td.num { color: var(--ok); }
+
+tr.jumlahbaris td {
+    border-top: 2px solid var(--border-strong);
+    border-bottom: 3px double var(--border-strong);
+    font-weight: 700;
+}
+
+tr.grupbaris td {
+    background: var(--card-2);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--faint);
+    font-weight: 600;
+}
+
+/* ------------------------------------------------------- penyesuaian */
+
+.rencana {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 13px 15px;
+    background: var(--bg-soft);
+    margin-bottom: 12px;
+}
+
+.rencana.sudah { border-color: var(--ok); }
+.rencana.sudah > .row-between .judul { color: var(--ok); }
+.rencana.kosong { opacity: .72; }
+.rencana .judul { font-size: 13.5px; font-weight: 650; }
+.rencana .sub2 { font-size: 12px; color: var(--muted); }
+.rencana .rumus { font-family: var(--mono); font-size: 11.5px; color: var(--accent-2); }
+.rencana .nilai { font-family: var(--mono); font-size: 17px; color: var(--accent-2); font-variant-numeric: tabular-nums; }
+
+/* --------------------------------------------------------- penutup */
+
+.langkah {
+    border-left: 3px solid var(--accent);
+    padding: 8px 0 8px 12px;
+    margin-bottom: 10px;
+}
+
+.langkah .no {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent-teks);
+    letter-spacing: .04em;
+}
+
+.langkah h4 { font-size: 13px; margin-bottom: 4px; }
+
+.periode-grid {
+    display: grid;
+    /* Same guard as .summary: never ask for a track the content cannot fit into. */
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 122px), 1fr));
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.periode-kartu {
+    min-width: 0;
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 8px 10px;
+    background: var(--bg-soft);
+    font-size: 12px;
+}
+
+.periode-kartu.terkunci { border-color: var(--warn); }
+.periode-kartu .nm { font-weight: 600; font-size: 12.5px; }
+.periode-kartu .st { font-family: var(--mono); font-size: 10.5px; }
+.periode-kartu.terkunci .st { color: var(--warn); }
+.periode-kartu .st.buka { color: var(--ok); }
+.periode-kartu .jml { font-family: var(--mono); font-size: 11px; color: var(--faint); }
+.periode-kartu button { margin-top: 6px; width: 100%; }
+
+/* ------------------------------------------------------------ misc */
+
+.perchip {
+    font-size: 11px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    color: var(--text);
+    white-space: nowrap;
+}
+
+.kv2 {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 3px 12px;
+    font-size: 12.5px;
+    margin-top: 6px;
+}
+
+.kv2 dt { color: var(--faint); }
+.kv2 dd { font-family: var(--mono); font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: anywhere; }
+
+.mini-tabel td, .mini-tabel th { padding: 4px 7px; }
+.mini-tabel table { min-width: 0; }
+
+/* PLACEHOLDER COLOUR, set explicitly in both themes.
+   Left to the Chromium default it is rgb(117,117,117), which measures 2.94:1 on
+   the dark field surface and 2.91:1 on the light one — both well under AA's 4.5:1
+   — and the `opacity: .8` that used to sit on .jbaris input::placeholder made
+   whatever colour was chosen fail again by compositing it back toward the
+   background. --muted measures 6.4:1 dark and 6.0:1 light on the field surfaces.
+   This matters most on a phone: below 620px the .jhead column headers are
+   display:none, so for a while these placeholders were the only thing telling the
+   debit column from the credit column. There is now a real label per row as
+   well — see the ≤620px block. */
+input::placeholder,
+textarea::placeholder {
+    color: var(--muted);
+    opacity: 1;
+}
+
+/* A full-width note under the row it belongs to, for tables too column-heavy to
+   carry prose in a cell. */
+.catatanbaris td {
+    color: var(--muted);
+    padding-top: 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.wrap-normal { white-space: normal; }
+.grow { flex: 1 1 auto; }
+.stack { display: flex; flex-direction: column; gap: 3px; }
+
+/* The app-wide message region, outside the tab panels. It carries .tolak /
+   .terima-ok boxes, which already bring their own colours; this only gives it a
+   card surface so a message raised at load time reads as belonging to the page
+   rather than floating between the context bar and the tabs. */
+.pesanbar {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px 12px 12px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 14px;
+}
+
+.pesanbar .tolak, .pesanbar .terima-ok { margin-top: 8px; }
+
+.tolak {
+    border-left: 3px solid var(--bad);
+    background: color-mix(in srgb, var(--bad) 8%, transparent);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 12.5px;
+    margin-top: 8px;
+}
+
+.tolak b { color: var(--bad); }
+.tolak ul { margin: 5px 0 0 18px; }
+.tolak li { margin-bottom: 2px; }
+
+.terima-ok {
+    border-left: 3px solid var(--ok);
+    background: color-mix(in srgb, var(--ok) 8%, transparent);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 12.5px;
+    margin-top: 8px;
+}
+
+.terima-ok b { color: var(--ok); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+
+.chip {
+    font-size: 11.5px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-soft);
+    color: var(--muted);
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.chip[aria-pressed="true"] { border-color: var(--accent); color: var(--text); background: var(--card-2); }
+
+input, select, textarea {
+    background: var(--bg-soft);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 6px 9px;
+    font: inherit;
+    font-size: 12.5px;
+}
+
+input[type="date"] { color-scheme: dark; }
+html[data-theme="light"] input[type="date"] { color-scheme: light; }
+
+.controls .field.field-cari { flex: 1 1 300px; max-width: 400px; }
+
+.cari {
+    width: 100%;
+    min-width: 0;
+    background: var(--bg-soft);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    border-radius: 9px;
+    padding: 8px 11px;
+    font: inherit;
+    font-size: 13px;
+}
+
+/* ------------------------------------------------------------- print */
+
+@media print {
+    .top, .tabs, .ctxbar, .foot, .no-print { display: none !important; }
+
+    /* Redefine the PALETTE, not just body. Printing from the default dark theme
+       otherwise put --ok #34d399 and --warn #eab308 straight onto white paper at
+       1.9:1, which made the totals the faintest thing on the sheet. Both themes
+       are overridden, so it does not matter which one the reader printed from. */
+    :root,
+    html[data-theme="dark"],
+    html[data-theme="light"] {
+        --bg: #fff;
+        --bg-soft: #fff;
+        --card: #fff;
+        --card-2: #fff;
+        --border: #b9bfcf;
+        --border-strong: #8b93a6;
+        --text: #000;
+        --muted: #333;
+        --faint: #444;
+        --link: #0b4f73;
+        --accent: #2f2a8f;
+        --accent-teks: #2f2a8f;
+        --accent-2: #0b4f73;
+        --accent-3: #5b21b6;
+        --ok: #065f46;
+        --warn: #7a4a00;
+        --bad: #8b1030;
+        --info: #0b4f73;
+        --pos: #065f46;
+        --neg: #8b1030;
+        --t-aset: #0b4f73;
+        --t-liabilitas: #7a4a00;
+        --t-ekuitas: #5b21b6;
+        --t-pendapatan: #065f46;
+        --t-beban: #8b1030;
+        --j-sesuai: #7a4a00;
+        --j-tutup: #5b21b6;
+        --j-balik: #8b1030;
+        --j-koreksi: #0b4f73;
+        --j-awal: #444;
+        --shadow: none;
+        --shadow-sm: none;
+    }
+
+    body { background: #fff; color: #000; font-size: 11px; }
+    body::before { display: none; }
+    main { padding: 0; max-width: none; }
+    .card { border: 0; box-shadow: none; padding: 0; margin-bottom: 12px; }
+    .banner { border: 1px solid #8b93a6; }
+
+    /* A4 is 794 CSS px. Tables carry a min-width for the screen, and inside
+       `overflow-x:auto` there is no scrollbar on paper — the overflowing columns
+       are simply cut off the sheet. Let them reflow instead. */
+    .tbl-wrap { overflow: visible !important; }
+    table { min-width: 0 !important; width: 100% !important; font-size: 9.5px; table-layout: auto; }
+    th, td { padding: 3px 4px !important; }
+
+    /* AND RELAX `white-space: nowrap`, which is set on every cell for the screen
+       and was never lifted here. Resetting min-width and setting width:100% is not
+       enough on its own: an unbreakable cell still contributes its full width to
+       the table's MIN-CONTENT width, so the table stayed wider than the sheet and
+       the last column simply fell off the right edge. Measured at paper width
+       (717px of A4 content box): Bagan Akun rendered 795px and lost the Saldo
+       column — the one column an accountant opens a chart of accounts for — and
+       the fixed-asset register rendered 769px and lost Nilai buku akhir.
+       Long account names and descriptions may now wrap; figures and account codes
+       may not, because a rupiah figure broken across two lines is worse than a
+       narrow column. */
+    th, td { white-space: normal !important; overflow-wrap: anywhere; }
+    .kode, .rp, .mono, td.num, th.num { white-space: nowrap !important; }
+    /* Columns that are working intermediates, or that duplicate a figure already
+       on the row, are left off the sheet — measured, not guessed: with them the
+       PPh masa table came to 880px and the loan register to 826px against a
+       717px A4 content box, and it is the last column that falls off. */
+    .print-drop { display: none !important; }
+    .lap { max-width: none; }
+    .duaLap { grid-template-columns: 1fr 1fr; }
+    .lbaris, .rekon-baris, .card, .langkah, .rencana { break-inside: avoid; }
+    /* break-after alone still lets the heading's own box straddle the sheet
+       boundary, which prints half a line of text at the top of the next page. */
+    .lap-judul, .card > h3 { break-inside: avoid; break-after: avoid; }
+}
+
+/* -------------------------------------------------------- responsive */
+
+@media (max-width: 900px) {
+    .grid2, .grid-side, .duaLap { grid-template-columns: 1fr; }
+    .ctx-note { margin-left: 0; max-width: none; }
+}
+
+@media (max-width: 620px) {
+    /* The journal editor drops to two rows per line below this: an account
+       select at full width, then debit and credit side by side underneath. Three
+       columns plus a delete button in 390px leaves 60px for a select holding
+       "1602 Akumulasi Penyusutan Peralatan Toko", and a select that cannot shrink
+       is what pushes a whole document into horizontal scroll. */
+    .jbaris {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 30px;
+        grid-template-areas:
+            "akun akun hapus"
+            "lbld lblk    ."
+            "debit kredit .";
+        row-gap: 3px;
+        padding: 7px 0;
+        border-bottom: 1px dotted var(--border);
+    }
+
+    .jbaris > .j-akun { grid-area: akun; }
+    .jbaris > .j-debit { grid-area: debit; }
+    .jbaris > .j-kredit { grid-area: kredit; }
+    .jbaris > .j-hapus { grid-area: hapus; }
+    /* The column headers in .jhead are hidden at this width, so each row grows its
+       own pair of labels. Previously nothing named these two fields but their
+       placeholder, which vanishes as soon as a digit is typed and measured 2.9:1
+       against the field in both themes. */
+    .jbaris > .jlbl {
+        display: block;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        color: var(--muted);
+        text-align: right;
+    }
+
+    .jbaris > .jlbl-d { grid-area: lbld; }
+    .jbaris > .jlbl-k { grid-area: lblk; }
+    .jhead { display: none; }
+}
+
+@media (max-width: 560px) {
+    body { font-size: 14px; }
+    .top { padding: 14px 12px; }
+    main { padding: 0 12px 48px; }
+    .brand h1 { font-size: 18px; }
+    .sub { font-size: 12.5px; }
+    .card { padding: 13px; }
+    /* Narrower phones: a smaller figure needs a smaller floor, and the floor is
+       still guarded by min(100%, …) so it can always collapse to one column. */
+    .summary { grid-template-columns: repeat(auto-fit, minmax(min(100%, 148px), 1fr)); }
+    .stat .v { font-size: 16px; }
+    .ctxbar { padding: 10px; }
+    .field > span { font-size: 10px; }
+    .kv2 { grid-template-columns: 1fr; }
+    .kv2 dd { margin-bottom: 4px; }
+    .lbaris { font-size: 12.5px; }
+    .lbaris .n { min-width: 96px; }
+    .lbaris.rinci2 { padding-left: 20px; }
+    .periode-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 104px), 1fr)); }
+    .rekon-baris { font-size: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+        animation: none !important;
+        scroll-behavior: auto !important;
+    }
+}

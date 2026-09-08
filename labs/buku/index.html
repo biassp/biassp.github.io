@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<!--
+  Buku — part of the biassp.github.io portfolio
+  Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+  Not open source. Readable for evaluation only — copying, modification,
+  re-branding or redistribution is not permitted. See /LICENSE.
+  https://biassp.github.io/
+-->
+<html lang="id" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; worker-src 'self' blob:; form-action 'none'; base-uri 'none'; object-src 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Buku — sistem informasi akuntansi berpasangan untuk UMKM</title>
+    <meta name="description" content="Demo sistem akuntansi double-entry: bagan akun lima tipe, jurnal umum yang menolak entri tak seimbang, buku besar, neraca saldo sebelum dan sesudah penyesuaian, penyusutan garis lurus berjadwal, empat laporan keuangan bentuk SAK EMKM, jurnal penutup, kunci periode berperan, PPN masukan/keluaran dan PPh final UMKM 0,5%. Saldo selalu diturunkan dari jurnal, tidak pernah disimpan. Seluruh data fabrikasi, tidak ada yang dikirim ke mana pun.">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2032%2032%22%3E%3Crect%20width=%2232%22%20height=%2232%22%20rx=%227%22%20fill=%22%236366f1%22/%3E%3Cpath%20d=%22M7%206h13a5%205%200%200%201%200%2010H7z%22%20fill=%22%23fff%22%20opacity=%22.32%22/%3E%3Cpath%20d=%22M8%205h11.5a5.5%205.5%200%200%201%203.9%209.4A6%206%200%200%201%2020.5%2027H8z%22%20fill=%22none%22%20stroke=%22%23fff%22%20stroke-width=%222.4%22%20stroke-linejoin=%22round%22/%3E%3Cpath%20d=%22M8%2015.4h11.6%22%20stroke=%22%23fff%22%20stroke-width=%222.4%22/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="app.css">
+    <script src="guard.js"></script>
+</head>
+
+<body>
+    <a class="skip" href="#main">Lompat ke konten</a>
+
+    <!-- One polite live region for the whole app. Every panel is torn down and
+         rebuilt on each state change, which announces nothing on its own: the
+         posted entry and its document number, the refused entry and the exact
+         imbalance that refused it, the recomputed statements and the invariant
+         count are all written here. -->
+    <div id="say" role="status" aria-live="polite" class="sr-only"></div>
+
+    <header class="top">
+        <div class="brand">
+            <span class="mark" aria-hidden="true">BKU</span>
+            <div>
+                <h1>Buku</h1>
+                <p class="sub">Sistem informasi akuntansi berpasangan — SAK EMKM, PPh final 0,5%. Data fabrikasi, tidak keluar dari tab ini.</p>
+            </div>
+        </div>
+        <div class="top-actions">
+            <button type="button" class="testbadge" id="testBadge" title="Buka hasil uji">
+                <span class="dot" aria-hidden="true"></span><span id="testText">uji: menunggu…</span>
+            </button>
+            <button type="button" class="testbadge" id="bukuBadge" title="Invarian I1–I7 dihitung ulang dari jurnal mentah buku yang sedang dimuat — termasuk entri yang baru Anda posting">
+                <span class="dot" aria-hidden="true"></span><span id="bukuText">buku: memeriksa…</span>
+            </button>
+            <span class="netbadge" id="netBadge" title="Percobaan fetch / XMLHttpRequest / WebSocket / EventSource / sendBeacon dari halaman ini sejak dimuat">
+                <span class="dot" aria-hidden="true"></span><span id="netCount">panggilan jaringan: 0</span>
+            </span>
+            <button type="button" id="themeBtn" class="btn ghost" aria-pressed="false" title="Ganti ke tema terang">Terang</button>
+            <a class="btn ghost" href="../../">CV</a>
+        </div>
+    </header>
+
+    <main id="main">
+        <p class="banner" id="fabricBanner">
+            <b>Seluruh data di halaman ini fabrikasi.</b> Tidak ada perusahaan, NPWP, nomor rekening, pelanggan,
+            supplier atau satu rupiah pun yang nyata di sini. <em>UD Sinar Kalibata</em> tidak ada; NPWP-nya
+            berawalan <code>99</code>, blok kategori yang tidak pernah diterbitkan DJP, dan nomor rekeningnya di
+            rentang <code>0000</code> yang tidak bisa dituju. Seluruh buku &mdash; satu tahun penuh, ratusan entri
+            jurnal &mdash; dibangun ulang dari satu bilangan seed setiap kali halaman dimuat, jadi angka yang Anda
+            lihat sama dengan angka di README dan bisa dicek sendiri.
+        </p>
+
+        <div class="ctxbar" id="ctxbar"></div>
+
+        <!-- One message region for the whole app, OUTSIDE the tab panels.
+             It used to be rendered from inside three of the ten panel renderers,
+             so a message raised at load time — "N stored entries could not be
+             replayed" — could never be seen: the page always boots on Beranda,
+             which was not one of the three. A message about documents that did
+             not come back must be visible wherever the reader happens to be. -->
+        <div class="pesanbar" id="pesanbar"></div>
+
+        <nav class="tabs" id="tabs" role="tablist" aria-label="Modul">
+            <button type="button" role="tab" id="tab-beranda" aria-controls="panel-beranda" aria-selected="true" class="tab">Beranda</button>
+            <button type="button" role="tab" id="tab-bagan" aria-controls="panel-bagan" aria-selected="false" tabindex="-1" class="tab">Bagan Akun</button>
+            <button type="button" role="tab" id="tab-jurnal" aria-controls="panel-jurnal" aria-selected="false" tabindex="-1" class="tab">Jurnal Umum</button>
+            <button type="button" role="tab" id="tab-besar" aria-controls="panel-besar" aria-selected="false" tabindex="-1" class="tab">Buku Besar</button>
+            <button type="button" role="tab" id="tab-saldo" aria-controls="panel-saldo" aria-selected="false" tabindex="-1" class="tab">Neraca Saldo</button>
+            <button type="button" role="tab" id="tab-sesuai" aria-controls="panel-sesuai" aria-selected="false" tabindex="-1" class="tab">Penyesuaian</button>
+            <button type="button" role="tab" id="tab-laporan" aria-controls="panel-laporan" aria-selected="false" tabindex="-1" class="tab">Laporan</button>
+            <button type="button" role="tab" id="tab-tutup" aria-controls="panel-tutup" aria-selected="false" tabindex="-1" class="tab">Penutup &amp; Periode</button>
+            <button type="button" role="tab" id="tab-pajak" aria-controls="panel-pajak" aria-selected="false" tabindex="-1" class="tab">Pajak</button>
+            <button type="button" role="tab" id="tab-uji" aria-controls="panel-uji" aria-selected="false" tabindex="-1" class="tab">Uji</button>
+        </nav>
+
+        <div class="panels">
+            <section id="panel-beranda" role="tabpanel" aria-labelledby="tab-beranda" tabindex="0" class="panel"></section>
+            <section id="panel-bagan" role="tabpanel" aria-labelledby="tab-bagan" tabindex="0" class="panel" hidden></section>
+            <section id="panel-jurnal" role="tabpanel" aria-labelledby="tab-jurnal" tabindex="0" class="panel" hidden></section>
+            <section id="panel-besar" role="tabpanel" aria-labelledby="tab-besar" tabindex="0" class="panel" hidden></section>
+            <section id="panel-saldo" role="tabpanel" aria-labelledby="tab-saldo" tabindex="0" class="panel" hidden></section>
+            <section id="panel-sesuai" role="tabpanel" aria-labelledby="tab-sesuai" tabindex="0" class="panel" hidden></section>
+            <section id="panel-laporan" role="tabpanel" aria-labelledby="tab-laporan" tabindex="0" class="panel" hidden></section>
+            <section id="panel-tutup" role="tabpanel" aria-labelledby="tab-tutup" tabindex="0" class="panel" hidden></section>
+            <section id="panel-pajak" role="tabpanel" aria-labelledby="tab-pajak" tabindex="0" class="panel" hidden></section>
+            <section id="panel-uji" role="tabpanel" aria-labelledby="tab-uji" tabindex="0" class="panel" hidden></section>
+        </div>
+
+        <footer class="foot">
+            <p>
+                <b>Satu keputusan menjelaskan seluruh aplikasi ini: yang disimpan hanyalah entri jurnal.</b>
+                Tidak ada field saldo, tidak ada neraca saldo yang di-<em>cache</em>, tidak ada total yang
+                diperbarui saat posting. Setiap saldo, setiap kolom neraca saldo dan setiap baris laporan
+                keuangan adalah fungsi dari postingnya, dihitung saat diminta, setiap kali. Itu invarian I7, dan
+                itu sebabnya enam invarian lainnya bisa dipercaya: tidak ada salinan kedua dari kebenaran yang
+                bisa menyimpang dari yang pertama.
+            </p>
+            <p>
+                <b>Mengapa angka jaringan itu penting di sini.</b> Halaman ini memegang peredaran bruto, marjin,
+                pengambilan pemilik dan NPWP. Halaman ini memasang <code>connect-src 'none'</code> di dalam tag
+                <code>&lt;meta http-equiv="Content-Security-Policy"&gt;</code> pada sumbernya sendiri, jadi
+                peramban menolak setiap koneksi keluar yang diminta JavaScript <em>dokumen ini</em>. Pembungkus di
+                <code>guard.js</code> menutup <code>fetch</code>, <code>XMLHttpRequest</code>,
+                <code>WebSocket</code>, <code>EventSource</code> dan <code>sendBeacon</code>, lalu menghitung
+                setiap percobaan. Buka DevTools, tab Network akan tetap kosong. Yang tersimpan hanya perubahan
+                Anda, di IndexedDB, di peramban ini. Ini pernyataan tentang <em>halaman ini</em> &mdash; beranda
+                CV di biassp.github.io memang memanggil GitHub API untuk daftar repositorinya.
+            </p>
+            <p class="small">
+                Tanpa framework, tanpa bundler, tanpa dependensi, tanpa build step:
+                <code>guard.js</code>, <code>domain.js</code>, <code>ledger.js</code>, <code>sesuai.js</code>,
+                <code>seed.js</code>, <code>store.js</code>, <code>tests.js</code>, <code>app.js</code>,
+                <code>app.css</code>.
+                <a href="README.md">README</a>
+            </p>
+        </footer>
+    </main>
+
+    <script src="domain.js"></script>
+    <script src="ledger.js"></script>
+    <script src="sesuai.js"></script>
+    <script src="seed.js"></script>
+    <script src="store.js"></script>
+    <script src="tests.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

@@ -53,6 +53,15 @@ Last updated: 2026-09-08.
     the site itself still ships as a single dependency-free index.html.
 
 ## Standing rules (decided 2026-09-08 — apply without asking again)
+- COPYRIGHT: the repo ships an all-rights-reserved LICENSE and every lab source file carries a
+  copyright header. This is NOT open source and must not be relicensed. Keep the headers when
+  editing those files.
+- Reality check to repeat if asked again: a static site cannot technically prevent copying — the
+  browser must receive the code to run it. The LICENSE and headers are the enforceable layer
+  (they make a DMCA takedown possible); obfuscation is not, and would destroy the labs' whole
+  point, which is that a reviewer can READ the code. The genuinely confidential products
+  (RepBout/fitclash, company-vault, penyidik) are protected the only way that works: their repos
+  stay private and the CV only DESCRIBES them in prose.
 - NOTHING black-hat, gambling-adjacent, or legally grey goes on this CV. No portfolio card, no
   repos-feed entry. That work stays PRIVATE and uncarded. This covers the gambling/AMP/SEO cluster
   (daman-*, tiranga-*, 62club-*, 91.club, ok-win, basant-club, kubet*, cheatgacor, cheatslot,

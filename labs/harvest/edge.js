@@ -1,3 +1,10 @@
+/*!
+ * HARvest — part of the biassp.github.io portfolio
+ * Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+ * Not open source. Readable for evaluation only — copying, modification,
+ * re-branding or redistribution is not permitted. See /LICENSE.
+ * https://biassp.github.io/
+ */
 /* HARvest - edge.js
  * Edge / security engine. Salvaged from the cancelled "WAF Workbench" design:
  * IPv4+IPv6 CIDR matching, and a sliding-window rate-limit simulation driven by

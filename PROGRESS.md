@@ -78,19 +78,28 @@ Last updated: 2026-09-08.
 - Heads-up from the feed going live: Blocking-DDoS-Attacks-Cloudflare-WAF-Rules and
   CareerHigh-Android are FORKS on GitHub, so the fork filter drops them — they now
   only appear in the offline fallback. Detach/recreate them, or decide to let them go.
-- VERIFY: biassp/Movie-API looks EMPTY (created_at == updated_at == 2021-04-29T15:16:58Z, no
-  language, no description). The Movieca portfolio card calls it "the backend foundation feeding
-  the Movieca movie-discovery experience" and the CURATED map ranks it weight 60. If it really has
-  no commits, drop both claims — a recruiter who clicks learns something worse than nothing.
+- RESOLVED 2026-09-08: biassp/Movie-API IS empty. Every claim removed — the repos fallback card,
+  the CURATED entry, and it is HIDE-listed so the live feed cannot resurrect it as a placeholder.
+  Fallback grid is 8 cards now, not 9.
 - Portfolio expansion (2026-09-08 planning run) — decided:
   * EXCLUDED under the standing rule: penyidik / selingkuh-detector (infidelity detector),
     sports-khel (live-cricket rights + betting-affiliate risk), the-predix, kindfans.
   * netflex -> fold into the existing Movieca card as "Movieca Web". Never use the name "Netflex"
     or "Netflix-style" on the CV — one character off a trademark.
   * claude-sync -> do NOT make public just for a CV line; it holds config + memory files.
-  * Still unanswered, needed before any card: what are fitclash, company-vault,
-    website-cloner-skills, my-claude-marketplace? Is selingkuh-detector the Flutter client for
-    penyidik.co? Is login-portal the code behind login.ac.pk or login.net.pk (both already carded)?
+  * ANSWERED 2026-09-08:
+    - fitclash = RepBout, an Android workout-battle app (Flutter). CARDED in the portfolio.
+      Repo stays private; repbout-secrets holds the release keystore, encrypted — keep it that way.
+    - company-vault = owner's own digital wallet running on his VPS. Repo stays PRIVATE. He wants a
+      screenshot on the CV instead of a link. BLOCKED: this session has no VPS access and cannot
+      take it. He must capture it himself and drop it in assets/images/, REDACTED first (no
+      balances, no hostnames/IPs, no endpoints, no tokens, no customer data). Then the card can
+      be written around the screenshot.
+    - website-cloner-skills + my-claude-marketplace = internal AI-agent tooling. Owner's decision:
+      do NOT put on the CV. Excluded permanently.
+  * Still unanswered: is selingkuh-detector the Flutter client for penyidik.co? (moot for now —
+    penyidik is excluded under the standing rule). Is login-portal the code behind login.ac.pk or
+    login.net.pk (both already carded)? Needed only to avoid a duplicate card.
 - SkillPath: completion certificate (PDF), instructor detail page, more seed courses.
 - Confirm PH employer naming: PDF says "Quantum Advertising Services"; CV currently uses
   "Infinix Philippines" per request for both Makati roles — change if needed.

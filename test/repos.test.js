@@ -115,6 +115,12 @@ const PAYLOAD = [
     description: null, language: 'Perl', stargazers_count: 4, forks_count: 4,
     pushed_at: iso(2), topics: [], fork: false, archived: false, private: false,
   },
+  {
+    // public but EMPTY - must never be linked from the CV
+    name: 'Movie-API', html_url: 'https://github.com/biassp/Movie-API',
+    description: null, language: 'Perl', stargazers_count: 4, forks_count: 4,
+    pushed_at: iso(2), topics: [], fork: false, archived: false, private: false,
+  },
 ];
 
 // The six survivors: skillpath, quran-online, aplikasi-pengarsipan-surat-php,
@@ -126,9 +132,11 @@ const EXPECTED = {
   forks: 2 + 0 + 1 + 0 + 0 + 0,   // 3
 };
 
+// Movie-API was removed from the fallback: the repo is empty, so the card sent
+// recruiters to nothing. It is HIDE-listed too, so the live feed cannot resurrect it.
 const FALLBACK_TITLES = [
   'Quran Online', 'Aplikasi Kasir Web', 'Arsip Surat (PHP)', 'Cloudflare WAF Rules',
-  'CareerHigh Android', 'MySQL Converter Tool', 'Movie API', 'Penerimaan Siswa Baru',
+  'CareerHigh Android', 'MySQL Converter Tool', 'Penerimaan Siswa Baru',
   'Kalkulator JavaScript',
 ];
 
@@ -224,10 +232,10 @@ test('a) healthy payload: filters, curated overrides, uncurated repos still rend
   }
   // HIDE list: matched case-insensitively, and it beats every other signal
   // (wp1/WordPress are public, non-fork, and have more stars than anything else)
-  for (const hidden of ['biassp', 'wp1', 'WordPress', 'traffic', 'billy-kill-1']) {
+  for (const hidden of ['biassp', 'wp1', 'WordPress', 'traffic', 'billy-kill-1', 'Movie-API']) {
     assert.ok(!hrefs.includes('https://github.com/biassp/' + hidden), hidden + ' is HIDE-listed');
   }
-  for (const t of ['Wp1', 'WordPress', 'Traffic', 'Billy Kill 1']) {
+  for (const t of ['Wp1', 'WordPress', 'Traffic', 'Billy Kill 1', 'Movie API']) {
     assert.ok(!titles(ctx).includes(t), t + ' must not render a card');
   }
   // ...and their stars/forks/language must not leak into the counters or chips
@@ -407,7 +415,8 @@ test('d2) a language with no matching cards shows the empty message', async () =
 /** shared assertions for every failure mode */
 function assertFellBack(ctx, label) {
   const cards = ctx.cards();
-  assert.strictEqual(cards.length, 9, label + ': nine hardcoded cards restored');
+  assert.strictEqual(cards.length, FALLBACK_TITLES.length,
+    label + ': every hardcoded fallback card restored');
   assert.strictEqual(ctx.grid.querySelectorAll('.repo-skel').length, 0, label + ': no skeleton left');
   assert.strictEqual(ctx.grid.querySelectorAll('.ln').length, 0, label + ': no skeleton lines left');
   assert.strictEqual(ctx.grid.querySelectorAll('.reveal').length, 0,
@@ -420,7 +429,7 @@ function assertFellBack(ctx, label) {
     assert.ok(c.querySelector('p').textContent.trim().length > 0);
   });
   assert.deepStrictEqual(cards.map((c) => c.querySelector('h3').textContent), FALLBACK_TITLES,
-    label + ': the original nine, in the original order');
+    label + ': the original fallback cards, in the original order');
 
   assert.strictEqual(ctx.stats.hidden, true, label + ': counter strip hidden');
   assert.strictEqual(ctx.filters.hidden, true, label + ': chips hidden');
@@ -429,7 +438,7 @@ function assertFellBack(ctx, label) {
   assert.ok(ctx.note.querySelector('a[href*="biassp?tab=repositories"]'), label + ': CTA link present');
 }
 
-test('e) 403 rate limit: the nine hardcoded cards come back', async () => {
+test('e) 403 rate limit: the hardcoded cards come back', async () => {
   assertFellBack(await boot(httpError(403)), '403');
   assertFellBack(await boot(httpError(429)), '429');
   assertFellBack(await boot(httpError(500)), '500');
@@ -451,7 +460,7 @@ test('f) rejected promise (offline): identical behaviour', async () => {
   assertFellBack(await boot(() => { throw new TypeError('NetworkError'); }), 'throwing fetch');
 });
 
-test('f2) fetch missing entirely: still the nine cards', async () => {
+test('f2) fetch missing entirely: still the hardcoded cards', async () => {
   const dom = new JSDOM(HTML, {
     url: 'https://biassp.github.io/',
     runScripts: 'dangerously',
@@ -462,7 +471,7 @@ test('f2) fetch missing entirely: still the nine cards', async () => {
   });
   await settle();
   const doc = dom.window.document;
-  assert.strictEqual(doc.querySelectorAll('#repoGrid .proj').length, 9);
+  assert.strictEqual(doc.querySelectorAll('#repoGrid .proj').length, FALLBACK_TITLES.length);
   assert.strictEqual(doc.querySelectorAll('#repoGrid .repo-skel').length, 0);
   assert.strictEqual(doc.querySelectorAll('#repoGrid .reveal').length, 0);
 });
@@ -541,8 +550,10 @@ test('i) unreadable localStorage does not break the feed', async () => {
 
 test('j) the shipped markup keeps the fallback intact', () => {
   const section = HTML.slice(HTML.indexOf('id="repos"'), HTML.indexOf('id="skills"'));
-  assert.strictEqual((section.match(/<a class="proj"/g) || []).length, 9,
-    'nine fallback cards still present in the static HTML');
+  assert.strictEqual((section.match(/<a class="proj"/g) || []).length, FALLBACK_TITLES.length,
+    'every fallback card still present in the static HTML');
+  assert.ok(!HTML.includes('Movie-API'), 'the empty Movie-API repo is claimed nowhere');
+  assert.ok(!HTML.includes("'movie-api': {"), 'and has no CURATED entry');
   assert.strictEqual((section.match(/class="proj reveal"/g) || []).length, 0,
     '.reveal removed from the fallback cards');
   for (const id of ['repoGrid', 'repoStats', 'repoFilters', 'repoEmpty', 'repoNote']) {

@@ -329,8 +329,9 @@
     }
     if (missing > 0) {
       warnings.push(missing + ' of ' + out.length + ' responses have no body in the HAR. ' +
-        'Chrome omits response bodies unless you tick "Preserve log" and expand large bodies; ' +
-        'schema inference degrades to header-level for those.');
+        'Re-capture with right-click \u2192 "Save all as HAR with content"; the plain ' +
+        '"Save all as HAR" omits response bodies. Schema inference degrades to ' +
+        'header-level for those requests.');
     }
 
     return {

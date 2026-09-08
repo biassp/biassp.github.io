@@ -13,10 +13,17 @@
     --border-strong: rgba(255, 255, 255, 0.16);
     --text: #eaeefb;
     --muted: #9aa6c4;
-    --faint: #6b7699;
+    /* --faint carries 10-11px label text (stat keys, tick labels, row indices),
+       so it is nudged off the CV's #6b7699 to clear 4.5:1 on --card. */
+    --faint: #7f8aad;
     --accent: #6366f1;
     --accent-2: #22d3ee;
     --accent-3: #a855f7;
+    /* Link + focus-ring roles. On the dark ground the brand cyan is fine (10.5:1),
+       but it is 1.7:1 on the light ground, so the light theme overrides these two
+       rather than dulling the brand token everywhere. */
+    --link: #22d3ee;
+    --focus: #22d3ee;
     --grad: linear-gradient(120deg, #6366f1 0%, #a855f7 50%, #22d3ee 100%);
     --shadow: 0 18px 50px -24px rgba(0, 0, 0, 0.85);
     --shadow-sm: 0 8px 24px -16px rgba(0, 0, 0, 0.8);
@@ -48,7 +55,9 @@ html[data-theme="light"] {
     --border-strong: rgba(15, 23, 42, 0.18);
     --text: #131a2e;
     --muted: #55618a;
-    --faint: #8891ad;
+    --faint: #656e8f;
+    --link: #0e7490;
+    --focus: #045981;
     --shadow: 0 18px 50px -30px rgba(30, 41, 90, 0.35);
     --shadow-sm: 0 10px 26px -20px rgba(30, 41, 90, 0.4);
 
@@ -95,7 +104,7 @@ h1, h2, h3, h4 {
 }
 
 a {
-    color: var(--accent-2);
+    color: var(--link);
 }
 
 code, pre, .mono {
@@ -104,7 +113,7 @@ code, pre, .mono {
 }
 
 :focus-visible {
-    outline: 2px solid var(--accent-2);
+    outline: 2px solid var(--focus);
     outline-offset: 2px;
     border-radius: 6px;
 }
@@ -290,7 +299,7 @@ main {
 }
 
 .drop .link {
-    color: var(--accent-2);
+    color: var(--link);
     text-decoration: underline;
 }
 
@@ -456,6 +465,17 @@ main {
     flex-wrap: wrap;
 }
 
+.jump-note {
+    font-size: 12.5px;
+    color: var(--text);
+    background: var(--card-2);
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 7px 11px;
+    margin-bottom: 10px;
+}
+
 .empty {
     color: var(--muted);
     font-size: 13.5px;
@@ -580,6 +600,11 @@ label.inline {
     align-items: end;
     padding: 0 6px 3px;
     gap: 8px;
+    cursor: default;
+}
+
+.wf-rlabel {
+    color: var(--faint);
 }
 
 .wf-axis {
@@ -851,6 +876,26 @@ td .tpl {
     overflow-wrap: anywhere;
 }
 
+/* A real button so the jump-to-request affordance is reachable by keyboard and
+   announced to screen readers; styled to read as the plain template it wraps. */
+.tpl-btn {
+    display: inline-block;
+    background: none;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.tpl-btn:hover .tpl,
+.tpl-btn:focus-visible .tpl {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
 .param {
     color: var(--accent-3);
 }
@@ -1031,8 +1076,16 @@ td .tpl {
         grid-template-columns: 1fr;
     }
 
+    /* The path column gets a floor of its own instead of surrendering everything
+       to the bar track - below 860px every row used to read "/api/v2/…". */
     .wf-row, .wf-ruler {
-        grid-template-columns: 34px minmax(0, 1fr) 120px 56px;
+        grid-template-columns: 30px minmax(120px, 1.7fr) minmax(96px, 1fr) 52px;
+        gap: 6px;
+    }
+
+    /* Five tick labels do not fit in a ~100px track; keep 0 / half / full. */
+    .wf-tick.hideable {
+        display: none;
     }
 }
 
@@ -1053,13 +1106,66 @@ td .tpl {
         font-size: 18px;
     }
 
+    /* Kept, not hidden: this is the sentence that answers "what is this page". */
     .sub {
-        display: none;
+        font-size: 12.5px;
     }
 
-    .wf-row, .wf-ruler {
-        grid-template-columns: 26px minmax(0, 1fr) 80px 48px;
-        gap: 5px;
+    /* Below 560px the bar moves onto its own line under the path, so both the
+       endpoint and the timing stay legible instead of sharing ~80px. */
+    .wf-row {
+        grid-template-columns: 26px minmax(0, 1fr) 50px;
+        grid-template-areas:
+            "idx name time"
+            "idx track track";
+        row-gap: 3px;
+        column-gap: 6px;
+        align-items: center;
+    }
+
+    .wf-row .wf-idx {
+        grid-area: idx;
+        align-self: start;
+        padding-top: 2px;
+    }
+
+    .wf-row .wf-name {
+        grid-area: name;
+    }
+
+    .wf-row .wf-track {
+        grid-area: track;
+        height: 9px;
+    }
+
+    .wf-row .wf-time {
+        grid-area: time;
+    }
+
+    .wf-ruler {
+        grid-template-columns: 26px minmax(0, 1fr) 50px;
+        grid-template-areas:
+            "idx label label"
+            "idx axis axis";
+        row-gap: 2px;
+        column-gap: 6px;
+        align-items: end;
+    }
+
+    .wf-ruler .wf-idx {
+        grid-area: idx;
+    }
+
+    .wf-rlabel {
+        grid-area: label;
+    }
+
+    .wf-axis {
+        grid-area: axis;
+    }
+
+    .wf-rtail {
+        display: none;
     }
 
     .kv {

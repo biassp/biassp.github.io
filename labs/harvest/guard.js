@@ -18,12 +18,28 @@
   'use strict';
 
   /* ---- theme ---- */
-  var stored = null;
-  try { stored = localStorage.getItem('harvest.theme'); } catch (e) { /* blocked, fine */ }
-  if (!stored) { try { stored = localStorage.getItem('theme'); } catch (e2) { /* the CV's own key */ } }
+  // Values are stored RAW ('light' / 'dark') by both this lab and the CV. An older
+  // build of this page wrote a JSON-encoded '"light"' through a save() helper, which
+  // this reader never matched - so strip stray quotes and heal that value instead of
+  // pinning a returning visitor to dark forever.
+  function readTheme(key) {
+    var v = null;
+    try { v = localStorage.getItem(key); } catch (e) { return null; }
+    if (v == null) return null;
+    v = String(v).replace(/^"+|"+$/g, '');
+    return (v === 'light' || v === 'dark') ? v : null;
+  }
+  // Anything unrecognised under our own key must fall through to the CV's shared
+  // key, not be treated as a valid choice.
+  var stored = readTheme('harvest.theme') || readTheme('theme');
   // Dark by default, exactly like the CV, which also ignores prefers-color-scheme
   // so that a visitor who chose a theme there sees the same one here.
   var theme = (stored === 'light' || stored === 'dark') ? stored : 'dark';
+  // Self-heal a legacy quoted value so it stops shadowing the CV key on later loads.
+  try {
+    var raw = localStorage.getItem('harvest.theme');
+    if (raw != null && raw !== 'light' && raw !== 'dark') localStorage.setItem('harvest.theme', theme);
+  } catch (e3) { /* site data blocked */ }
   document.documentElement.setAttribute('data-theme', theme);
   document.documentElement.classList.add('js');
 

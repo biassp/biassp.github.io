@@ -114,6 +114,16 @@ just self-reported by the build agent):
     so costs swapped between destination warehouses. All fixed and independently re-verified.
     Note the cross-tab fix took a better route than the review suggested: put() -> add(), so a
     colliding key throws and the tab stops writing, instead of minting UUIDs to dodge it.
+    Open gaps, stated in its README: two-tab posting is PREVENTED (one writer holds a lock),
+    not supported, with a residual sub-second race if a frozen tab's 9s lock lapses; the rupiah
+    conservation identity is still engine-derived, though quantities and per-document transfer
+    value are now cross-checked against the raw journal ("buku hidup: 21/21 invarian" in the
+    header); only ledger entries persist, not the nota/PO/transfer document objects, so a nota
+    created this session is not selectable in the retur picker after a reload (its entries and
+    cumulative retur history survive and are still enforced); retur pembelian is costed by the
+    active method rather than against the specific receipt; and entries written by an older
+    build carry no nilaiDpp, so they are estimated as PPN-inclusive and counted in
+    total.dppTaksiran with the live-book check going red — visible rather than silent.
   RECURRING BUG TO CHECK IN EVERY NEW LAB: both labs shipped a light-theme regression where
   --accent/--accent-2 were not overridden, leaving dark-surface cyan on near-white and text
   below AA. Check the light block overrides EVERY accent token before shipping.

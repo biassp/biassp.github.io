@@ -527,16 +527,28 @@
               if (qty > tersedia) qty = tersedia;
               var hargaU = cs.hargaJual;
               if (plg.diskonBp) hargaU = hargaU - D.divRound(D.mul(hargaU, plg.diskonBp), 10000);
-              var ent = L.tambah(out.buku, {
-                tgl: hari, sku: cs.sku, gudang: gj, arah: -1, qty: qty,
-                jenis: 'jual', dok: nota.id, nilaiJual: D.mul(qty, hargaU), catatan: ''
-              });
-              bump(cs.sku, gj, -qty);
-              nota.baris.push({ sku: cs.sku, satuan: D.satuanBasis(cs).kode, qtySatuan: qty, qty: qty, harga: hargaU, diskon: 0, entryId: ent.id });
+              nota.baris.push({ sku: cs.sku, satuan: D.satuanBasis(cs).kode, qtySatuan: qty, qty: qty, harga: hargaU, diskon: 0, entryId: null });
             }
             if (!nota.baris.length) { ksSeq--; continue; }
+            /* PPN is rounded ONCE per nota, so the document total has to exist
+             * before its lines can be written to the ledger: each sale entry
+             * carries its allocated share of the nota's DPP, and that is the
+             * figure gross profit is computed from. Writing the entries first
+             * and the total afterwards is what left the ledger with revenue on
+             * one tax base and cost on another. */
             var tot = P.totalKeranjang(nota.baris, { ppnInklusif: true });
             nota.total = tot.total; nota.dpp = tot.dpp; nota.ppn = tot.ppn; nota.subtotal = tot.subtotal;
+            for (var ki = 0; ki < nota.baris.length; ki++) {
+              var kb = nota.baris[ki];
+              var ent = L.tambah(out.buku, {
+                tgl: hari, sku: kb.sku, gudang: gj, arah: -1, qty: kb.qty,
+                jenis: 'jual', dok: nota.id, nilaiJual: D.mul(kb.qty, kb.harga),
+                nilaiDpp: tot.baris[ki].dpp, catatan: ''
+              });
+              bump(kb.sku, gj, -kb.qty);
+              kb.entryId = ent.id;
+              kb.nilaiDpp = tot.baris[ki].dpp;
+            }
             /* Payment mix: mostly cash rounded up to a note, some QRIS for the
              * exact amount, a few split. */
             if (r.chance(0.58)) {
@@ -566,7 +578,10 @@
         rjSeq++;
         var rj = {
           id: nomor('RJ', rjSeq), tgl: hari, notaId: asal.id, gudang: asal.gudang,
-          baris: [{ sku: brs.sku, qtyBase: qR, refEntry: brs.entryId, nilaiJual: D.mul(qR, brs.harga) }],
+          baris: [{
+            sku: brs.sku, qtyBase: qR, refEntry: brs.entryId, nilaiJual: D.mul(qR, brs.harga),
+            nilaiDpp: D.isInt(brs.nilaiDpp) ? D.divRound(D.mul(brs.nilaiDpp, qR), brs.qty) : null
+          }],
           alasan: r.pick(['barang cacat', 'salah varian', 'kemasan penyok', 'batal beli'])
         };
         var es = P.returPenjualan(out.buku, { id: asal.id, gudang: asal.gudang }, rj.baris, hari, rj.id);

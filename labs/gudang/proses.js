@@ -73,6 +73,15 @@
     var pot = D.isInt(opsi.diskonNota) ? opsi.diskonNota : 0;
     var dasar = sub - pot;
     var pjk = D.hitungPpn(dasar, !!opsi.ppnInklusif);
+    /* The document's DPP, split across its own lines so each ledger entry can
+     * carry the VAT-exclusive share of the revenue it represents. The split is
+     * an allocation of the one rounded document figure (D.alokasi), so the lines
+     * add up to the nota exactly — and a later report can subtract cost from
+     * revenue without mixing two tax bases. */
+    var bobot = [], i2;
+    for (i2 = 0; i2 < rows.length; i2++) bobot.push(rows[i2].jumlah);
+    var bagi = D.alokasi(pjk.dpp, bobot);
+    for (i2 = 0; i2 < rows.length; i2++) rows[i2].dpp = bagi[i2];
     return {
       baris: rows,
       subtotal: sub,
@@ -227,9 +236,16 @@
     var out = [];
     for (var i = 0; i < tr.baris.length; i++) {
       var b = tr.baris[i];
+      /* ref points at THIS shipment's own receipt into TRANSIT. TRANSIT is one
+       * location per SKU, so when a second shipment of the same SKU is on the
+       * road the ordinary oldest-first pick would hand this arrival the other
+       * shipment's cost layers and swap the two destinations' values. The
+       * reference lets the costing engine take back exactly what this transfer
+       * put in. */
       var keluar = L.tambah(buku, {
         tgl: tglTerima, sku: b.sku, gudang: D.TRANSIT, arah: -1, qty: b.qtyBase,
-        jenis: 'transfer-keluar', dok: tr.id, catatan: 'tiba di ' + tr.keGudang
+        jenis: 'transfer-keluar', dok: tr.id, ref: b.entryTransit || null,
+        catatan: 'tiba di ' + tr.keGudang
       });
       var masuk = L.tambah(buku, {
         tgl: tglTerima, sku: b.sku, gudang: tr.keGudang, arah: 1, qty: b.qtyBase,
@@ -368,6 +384,10 @@
         tgl: tgl, sku: b.sku, gudang: jual.gudang, arah: 1, qty: b.qtyBase,
         jenis: 'retur-jual', dok: dok, ref: b.refEntry,
         nilaiJual: D.isInt(b.nilaiJual) ? b.nilaiJual : null,
+        /* The DPP share of what is being handed back, taken from the sale line's
+         * own DPP rather than recomputed from the price — so a retur nets out of
+         * revenue on exactly the base the sale went in on. */
+        nilaiDpp: D.isInt(b.nilaiDpp) ? b.nilaiDpp : null,
         catatan: 'retur atas ' + jual.id
       }));
     }

@@ -627,6 +627,11 @@ tr.sel { background: var(--card-2); }
     font-size: 11px;
 }
 
+/* The live-book card prints a sentence next to a check that PASSED as well as
+   one that failed, and a passing figure must not be rendered in the failure
+   colour. */
+.tcase.ok .msg { color: var(--faint); }
+
 /* ------------------------------------------------------------------ misc */
 
 .grid2 {
@@ -642,12 +647,14 @@ tr.sel { background: var(--card-2); }
     align-items: start;
 }
 
-/* Specificity matters here. `input[type=number]` is (0,1,1) and `.nilai-input`
-   is (0,1,0), so the intended padding, font-size and font-family were dead
-   declarations: the field rendered at 13px Inter inside 20px of horizontal
-   padding in a 58px box, and a mark of 100 was clipped to "10(". Qualifying the
-   class with the element+attribute selector wins, and the box is wide enough for
-   three digits plus the spinner. */
+/* The numeric fields are input[type=text] with inputmode="numeric", not
+   type=number: every keystroke re-renders the panel and Chromium refuses
+   selectionStart/setSelectionRange on a number field, so the caret could not be
+   restored and typing "30" produced 3 (see numInput in app.js). The rule is
+   written for both spellings — the class alone is (0,1,0) and used to lose to
+   the (0,1,1) element+attribute selector, which left the padding, font-size and
+   font-family as dead declarations and clipped a three-digit figure. */
+input.nilai-input,
 input[type=number].nilai-input {
     width: 68px;
     text-align: right;
@@ -656,6 +663,7 @@ input[type=number].nilai-input {
     font-size: 12px;
 }
 
+input.nilai-input.edited,
 input[type=number].nilai-input.edited {
     border-color: var(--accent-3);
     color: var(--accent-3);
@@ -817,6 +825,13 @@ input[type=number].nilai-input.edited {
    right, because a cashier looks at exactly one number. */
 .kasir-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; align-items: start; }
 
+/* Grid tracks default to min-width:auto exactly like flex items do, so the
+   cart table's 820px min-width escaped its own .tbl-wrap and pushed the WHOLE
+   document into horizontal scroll at 390px — 846px of scrollWidth against a
+   390px viewport — as soon as the cart was non-empty. The same defensive rule
+   is already on .field for flex; the grid was missed. */
+.kasir-grid > * { min-width: 0; }
+
 .total-blok {
     background: var(--bg-soft);
     border: 1px solid var(--border-strong);
@@ -884,8 +899,16 @@ td.varians-kurang { color: var(--gerak-keluar); font-weight: 600; }
 .kv2 dt { color: var(--faint); }
 .kv2 dd { font-family: var(--mono); }
 
+/* The search box lives in a .controls flex row. Without a flex-basis its
+   .field parent shrank to ~192px, and because max-width resolves against the
+   parent the 340px cap never applied — the placeholder that documents the Enter
+   key was clipped mid-sentence, which is the one instruction a new cashier
+   needs. */
+.controls .field.field-cari { flex: 1 1 340px; max-width: 420px; }
+
 .cari {
     width: 100%;
+    min-width: 0;
     max-width: 340px;
     background: var(--bg-soft);
     border: 1px solid var(--border-strong);
@@ -942,6 +965,17 @@ html[data-theme="light"] input[type="date"] { color-scheme: light; }
     font-family: inherit;
 }
 .chip[aria-pressed="true"] { border-color: var(--accent); color: var(--text); background: var(--card-2); }
+
+/* The suggestion Enter will pick. Marked visibly AND with aria-selected, so what
+   the cashier sees and what the key does cannot drift apart. Not colour alone:
+   the chip also carries a ⏎ glyph in its label. */
+.chip.pilihan {
+    border-color: var(--accent);
+    color: var(--text);
+    background: var(--card-2);
+    box-shadow: inset 0 0 0 1px var(--accent);
+    font-weight: 600;
+}
 
 /* The role chip is TEXT, and --accent is a border/focus hue: #6366f1 on the
    context bar measured 3.81:1, under AA. The chip keeps the indigo as its
@@ -1034,8 +1068,20 @@ html[data-theme="light"] input[type="date"] { color-scheme: light; }
 
     /* The struk is the only thing worth printing, so on paper everything else
        gets out of the way. It prints at receipt width, not A4-wide, because a
-       cashier prints it on an 80 mm roll. */
-    .panel > .card:not(.struk-wrap) { display: none !important; }
+       cashier prints it on an 80 mm roll.
+
+       This is an ALLOW-LIST, not a list of things to hide, because the deny-list
+       version missed two blocks that are not `.panel > .card`: the fabrication
+       banner (a child of <main>) and the message box renderPesan appends
+       (a `.terima-ok` / `.tolak`, complete with a live Tutup button). Together
+       they burned 133 mm of an 80 mm roll before the receipt began. Anything
+       added to a panel later cannot leak onto the paper either. */
+    main > *,
+    .panels > *,
+    .panel > * { display: none !important; }
+    main > .panels { display: block !important; }
+    .panels > .panel:not([hidden]) { display: block !important; }
+    .panel > .struk-wrap { display: block !important; }
     .struk { max-width: 74mm; font-family: var(--mono); font-size: 10px; }
     .struk table { font-size: 9.5px; }
 }

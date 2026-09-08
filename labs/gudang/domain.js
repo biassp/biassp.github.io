@@ -287,6 +287,40 @@
     return { dpp: dpp, ppn: ppn, total: dpp + ppn, inklusif: false };
   };
 
+  /* Split an integer total across integer weights so the parts sum EXACTLY to
+   * the total. Largest remainder: floor every share, then hand the residue out
+   * one rupiah at a time, biggest discarded fraction first.
+   *
+   * This is what lets a document-level figure become per-line figures without
+   * the lines drifting away from the document they belong to. PPN is rounded
+   * once per nota (see hitungPpn); the DPP of each LINE is then an allocation of
+   * that one rounded number, not a second independent rounding. Rounding each
+   * line on its own is how a nota ends up whose DPP column does not add up to
+   * its own DPP total. */
+  D.alokasi = function (total, bobot) {
+    if (!D.isInt(total)) throw new Error('total alokasi harus bilangan bulat, dapat ' + total);
+    var n = bobot.length, out = new Array(n), i, jml = 0;
+    for (i = 0; i < n; i++) {
+      if (!D.isInt(bobot[i])) throw new Error('bobot alokasi harus bilangan bulat, dapat ' + bobot[i]);
+      jml += bobot[i];
+    }
+    if (n === 0) return out;
+    for (i = 0; i < n; i++) out[i] = 0;
+    if (jml === 0) { out[0] = total; return out; }
+    var sisa = total, resid = [];
+    for (i = 0; i < n; i++) {
+      var atas = D.mul(total, bobot[i]);
+      var q = D.divFloor(atas, jml);
+      out[i] = q;
+      sisa -= q;
+      resid.push({ i: i, r: atas - D.mul(q, jml) });
+    }
+    resid.sort(function (a, b) { return (b.r - a.r) || (a.i - b.i); });
+    var arah = sisa >= 0 ? 1 : -1, sisaAbs = Math.abs(sisa);
+    for (var k = 0; k < sisaAbs; k++) out[resid[k % n].i] += arah;
+    return out;
+  };
+
   /* ------------------------------------------------------------ barcode */
 
   /* EAN-13 with a correct check digit, built on prefix 299.

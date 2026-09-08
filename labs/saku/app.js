@@ -64,18 +64,23 @@
   /* ---------------- snackbar ---------------- */
 
   var snackTimer = null;
+  function hideSnack() {
+    $('snackbar').hidden = true;
+    if (snackTimer) { clearTimeout(snackTimer); snackTimer = null; }
+  }
   function snack(text, actionLabel, onAction) {
     var bar = $('snackbar'), btn = $('snackAction');
     $('snackText').textContent = text;
     btn.hidden = !actionLabel;
     if (actionLabel) {
       btn.textContent = actionLabel;
-      btn.onclick = function () { bar.hidden = true; onAction && onAction(); };
+      btn.onclick = function () { hideSnack(); onAction && onAction(); };
     }
     bar.hidden = false;
     if (snackTimer) clearTimeout(snackTimer);
-    snackTimer = setTimeout(function () { bar.hidden = true; }, actionLabel ? 7000 : 3500);
+    snackTimer = setTimeout(function () { bar.hidden = true; snackTimer = null; }, actionLabel ? 7000 : 3500);
   }
+  $('snackClose').addEventListener('click', hideSnack);
 
   /* ---------------- theme ---------------- */
 
@@ -97,6 +102,15 @@
   var VIEWS = ['engine', 'inbox', 'capture'];
   var current = 'engine';
 
+  /* Storage can be denied outright (Firefox with cookies blocked, Chrome with
+     site data blocked). Every fire-and-forget renderer routes its rejection here
+     so a blocked browser produces a degraded UI, not console noise. */
+  var lastDbError = null;
+  function noteDbError(err) {
+    lastDbError = err || new Error('storage unavailable');
+    return null;
+  }
+
   function showView(name, push) {
     if (VIEWS.indexOf(name) < 0) name = 'engine';
     current = name;
@@ -108,8 +122,8 @@
     if (push !== false) {
       try { history.replaceState(null, '', '#/' + name); } catch (e) {}
     }
-    if (name === 'inbox') renderInbox();
-    if (name === 'engine') refreshEngine();
+    if (name === 'inbox') renderInbox().catch(noteDbError);
+    if (name === 'engine') refreshEngine().catch(noteDbError);
     try { $('view-' + name).focus({ preventScroll: true }); } catch (e) { $('view-' + name).focus(); }
   }
 
@@ -133,15 +147,28 @@
   /* ---------------- service worker ---------------- */
 
   var swReg = null;
-  var swSupported = 'serviceWorker' in navigator;
+  /* Probe by READING, not by `in`: in a sandboxed iframe without allow-same-origin
+     the property exists but throws on access, which would kill this whole IIFE. */
+  var swApi = null;
   var swError = null;
+  try { swApi = navigator.serviceWorker || null; } catch (e) { swApi = null; swError = String(e && e.message || e); }
+  var swSupported = !!swApi;
+  var swUnregistered = false;
   var lastBus = [];
 
+  function swController() {
+    if (!swApi) return null;
+    try { return swApi.controller || null; } catch (e) { return null; }
+  }
+
   function swStateText() {
-    if (!swSupported) return 'unsupported';
+    if (!swSupported) return swError ? 'unavailable' : 'unsupported';
     if (swError) return 'failed';
+    if (swUnregistered && !swReg) {
+      return swController() ? 'unregistered (still controlling until reload)' : 'unregistered';
+    }
     if (!swReg) return 'registering…';
-    if (navigator.serviceWorker.controller) return 'controlling';
+    if (swController()) return 'controlling';
     if (swReg.active) return 'active, not controlling';
     if (swReg.installing) return 'installing';
     if (swReg.waiting) return 'waiting';
@@ -152,13 +179,16 @@
     var pill = $('pillSW');
     var s = swStateText();
     pill.textContent = 'sw: ' + s;
-    pill.className = 'pill' + (s === 'controlling' ? ' good' : (s === 'unsupported' || s === 'failed' ? ' bad' : ' warn'));
-    var ready = !!(swSupported && navigator.serviceWorker.controller);
+    pill.className = 'pill' + (s === 'controlling' ? ' good'
+      : (s === 'unsupported' || s === 'failed' || s === 'unavailable' ? ' bad' : ' warn'));
+    var ready = !!swController();
     $('shareFetchBtn').disabled = !ready;
     $('shareNavBtn').disabled = !ready;
     $('shareHint').textContent = ready
       ? 'The worker controls this page, so the POST below is intercepted locally. Watch the trace.'
-      : (swError
+      : (swUnregistered && !swReg
+        ? 'You unregistered the worker. The already-active worker keeps controlling this page until you reload, so the share pipeline still commits — but nothing is registered any more. Reload to register a fresh one and replay the cold start.'
+        : swError
         ? 'Service worker unavailable here: ' + swError + '. That happens in a private window, behind a blocked-worker policy, or on an insecure origin — so the share pipeline is switched off rather than left to fail silently. Capture, the parser, IndexedDB, the outbox and every panel below still work.'
         : (swSupported
           ? 'Waiting for the service worker to take control of this client. Until it does, a POST to ./share would escape to the network and the host would answer 405 — which is exactly the failure window this app is built to close.'
@@ -172,23 +202,24 @@
       paintSWPill();
       return;
     }
-    navigator.serviceWorker.register('./sw.js', { scope: './' }).then(function (reg) {
+    swApi.register('./sw.js', { scope: './' }).then(function (reg) {
       if (!reg) throw new Error('registration returned nothing — workers are blocked in this context');
       swReg = reg;
+      swUnregistered = false;
       paintSWPill();
       reg.addEventListener('updatefound', function () {
         var nw = reg.installing;
         if (!nw) return;
         nw.addEventListener('statechange', function () {
           paintSWPill();
-          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+          if (nw.state === 'installed' && swController()) {
             $('updateBanner').hidden = false;
           }
           refreshEngine();
         });
       });
-      if (reg.waiting && navigator.serviceWorker.controller) $('updateBanner').hidden = false;
-      return navigator.serviceWorker.ready;
+      if (reg.waiting && swController()) $('updateBanner').hidden = false;
+      return swApi.ready;
     }).then(function () {
       paintSWPill();
       refreshEngine();
@@ -201,7 +232,7 @@
       refreshEngine();
     });
 
-    navigator.serviceWorker.addEventListener('controllerchange', function () {
+    swApi.addEventListener('controllerchange', function () {
       paintSWPill();
       refreshEngine();
     });
@@ -214,21 +245,22 @@
 
   $('swRefresh').addEventListener('click', function () {
     if (!swSupported) return;
-    navigator.serviceWorker.getRegistration().then(function (r) {
-      swReg = r || swReg;
-      if (r) r.update().catch(function () {});
+    swApi.getRegistration().then(function (r) {
+      swReg = r || null;
+      if (r) { swUnregistered = false; r.update().catch(function () {}); }
       paintSWPill();
       refreshEngine();
       snack('Service worker state re-read.');
-    });
+    }).catch(function (e) { snack('Could not re-read the worker: ' + String(e && e.message || e)); });
   });
 
   $('swUnregister').addEventListener('click', function () {
     if (!swReg) return;
     swReg.unregister().then(function () {
       swReg = null;
+      swUnregistered = true;
       paintSWPill();
-      refreshEngine();
+      refreshEngine().catch(noteDbError);
       snack('Unregistered. Reload to register a fresh worker and replay the cold start.', 'Reload', function () { location.reload(); });
     });
   });
@@ -377,7 +409,7 @@
       $('shareStatus').textContent = 'Share failed: ' + String(err && err.message || err);
       traceLocal('fetch threw: ' + String(err && err.message || err), 'err');
     }).then(function () {
-      btn.disabled = !(swSupported && navigator.serviceWorker.controller);
+      btn.disabled = !(swSupported && swController());
     });
   });
 
@@ -434,6 +466,17 @@
 
   var persistedState = 'unknown';
 
+  function hasStorageAPI(name) {
+    try { return !!(navigator.storage && navigator.storage[name]); } catch (e) { return false; }
+  }
+
+  /* window.caches THROWS, it does not return undefined, in a sandboxed iframe
+     without allow-same-origin — same trap as navigator.serviceWorker. */
+  var cachesError = null;
+  function cacheStore() {
+    try { return window.caches || null; } catch (e) { cachesError = String(e && e.message || e); return null; }
+  }
+
   function renderCaps() {
     var body = $('capsBody');
     clear(body);
@@ -442,10 +485,15 @@
     body.appendChild(capRow('Secure context', secure,
       secure ? location.protocol + '//' + location.hostname + ' is a secure context'
         : 'service workers are disabled outside https:// and http://localhost'));
-    body.appendChild(capRow('Service worker', swSupported && secure && !swError,
+    var swMark;
+    if (!swSupported || swError) swMark = false;
+    else if (!secure) swMark = false;
+    else if (swUnregistered && !swReg) swMark = null;
+    else swMark = true;
+    body.appendChild(capRow('Service worker', swMark,
       swError ? swError : (swSupported ? 'state: ' + swStateText() : 'API absent (private window?)')));
     body.appendChild(capRow('Simulate a share (this page → ./share)',
-      !!(swSupported && navigator.serviceWorker.controller),
+      !!(swSupported && swController()),
       'works on every browser that runs a service worker, desktop included'));
 
     var shareTargetLikely = isAndroid() && isChromium();
@@ -463,9 +511,16 @@
           : (isIOS() ? 'iOS fires no prompt: use Share → Add to Home Screen'
             : 'not fired yet (already installed, dismissed recently, or unsupported)'))));
 
-    body.appendChild(capRow('IndexedDB', !!window.indexedDB, 'every entry, the outbox and the simulated peer live here'));
-    body.appendChild(capRow('Storage estimate', !!(navigator.storage && navigator.storage.estimate), 'quota bar above'));
-    body.appendChild(capRow('Persistent storage', !!(navigator.storage && navigator.storage.persist),
+    /* Reading window.indexedDB THROWS in Firefox when site data is blocked, so the
+       one panel meant to report the degradation must not be the thing that breaks. */
+    var idbOK = false, idbThrew = null;
+    try { idbOK = !!window.indexedDB; } catch (e) { idbOK = false; idbThrew = String(e && e.message || e); }
+    body.appendChild(capRow('IndexedDB', idbOK,
+      idbOK ? 'every entry, the outbox and the simulated peer live here'
+        : (idbThrew ? 'blocked by this browser\u2019s site-data setting (' + idbThrew + ') — the panels below say so instead of showing zeros'
+          : 'API absent in this context — capture and the parser still run, nothing is persisted')));
+    body.appendChild(capRow('Storage estimate', hasStorageAPI('estimate'), 'quota bar above'));
+    body.appendChild(capRow('Persistent storage', hasStorageAPI('persist'),
       'current: ' + persistedState + ' — a denial is normal and is reported, not hidden'));
 
     var bgSync = false;
@@ -480,6 +535,9 @@
         : 'desktop browsers ignore capture= and open the file picker instead — the photo pipeline still runs'));
     body.appendChild(capRow('OffscreenCanvas in the worker', typeof OffscreenCanvas === 'function',
       'used to downscale a shared photo before it is committed'));
+    body.appendChild(capRow('Cache Storage (offline shell)', !!cacheStore(),
+      cacheStore() ? 'the precached shell that makes a cold offline load work'
+        : (cachesError ? 'blocked in this context: ' + cachesError : 'API absent — the app still runs, it just cannot serve itself offline')));
     body.appendChild(capRow('BroadcastChannel', typeof BroadcastChannel === 'function',
       'live pipeline trace; without it the trace is still persisted on the entry'));
     body.appendChild(capRow('Vibration', !!navigator.vibrate, 'long-press haptics on entry rows'));
@@ -489,112 +547,168 @@
 
   /* ---------------- engine panels ---------------- */
 
-  function refreshSW() {
-    var body = $('swBody');
+  /* Every panel below is repainted from several places at once (boot, the SW
+     lifecycle events, the BroadcastChannel, tab switches). A row appended from a
+     stale async continuation into a tbody a newer pass already repainted is how
+     the landing view ended up printing each counter seven times. So: one
+     generation token per panel, and one synchronous swap of a DocumentFragment
+     at the end — never clear-now-append-later. */
+  var swGen = 0, idbGen = 0, quotaGen = 0;
+
+  function swapRows(body, rows) {
+    var frag = document.createDocumentFragment();
+    rows.forEach(function (r) { frag.appendChild(r); });
     clear(body);
-    body.appendChild(kvRow('state', swStateText()));
-    body.appendChild(kvRow('controls this client', swSupported && navigator.serviceWorker.controller ? 'yes' : 'no'));
-    body.appendChild(kvRow('scope', swReg ? swReg.scope.replace(location.origin, '') : '—'));
-    body.appendChild(kvRow('installing / waiting / active',
+    body.appendChild(frag);
+  }
+
+  function refreshSW() {
+    var gen = ++swGen;
+    var body = $('swBody');
+    var rows = [];
+    rows.push(kvRow('state', swStateText()));
+    rows.push(kvRow('controls this client', swSupported && swController() ? 'yes' : 'no'));
+    rows.push(kvRow('scope', swReg ? swReg.scope.replace(location.origin, '') : '—'));
+    rows.push(kvRow('installing / waiting / active',
       swReg ? [!!swReg.installing, !!swReg.waiting, !!swReg.active].join(' / ') : '— / — / —'));
-    body.appendChild(kvRow('secure context', String(!!window.isSecureContext)));
-    if (swError) body.appendChild(kvRow('error', swError));
+    rows.push(kvRow('secure context', String(!!window.isSecureContext)));
+    if (swError) rows.push(kvRow('error', swError));
 
     $('swNote').textContent = swReg && swReg.waiting
       ? 'A newer worker is installed and waiting. It will not take over until you say so.'
-      : 'No skipWaiting() on install: code is never swapped under a live session.';
+      : (swUnregistered && !swReg
+        ? 'Nothing is registered. The worker that is still controlling this client keeps running until you reload — that is the spec, not a stale reading.'
+        : 'No skipWaiting() on install: code is never swapped under a live session.');
 
-    if (window.caches) {
-      caches.keys().then(function (keys) {
-        var mine = keys.filter(function (k) { return k.indexOf('saku-shell-') === 0; });
-        body.appendChild(kvRow('cache names', mine.join(', ') || '(none yet)'));
-        if (mine.length) {
-          return caches.open(mine[0]).then(function (c) { return c.keys(); }).then(function (reqs) {
-            body.appendChild(kvRow('precached entries', String(reqs.length)));
-          });
-        }
-      }).catch(function () {});
-    } else {
-      body.appendChild(kvRow('Cache Storage', 'unavailable'));
+    function paint(extra) {
+      if (gen !== swGen) return false;          // a newer pass owns this tbody
+      swapRows(body, rows.concat(extra || []));
+      return true;
     }
+
+    var cs = cacheStore();
+    if (!cs) {
+      paint([kvRow('Cache Storage', cachesError ? 'unavailable: ' + cachesError : 'unavailable')]);
+      return Promise.resolve();
+    }
+    paint();   // never leave the card empty while caches.keys() resolves
+    return cs.keys().then(function (keys) {
+      var mine = keys.filter(function (k) { return k.indexOf('saku-shell-') === 0; });
+      var extra = [kvRow('cache names', mine.join(', ') || '(none yet)')];
+      if (!mine.length) return extra;
+      return cs.open(mine[0]).then(function (c) { return c.keys(); }).then(function (reqs) {
+        extra.push(kvRow('precached entries', String(reqs.length)));
+        return extra;
+      });
+    }).then(function (extra) {
+      paint(extra);
+    }).catch(function (err) {
+      paint([kvRow('Cache Storage', 'unreadable: ' + String(err && err.message || err))]);
+    });
   }
 
   function refreshIDB() {
+    var gen = ++idbGen;
     var body = $('idbBody');
+    var rows = [];
     return S.schema().then(function (sc) {
-      clear(body);
-      body.appendChild(kvRow('database', sc.name));
-      body.appendChild(kvRow('schema version', 'v' + sc.version));
-      body.appendChild(kvRow('object stores', sc.stores.join(', ')));
+      rows.push(kvRow('database', sc.name));
+      rows.push(kvRow('schema version', 'v' + sc.version));
+      rows.push(kvRow('object stores', sc.stores.join(', ')));
       return Promise.all([S.listEntries(), S.outboxAll(), S.peerAll(), S.merchantAll(), S.metaGet('lamport', 0)]);
     }).then(function (r) {
-      body.appendChild(kvRow('entries', String(r[0].length)));
-      body.appendChild(kvRow('outbox rows', String(r[1].length)));
-      body.appendChild(kvRow('peer rows (simulated)', String(r[2].length)));
-      body.appendChild(kvRow('merchant map', String(r[3].length)));
-      body.appendChild(kvRow('Lamport counter', String(r[4])));
+      rows.push(kvRow('entries', String(r[0].length)));
+      rows.push(kvRow('outbox rows', String(r[1].length)));
+      rows.push(kvRow('peer rows (simulated)', String(r[2].length)));
+      rows.push(kvRow('merchant map', String(r[3].length)));
+      rows.push(kvRow('Lamport counter', String(r[4])));
+      if (gen !== idbGen) return r[0];
+      swapRows(body, rows);
       var log = $('migrationLog');
-      clear(log);
       var lines = S.migrationLog;
+      var items = [];
       if (!lines.length) {
-        log.appendChild(el('li', 'empty', 'Schema already at v' + S.DB_VERSION + ' — no migration ran in this session.'));
+        items.push(el('li', 'empty', 'Schema already at v' + S.DB_VERSION + ' — no migration ran in this session.'));
       } else {
-        lines.forEach(function (m) { log.appendChild(el('li', 'ok', fmtTime(m.t) + '  ' + m.msg)); });
+        lines.forEach(function (m) { items.push(el('li', 'ok', fmtTime(m.t) + '  ' + m.msg)); });
       }
+      swapRows(log, items);
       return r[0];
     }).catch(function (err) {
-      clear(body);
-      body.appendChild(kvRow('error', String(err && err.message || err)));
+      if (gen === idbGen) {
+        swapRows(body, [
+          kvRow('error', String(err && err.message || err)),
+          kvRow('what this means', 'this browser is refusing IndexedDB for this origin, so nothing below is persisted — the counters are withheld rather than shown as zero')
+        ]);
+      }
       return [];
     });
   }
 
+  var outboxGen = 0;
   function refreshOutbox() {
-    var body = $('outboxBody');
+    var gen = ++outboxGen;
     return S.outboxAll().then(function (jobs) {
-      clear(body);
-      body.appendChild(kvRow('depth', String(jobs.length)));
+      var rows = [];
+      rows.push(kvRow('depth', String(jobs.length)));
       var next = jobs.length ? Math.min.apply(null, jobs.map(function (j) { return j.nextAt; })) : null;
-      body.appendChild(kvRow('next retry', next === null ? '—' :
+      rows.push(kvRow('next retry', next === null ? '—' :
         (next <= Date.now() ? 'due now' : 'in ' + Math.round((next - Date.now()) / 1000) + 's (' + fmtTime(next) + ')')));
       var attempts = jobs.reduce(function (a, j) { return Math.max(a, j.attempts || 0); }, 0);
-      body.appendChild(kvRow('max attempts on a row', String(attempts)));
-      body.appendChild(kvRow('backoff', 'min(30s, 500ms·2^n) with half-range jitter'));
+      rows.push(kvRow('max attempts on a row', String(attempts)));
+      rows.push(kvRow('backoff', 'min(30s, 500ms·2^n) with half-range jitter'));
       var leased = jobs.filter(function (j) { return j.claimedBy && j.leaseUntil > Date.now(); });
-      body.appendChild(kvRow('leased by a client', leased.length ? leased.length + ' (claim + ' + S.LEASE_MS / 1000 + 's lease)' : 'none'));
+      rows.push(kvRow('leased by a client', leased.length ? leased.length + ' (claim + ' + S.LEASE_MS / 1000 + 's lease)' : 'none'));
       var lastErr = jobs.map(function (j) { return j.lastError; }).filter(Boolean)[0];
-      body.appendChild(kvRow('last error', lastErr || 'none'));
-      body.appendChild(kvRow('sync trigger', autoDrain ? 'auto: online + visibilitychange + 5s timer' : 'manual only'));
+      rows.push(kvRow('last error', lastErr || 'none'));
+      rows.push(kvRow('sync trigger', autoDrain ? 'auto: online + visibilitychange + 5s timer' : 'manual only'));
+      if (gen === outboxGen) swapRows($('outboxBody'), rows);
       return jobs;
+    }, function (err) {
+      if (gen === outboxGen) {
+        swapRows($('outboxBody'), [kvRow('error', String(err && err.message || err))]);
+      }
+      return [];
     });
   }
 
   function refreshQuota() {
+    var gen = ++quotaGen;
     var text = $('quotaText'), fill = $('quotaFill'), body = $('storageBody');
-    clear(body);
-    if (!(navigator.storage && navigator.storage.estimate)) {
-      text.textContent = 'navigator.storage.estimate() is unavailable in this browser.';
-      fill.style.width = '0%';
-      body.appendChild(kvRow('estimate API', 'unavailable'));
+    function paint(rows) {
+      if (gen !== quotaGen) return false;
+      swapRows(body, rows);
+      return true;
+    }
+    if (!hasStorageAPI('estimate')) {
+      if (gen === quotaGen) {
+        text.textContent = 'navigator.storage.estimate() is unavailable in this browser.';
+        fill.style.width = '0%';
+      }
+      paint([kvRow('estimate API', 'unavailable')]);
       return Promise.resolve();
     }
     return navigator.storage.estimate().then(function (est) {
       var used = est.usage || 0, quota = est.quota || 0;
       var pct = quota ? Math.min(100, (used / quota) * 100) : 0;
-      fill.style.width = pct.toFixed(2) + '%';
-      text.textContent = fmtBytes(used) + ' used of ' + fmtBytes(quota) + ' (' + pct.toFixed(3) + '%)';
-      body.appendChild(kvRow('usage', fmtBytes(used)));
-      body.appendChild(kvRow('quota', fmtBytes(quota)));
-      if (navigator.storage.persisted) {
+      var rows = [kvRow('usage', fmtBytes(used)), kvRow('quota', fmtBytes(quota))];
+      if (gen === quotaGen) {
+        fill.style.width = pct.toFixed(2) + '%';
+        text.textContent = fmtBytes(used) + ' used of ' + fmtBytes(quota) + ' (' + pct.toFixed(3) + '%)';
+      }
+      if (hasStorageAPI('persisted')) {
         return navigator.storage.persisted().then(function (p) {
           persistedState = p ? 'granted' : 'not granted';
-          body.appendChild(kvRow('persistent', persistedState));
+          rows.push(kvRow('persistent', persistedState));
+          paint(rows);
         });
       }
       persistedState = 'API unavailable';
-      body.appendChild(kvRow('persistent', persistedState));
+      rows.push(kvRow('persistent', persistedState));
+      paint(rows);
     }).catch(function (err) {
-      text.textContent = 'estimate failed: ' + String(err && err.message || err);
+      if (gen === quotaGen) text.textContent = 'estimate failed: ' + String(err && err.message || err);
+      paint([kvRow('estimate', 'failed: ' + String(err && err.message || err))]);
     });
   }
 
@@ -611,8 +725,8 @@
   });
 
   function refreshEngine() {
-    refreshSW();
-    renderCaps();
+    try { refreshSW(); } catch (e) { noteDbError(e); }
+    try { renderCaps(); } catch (e) { noteDbError(e); }
     return Promise.all([refreshIDB(), refreshOutbox(), refreshQuota()]).then(function () {
       return null;
     }).catch(function () { return null; });
@@ -639,7 +753,8 @@
       var v = transform ? transform(this) : this.checked;
       var patch = {};
       patch[key] = v;
-      S.setChaos(patch).then(function () { snack('Chaos updated: ' + key + ' = ' + v); });
+      S.setChaos(patch).then(function () { snack('Chaos updated: ' + key + ' = ' + v); })
+        .catch(function (e) { snack('Chaos not stored: ' + String(e && e.message || e)); });
     });
   }
   bindChaos('chaosOffline', 'offline');
@@ -650,11 +765,11 @@
     $('failRateOut').textContent = this.value + '%';
   });
   $('chaosFailRate').addEventListener('change', function () {
-    S.setChaos({ failRate: parseInt(this.value, 10) / 100 });
+    S.setChaos({ failRate: parseInt(this.value, 10) / 100 }).catch(noteDbError);
   });
   $('chaosLatency').addEventListener('input', function () { $('latencyOut').textContent = this.value + ' ms'; });
   $('chaosLatency').addEventListener('change', function () {
-    S.setChaos({ latencyMs: parseInt(this.value, 10) });
+    S.setChaos({ latencyMs: parseInt(this.value, 10) }).catch(noteDbError);
   });
 
   $('divergeBtn').addEventListener('click', function () {
@@ -720,7 +835,7 @@
     autoDrain = !autoDrain;
     this.setAttribute('aria-pressed', autoDrain ? 'true' : 'false');
     this.textContent = 'Auto-drain: ' + (autoDrain ? 'on' : 'off');
-    refreshOutbox();
+    refreshOutbox().catch(noteDbError);
   });
 
   setInterval(function () {
@@ -748,10 +863,29 @@
 
   var lastDeleted = null;
 
+  var inboxEmptyHTML = $('inboxEmptyText').innerHTML;
+
+  function setInboxEmpty(err) {
+    var title = $('inboxEmptyTitle'), text = $('inboxEmptyText'), cta = $('inboxEmptyCta');
+    if (err) {
+      title.textContent = 'The inbox cannot be read — storage is blocked here';
+      text.textContent = 'This browser refused IndexedDB for this origin (' +
+        String(err && err.message || err) + '). That is a site-data setting, not an empty list: ' +
+        'nothing was captured, and nothing was lost. The parser, the capability matrix and the ' +
+        'service-worker panels above still run.';
+      cta.hidden = true;
+    } else {
+      title.textContent = 'Nothing captured yet';
+      text.innerHTML = inboxEmptyHTML;
+      cta.hidden = false;
+    }
+  }
+
   function renderInbox() {
     return S.listEntries().then(function (rows) {
       var list = $('entryList');
       clear(list);
+      setInboxEmpty(null);
       $('inboxCount').textContent = String(rows.length);
       $('inboxEmpty').hidden = rows.length > 0;
       var pending = rows.filter(function (r) { return !r.synced; }).length;
@@ -760,6 +894,14 @@
         : '';
       rows.forEach(function (r) { list.appendChild(entryRow(r)); });
       return rows;
+    }, function (err) {
+      clear($('entryList'));
+      $('inboxCount').textContent = '—';
+      $('inboxSummary').textContent = '';
+      setInboxEmpty(err);
+      $('inboxEmpty').hidden = false;
+      noteDbError(err);
+      return [];
     });
   }
 
@@ -855,39 +997,86 @@
   function removeEntry(r) {
     lastDeleted = r;
     S.deleteEntry(r.id).then(function () {
-      renderInbox();
-      refreshEngine();
+      renderInbox().catch(noteDbError);
+      refreshEngine().catch(noteDbError);
       snack('Deleted "' + (r.merchant || 'entry') + '".', 'Undo', function () {
         var copy = {};
         for (var k in lastDeleted) copy[k] = lastDeleted[k];
         copy.__isEntry = true;
         S.commitEntry(copy).then(function () {
           snack('Restored, with a fresh outbox job.');
-          renderInbox(); refreshEngine();
-        });
+          renderInbox().catch(noteDbError); refreshEngine().catch(noteDbError);
+        }).catch(function (e) { snack('Undo failed: ' + String(e && e.message || e)); });
       });
-    });
+    }).catch(function (e) { snack('Delete failed: ' + String(e && e.message || e)); });
   }
 
   /* ---------------- entry sheet ---------------- */
 
+  var FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), ' +
+    'textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  var sheetOpener = null;
+  var SHEET_IDS = { scrim: 1, entrySheet: 1, conflictSheet: 1, snackbar: 1 };
+
+  /* aria-modal alone is a promise the page has to keep: while a sheet is open the
+     rest of the document is inert, so Tab and a screen reader cannot walk behind
+     the scrim, and closing hands focus back to whatever opened the sheet. */
+  function setBackgroundInert(on) {
+    Array.prototype.forEach.call(document.body.children, function (n) {
+      if (n.tagName === 'SCRIPT' || (n.id && SHEET_IDS[n.id])) return;
+      if (on) {
+        n.setAttribute('aria-hidden', 'true');
+        try { n.inert = true; } catch (e) {}
+      } else {
+        n.removeAttribute('aria-hidden');
+        try { n.inert = false; } catch (e) {}
+      }
+    });
+  }
+
+  function openSheets() { return !$('entrySheet').hidden || !$('conflictSheet').hidden; }
+
   function openSheet(sheet) {
+    var opener = document.activeElement;
+    sheetOpener = (opener && opener !== document.body && document.contains(opener)) ? opener : null;
     $('scrim').hidden = false;
     sheet.hidden = false;
     sheet.style.height = '62dvh';
+    document.body.classList.add('sheet-open');
+    setBackgroundInert(true);
     var f = sheet.querySelector('button, [tabindex]');
     if (f) f.focus();
   }
+
   function closeSheets() {
+    var was = openSheets();
     $('scrim').hidden = true;
     $('entrySheet').hidden = true;
     $('conflictSheet').hidden = true;
+    document.body.classList.remove('sheet-open');
+    setBackgroundInert(false);
+    if (was && sheetOpener && document.contains(sheetOpener)) {
+      try { sheetOpener.focus({ preventScroll: true }); } catch (e) { try { sheetOpener.focus(); } catch (e2) {} }
+    }
+    sheetOpener = null;
   }
+
   $('scrim').addEventListener('click', closeSheets);
   $('entryClose').addEventListener('click', closeSheets);
   $('conflictClose').addEventListener('click', closeSheets);
   document.addEventListener('keydown', function (ev) {
-    if (ev.key === 'Escape') closeSheets();
+    if (ev.key === 'Escape') { closeSheets(); return; }
+    if (ev.key !== 'Tab') return;
+    var sheet = !$('entrySheet').hidden ? $('entrySheet') : (!$('conflictSheet').hidden ? $('conflictSheet') : null);
+    if (!sheet) return;
+    var nodes = Array.prototype.filter.call(sheet.querySelectorAll(FOCUSABLE), function (n) {
+      return n.offsetWidth > 0 || n.offsetHeight > 0 || n === document.activeElement;
+    });
+    if (!nodes.length) return;
+    var first = nodes[0], last = nodes[nodes.length - 1];
+    var inside = sheet.contains(document.activeElement);
+    if (ev.shiftKey && (!inside || document.activeElement === first)) { ev.preventDefault(); last.focus(); }
+    else if (!ev.shiftKey && (!inside || document.activeElement === last)) { ev.preventDefault(); first.focus(); }
   });
 
   function openEntry(id) {
@@ -938,10 +1127,9 @@
 
       body.appendChild(el('h3', 'mini', 'Correct a field'));
       var wrap = el('div', 'row');
-      var mi = el('input');
+      var mi = el('input', 'ctl grow');
       mi.type = 'text'; mi.value = r.merchant || ''; mi.setAttribute('aria-label', 'Merchant');
-      mi.style.flex = '1';
-      var cat = el('select');
+      var cat = el('select', 'ctl');
       cat.setAttribute('aria-label', 'Category');
       ['', 'Food', 'Transport', 'Shopping', 'Bills', 'Income', 'Other'].forEach(function (c) {
         var o = el('option', null, c || '(none)');
@@ -957,7 +1145,9 @@
           .then(function () {
             snack('Correction committed — new outbox job queued, merchant map updated.');
             closeSheets();
-            renderInbox(); refreshEngine(); renderMerchants();
+            renderInbox().catch(noteDbError);
+            refreshEngine().catch(noteDbError);
+            renderMerchants().catch(noteDbError);
           })
           .catch(function (e) { snack('Update failed: ' + e.message); });
       });
@@ -1009,7 +1199,7 @@
         var theirs = el('td', null, String(f.theirs) + '  (clock ' + f.theirClock + ')');
         tr.appendChild(mine); tr.appendChild(theirs);
         var pick = el('td');
-        var sel = el('select');
+        var sel = el('select', 'ctl');
         sel.setAttribute('aria-label', 'Keep which value for ' + f.field);
         [['mine', 'this device'], ['theirs', 'peer']].forEach(function (o) {
           var op = el('option', null, o[1]);
@@ -1201,7 +1391,7 @@
       $('photoOut').hidden = true;
       $('pasteText').value = '';
       doParse();
-      return Promise.all([renderInbox(), refreshEngine(), renderMerchants()]);
+      return Promise.all([renderInbox(), refreshEngine(), renderMerchants()]).catch(noteDbError);
     }).catch(function (err) {
       var name = (err && err.name) || 'Error';
       snack(name + ': ' + (err && err.message || err) + ' — transaction aborted.');
@@ -1210,13 +1400,16 @@
   });
 
   function verifyNoOrphan() {
-    Promise.all([S.listEntries(), S.outboxAll()]).then(function (r) {
+    return Promise.all([S.listEntries(), S.outboxAll()]).then(function (r) {
       var ids = {};
       r[0].forEach(function (e) { ids[e.id] = true; });
       var orphanJobs = r[1].filter(function (j) { return !ids[j.entryId]; }).length;
       $('chaosNote').textContent =
         'Post-abort check: ' + r[0].length + ' entries, ' + r[1].length + ' outbox rows, ' +
         orphanJobs + ' orphaned job(s). The abort left nothing half-written.';
+    }).catch(function (e) {
+      $('chaosNote').textContent = 'Post-abort check could not run: ' + String(e && e.message || e) +
+        ' — storage is unavailable in this browser, so there is nothing to verify.';
     });
   }
 
@@ -1311,18 +1504,31 @@
   $('wipeBtn').addEventListener('click', function () {
     if (!window.confirm('Delete the database, every cache and the service worker registration?')) return;
     S.deleteDatabase().then(function () {
-      if (!window.caches) return null;
-      return caches.keys().then(function (ks) {
-        return Promise.all(ks.map(function (k) { return caches.delete(k); }));
+      var cs = cacheStore();
+      if (!cs) return null;
+      return cs.keys().then(function (ks) {
+        return Promise.all(ks.map(function (k) { return cs.delete(k); }));
       });
     }).then(function () {
       if (!swSupported) return null;
-      return navigator.serviceWorker.getRegistrations().then(function (rs) {
+      return swApi.getRegistrations().then(function (rs) {
         return Promise.all(rs.map(function (r) { return r.unregister(); }));
       });
     }).then(function () {
+      /* The card these numbers sit in is titled "Detected live, not assumed", so
+         it must not keep asserting 5 rows in a database that no longer exists. */
+      swReg = null;
+      swUnregistered = true;
+      paintSWPill();
+      return Promise.all([
+        renderInbox().catch(noteDbError),
+        renderMerchants().catch(noteDbError),
+        refreshConflicts().catch(noteDbError),
+        refreshEngine().catch(noteDbError)
+      ]);
+    }).then(function () {
       snack('Wiped. Reload for a genuine cold start.', 'Reload', function () { location.reload(); });
-    }).catch(function (e) { snack('Wipe failed: ' + e.message); });
+    }).catch(function (e) { snack('Wipe failed: ' + String(e && e.message || e)); });
   });
 
   $('seedBtn').addEventListener('click', function () {
@@ -1390,10 +1596,13 @@
     showView(startView, false);
   }).catch(function (err) {
     // A blocked-storage browser must still get a usable page, not a blank one.
+    noteDbError(err);
     snack('IndexedDB unavailable: ' + String(err && err.message || err) + '. The page still renders.');
+    setInboxEmpty(err);
     showView(startView, false);
     refreshSW();
     renderCaps();
+    refreshQuota().catch(noteDbError);
   });
 
   window.addEventListener('hashchange', function () {

@@ -100,12 +100,92 @@
     });
   };
 
+  /* add(), not put(). A ledger entry is append-only, and its key is the entry
+   * id: if a key already exists, something has gone wrong upstream and the
+   * right answer is a rejected promise the caller can show the user — not a
+   * silent overwrite that destroys a posted document. */
+  St.add = function (store, rec) {
+    if (St.mode === 'memori') {
+      if (Object.prototype.hasOwnProperty.call(mem[store], rec.k)) {
+        return Promise.reject(new Error('kunci ' + rec.k + ' sudah ada di ' + store));
+      }
+      mem[store][rec.k] = rec;
+      return Promise.resolve(rec);
+    }
+    return tx(store, 'readwrite', function (os) {
+      if (!os) {
+        if (Object.prototype.hasOwnProperty.call(mem[store], rec.k)) throw new Error('kunci ' + rec.k + ' sudah ada di ' + store);
+        mem[store][rec.k] = rec;
+        return rec;
+      }
+      os.add(rec);
+      return rec;
+    });
+  };
+
+  /* ------------------------------------------------------- kunci tulis */
+
+  /* ONE tab writes. Entry ids come from a counter that lives in the book, and a
+   * book lives in a tab: two tabs both minting E4199 and both calling put()
+   * means the second write destroys the first — a posted document vanishing on
+   * reload, two documents sharing one number, stock going negative. The counter
+   * cannot be made safe by being careful with it, so instead exactly one tab
+   * holds the write lock and the others are read-only and say so.
+   *
+   * The lock is a single record read and written inside ONE readwrite
+   * transaction, and IndexedDB serialises overlapping readwrite transactions on
+   * the same store, so the read-modify-write is atomic across tabs. It carries a
+   * timestamp and the holder refreshes it; a lock older than ttl belongs to a
+   * tab that is gone, and may be taken. */
+  St.lock = function (tabId, ttl) {
+    ttl = ttl || 9000;
+    var out = { ok: false, holder: null, at: 0, mode: St.mode };
+    if (St.mode === 'memori') { out.ok = true; out.holder = tabId; return Promise.resolve(out); }
+    return tx('konfig', 'readwrite', function (os) {
+      if (!os) { out.ok = true; out.holder = tabId; return out; }
+      var g = os.get('lock');
+      g.onsuccess = function () {
+        var v = g.result && g.result.v, now = Date.now();
+        if (!v || !v.tab || v.tab === tabId || (now - (v.at || 0)) > ttl) {
+          out.ok = true; out.holder = tabId; out.at = now;
+          try { os.put({ k: 'lock', v: { tab: tabId, at: now } }); } catch (e) { out.ok = false; }
+        } else {
+          out.ok = false; out.holder = v.tab; out.at = v.at || 0;
+        }
+      };
+      return out;
+    }).then(function (r) { return r || out; }).catch(function () { out.ok = false; return out; });
+  };
+
+  /* Best-effort release on unload so a second tab does not have to wait out the
+   * ttl. Losing this (a crash, a killed tab) is survivable: the ttl expires. */
+  St.unlock = function (tabId) {
+    if (St.mode === 'memori') return Promise.resolve();
+    return tx('konfig', 'readwrite', function (os) {
+      if (!os) return null;
+      var g = os.get('lock');
+      g.onsuccess = function () {
+        var v = g.result && g.result.v;
+        if (v && v.tab === tabId) { try { os.put({ k: 'lock', v: { tab: null, at: 0 } }); } catch (e) { } }
+      };
+      return null;
+    }).catch(function () { });
+  };
+
   St.del = function (store, k) {
     if (St.mode === 'memori') { delete mem[store][k]; return Promise.resolve(); }
     return tx(store, 'readwrite', function (os) {
       if (!os) { delete mem[store][k]; return; }
       os.delete(k);
     });
+  };
+
+  St.get = function (store, k) {
+    if (St.mode === 'memori') return Promise.resolve(mem[store][k] || null);
+    return tx(store, 'readonly', function (os) {
+      if (!os) return mem[store][k] || null;
+      return { __req: os.get(k) };
+    }).then(function (r) { return r || null; }).catch(function () { return null; });
   };
 
   St.all = function (store) {

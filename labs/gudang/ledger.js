@@ -130,11 +130,20 @@
     return { entries: [], seqBerikut: 1, tutup: {}, dokBerikut: {} };
   };
 
+  /* Document number width, per prefix. The seed prints cashier notas six digits
+   * wide (there are thousands of them) and everything else five, and a number
+   * minted at runtime has to be format-identical to a seeded one: KS-01445
+   * sorts BEFORE KS-001444 lexicographically, and the nota pickers sort
+   * lexicographically. One table, used by both sides. */
+  L.LEBAR_DOK = { KS: 6 };
+  L.lebarDok = function (prefix) { return L.LEBAR_DOK[prefix] || 5; };
+
   L.nomorDok = function (buku, prefix) {
     if (!buku.dokBerikut[prefix]) buku.dokBerikut[prefix] = 1;
     var n = buku.dokBerikut[prefix]++;
     var s = String(n);
-    while (s.length < 5) s = '0' + s;
+    var lebar = L.lebarDok(prefix);
+    while (s.length < lebar) s = '0' + s;
     return prefix + '-' + s;
   };
 
@@ -160,6 +169,11 @@
       dok: e.dok || '',
       harga: (e.harga === undefined) ? null : e.harga,
       nilaiJual: D.isInt(e.nilaiJual) ? e.nilaiJual : null,
+      /* The VAT-exclusive share of nilaiJual for this line, allocated once from
+       * the nota's own rounded DPP (see D.alokasi). Revenue and cost have to be
+       * on the same tax base before they are subtracted from each other, and
+       * the only place that base is known is the document. */
+      nilaiDpp: D.isInt(e.nilaiDpp) ? e.nilaiDpp : null,
       ref: e.ref || null,               // referenced entry id (retur -> penjualan)
       pasangan: e.pasangan || null,     // transfer: the paired movement
       alasan: e.alasan || null,
@@ -243,6 +257,12 @@
       saldoAwal: 0, pembelian: 0, returBeli: 0, hppJual: 0, returJual: 0,
       adjMasuk: 0, adjKeluar: 0, transferMasuk: 0, transferKeluar: 0,
       masuk: 0, keluar: 0, penjualanBruto: 0,
+      /* penjualanBruto is the money the customer handed over — PPN included
+       * when the nota is inclusive. penjualanDpp is the same sales, net of
+       * output PPN. Gross profit uses the DPP figure, never the bruto one:
+       * subtracting VAT-exclusive cost from VAT-inclusive revenue overstates
+       * the margin by the whole of the output tax. */
+      penjualanDpp: 0, returJualBruto: 0, returJualDpp: 0, dppTaksiran: 0,
       qtyMasuk: 0, qtyKeluar: 0
     };
   }
@@ -256,6 +276,23 @@
     for (k in m) if (Object.prototype.hasOwnProperty.call(m, k)) o[k] = m[k];
     return o;
   }
+
+  /* A per-document costing result, copied deeply enough that comparing two runs
+   * compares numbers rather than object identity. */
+  function cloneHasil(r) {
+    var o = {}, k;
+    for (k in r) if (Object.prototype.hasOwnProperty.call(r, k)) o[k] = r[k];
+    if (r.layers) {
+      var ls = new Array(r.layers.length);
+      for (var i = 0; i < r.layers.length; i++) {
+        var l = r.layers[i];
+        ls[i] = { kunci: l.kunci, srcId: l.srcId, srcDok: l.srcDok, tgl: l.tgl, qty: l.qty, unitCost: l.unitCost, nilai: l.nilai };
+      }
+      o.layers = ls;
+    }
+    return o;
+  }
+  L.cloneHasil = cloneHasil;
 
   /* Insert a layer in (tgl, seq) order. Ordinary receipts always carry the
    * largest key so far and land at the end after one comparison; a layer
@@ -294,6 +331,19 @@
     var hargaAcuan = opts.hargaAcuan || {};
 
     function get(k) { return st[k] || (st[k] = stKosong()); }
+
+    /* The DPP (VAT-exclusive) amount of a sale or sales-return line. The entry
+     * carries it because only the document knew whether its prices included
+     * PPN. An entry written before that field existed is estimated as inclusive
+     * — which is what every seeded and every live nota actually was — and the
+     * estimate is COUNTED so a report can say so out loud instead of quietly
+     * mixing two tax bases. */
+    function dppDari(e) {
+      if (D.isInt(e.nilaiDpp)) return e.nilaiDpp;
+      if (!D.isInt(e.nilaiJual)) return 0;
+      total.dppTaksiran++;
+      return D.hitungPpn(e.nilaiJual, true).dpp;
+    }
 
     function hargaJatuhTempo(k, sku) {
       var s = st[k];
@@ -356,6 +406,61 @@
       return { nilai: nilai, layers: dipakai, kurang: kurang };
     }
 
+    /* Consume the SPECIFIC layers a paired receipt created, not whatever the
+     * FIFO queue happens to hold. This exists for the arrival leg of a
+     * transfer: TRANSIT is one location per SKU, so when two shipments of the
+     * same SKU are on the road at once, an ordinary oldest-first pick would
+     * hand the arriving shipment the other one's cost layers and swap the two
+     * destinations' inventory values — while global conservation still closes,
+     * because the two errors offset. Matching on (kunci, unitCost) gives the
+     * arrival exactly the value its own send leg put into TRANSIT.
+     *
+     * If a matching layer is genuinely missing the shortfall falls through to
+     * the ordinary queue, so the function degrades to the old behaviour instead
+     * of inventing value. */
+    function ambilPasangan(k, qty, refHasil, sku) {
+      var s = get(k), nilai = 0, dipakai = [], cocok = 0, i, j;
+      if (fifo) {
+        for (i = 0; i < refHasil.layers.length; i++) {
+          var mau = refHasil.layers[i], sisaM = mau.qty;
+          while (sisaM > 0) {
+            var idx = -1;
+            for (j = 0; j < s.layers.length; j++) {
+              if (s.layers[j].qty > 0 && s.layers[j].kunci === mau.kunci && s.layers[j].unitCost === mau.unitCost) { idx = j; break; }
+            }
+            if (idx < 0) break;
+            var lay = s.layers[idx];
+            var amb = sisaM < lay.qty ? sisaM : lay.qty;
+            var nl = D.mul(amb, lay.unitCost);
+            nilai += nl;
+            cocok += amb;
+            dipakai.push({ kunci: lay.kunci, srcId: lay.srcId, srcDok: lay.srcDok, tgl: lay.tgl, qty: amb, unitCost: lay.unitCost, nilai: nl });
+            lay.qty -= amb;
+            sisaM -= amb;
+            if (lay.qty === 0) s.layers.splice(idx, 1);
+          }
+        }
+      } else {
+        /* Weighted average keeps no layers, so the pooled TRANSIT average would
+         * blend two shipments just as badly. The value that arrives is exactly
+         * the value that left, which is the whole claim TRANSIT makes. */
+        nilai = refHasil.nilai;
+        cocok = qty;
+        dipakai.push({ kunci: '~transit', srcId: refHasil.srcId || null, srcDok: 'TRANSIT', tgl: null, qty: qty, unitCost: qty ? D.divRound(nilai, qty) : 0, nilai: nilai });
+      }
+      s.qty -= cocok;
+      s.nilai -= nilai;
+      var kurang = 0;
+      if (cocok < qty) {
+        var tambahan = ambil(k, qty - cocok, sku);
+        nilai += tambahan.nilai;
+        kurang = tambahan.kurang;
+        dipakai = dipakai.concat(tambahan.layers);
+        ctx.pasanganTakLengkap++;
+      }
+      return { nilai: nilai, layers: dipakai, kurang: kurang };
+    }
+
     function taruh(k, qty, unitCost, kunci, srcId, srcDok, tgl) {
       var s = get(k);
       var nilai = D.mul(qty, unitCost);
@@ -372,13 +477,24 @@
      * per unit the sale was charged. The units returned are taken from the TAIL
      * of the original consumption — if a sale of 10 ate 4 from an old layer and
      * 6 from a newer one, returning 6 puts back the newer six. */
-    function taruhKembali(k, qty, refHasil, unitFallback, kunciFallback, srcId, srcDok, tgl) {
+    function taruhKembali(k, qty, refHasil, unitFallback, kunciFallback, srcId, srcDok, tgl, lewati) {
       var nilai = 0, kembali = [];
+      lewati = lewati || 0;
       if (refHasil && refHasil.layers && refHasil.layers.length) {
-        var sisa = qty;
+        var sisa = qty, lompat = lewati;
         for (var i = refHasil.layers.length - 1; i >= 0 && sisa > 0; i--) {
           var lay = refHasil.layers[i];
-          var amb = sisa < lay.qty ? sisa : lay.qty;
+          /* Units this sale has ALREADY given back on an earlier retur are gone
+           * from the tail: walk past them first. Without this cursor a return
+           * split into two postings restores the tail twice and puts back more
+           * value than the sale ever took out. */
+          var tersedia = lay.qty;
+          if (lompat > 0) {
+            if (lompat >= tersedia) { lompat -= tersedia; continue; }
+            tersedia -= lompat;
+            lompat = 0;
+          }
+          var amb = sisa < tersedia ? sisa : tersedia;
           var nl = fifo ? D.mul(amb, lay.unitCost) : D.divRound(D.mul(refHasil.nilai, amb), refHasil.qty);
           if (fifo) {
             nilai += nl;
@@ -422,7 +538,11 @@
           idx: i,
           st: cloneSt(st),
           total: cloneTotal(total),
-          lastHarga: cloneMap(lastHarga)
+          lastHarga: cloneMap(lastHarga),
+          /* The per-sale retur cursor is costing state like any other: an
+           * incremental replay that restarts without it would let a sale give
+           * back its tail a second time. */
+          returTerpakai: cloneMap(ctx.returTerpakai)
         });
         ctx.periodeBerjalan = per;
       }
@@ -446,11 +566,29 @@
         total.keluar += a.nilai; total.qtyKeluar += e.qty;
         if (e.jenis === 'jual') {
           total.hppJual += a.nilai;
-          if (D.isInt(e.nilaiJual)) total.penjualanBruto += e.nilaiJual;
+          if (D.isInt(e.nilaiJual)) {
+            total.penjualanBruto += e.nilaiJual;
+            total.penjualanDpp += dppDari(e);
+          }
         } else total.returBeli += a.nilai;
 
       } else if (e.jenis === 'transfer-keluar') {
-        var a2 = ambil(k, e.qty, e.sku);
+        /* The arrival leg issues out of TRANSIT and points at the send leg's
+         * receipt into TRANSIT, so it can be costed with the layers that
+         * shipment actually carried. Without the reference (an old entry, or a
+         * plain issue) it goes through the ordinary queue. */
+        var a2;
+        if (e.gudang === TRANSIT && e.ref) {
+          var srcT = hasil[e.ref];
+          if (!srcT) throw new Error('kedatangan transfer ' + e.id + ' tidak menemukan kaki kirim ' + e.ref);
+          if (srcT.jenis !== 'transfer-masuk' || srcT.sku !== e.sku || srcT.gudang !== TRANSIT || srcT.qty !== e.qty) {
+            throw new Error('kaki kirim ' + e.ref + ' bukan pasangan sah untuk kedatangan ' + e.id +
+              ' (jenis ' + srcT.jenis + ', sku ' + srcT.sku + ', qty ' + srcT.qty + ')');
+          }
+          a2 = ambilPasangan(k, e.qty, srcT, e.sku);
+        } else {
+          a2 = ambil(k, e.qty, e.sku);
+        }
         r = { qty: e.qty, nilai: a2.nilai, unit: e.qty ? D.divRound(a2.nilai, e.qty) : 0, layers: a2.layers, kurang: a2.kurang };
         total.keluar += a2.nilai; total.transferKeluar += a2.nilai; total.qtyKeluar += e.qty;
 
@@ -460,6 +598,14 @@
          * strictly smaller seq, and (tgl, seq) is the processing order. */
         var src = e.pasangan ? hasil[e.pasangan] : null;
         if (!src) throw new Error('transfer masuk ' + e.id + ' tidak menemukan pasangan keluar ' + e.pasangan);
+        /* Adopting whatever result object happens to sit at that id is how an
+         * unrelated document's cost ends up funding a receipt. The pair has to
+         * BE the issue for the same SKU and the same quantity, out of a
+         * different location, or the book is not the book we think it is. */
+        if (src.jenis !== 'transfer-keluar' || src.sku !== e.sku || src.qty !== e.qty || src.gudang === e.gudang) {
+          throw new Error('transfer masuk ' + e.id + ' berpasangan dengan dokumen yang bukan kaki keluarnya: ' +
+            e.pasangan + ' (jenis ' + src.jenis + ', sku ' + src.sku + ', qty ' + src.qty + ', gudang ' + src.gudang + ')');
+        }
         var nilaiT = 0, lys = [];
         var sT = get(k);
         for (var t = 0; t < src.layers.length; t++) {
@@ -486,10 +632,27 @@
 
       } else if (e.jenis === 'retur-jual') {
         var refH = e.ref ? hasil[e.ref] : null;
+        if (refH && (refH.jenis !== 'jual' || refH.sku !== e.sku)) {
+          throw new Error('retur ' + e.id + ' menunjuk dokumen yang bukan penjualan SKU yang sama: ' +
+            e.ref + ' (jenis ' + refH.jenis + ', sku ' + refH.sku + ')');
+        }
         var fb = hargaJatuhTempo(k, e.sku);
-        var rk = taruhKembali(k, e.qty, refH, fb, kk, e.id, e.dok, e.tgl);
+        var sudah = (e.ref && ctx.returTerpakai[e.ref]) || 0;
+        var rk = taruhKembali(k, e.qty, refH, fb, kk, e.id, e.dok, e.tgl, sudah);
+        if (e.ref) ctx.returTerpakai[e.ref] = sudah + e.qty;
+        /* A sale cannot be returned more than it sold. The posting screen
+         * refuses it, but the engine is where the invariant belongs: anything
+         * that appended entries some other way still gets counted here, and
+         * the live-book check on the header badge reads this list. */
+        if (refH && sudah + e.qty > refH.qty) {
+          ctx.returLebih.push({ ref: e.ref, entry: e.id, dok: e.dok, sku: e.sku, qtyRetur: sudah + e.qty, qtyJual: refH.qty });
+        }
         r = { qty: e.qty, nilai: rk.nilai, unit: e.qty ? D.divRound(rk.nilai, e.qty) : 0, layers: rk.layers, kurang: 0 };
         total.masuk += rk.nilai; total.returJual += rk.nilai; total.qtyMasuk += e.qty;
+        if (D.isInt(e.nilaiJual)) {
+          total.returJualBruto += e.nilaiJual;
+          total.returJualDpp += dppDari(e);
+        }
 
       } else if (e.jenis === 'adjust') {
         if (e.arah > 0) {
@@ -515,6 +678,8 @@
       r.jenis = e.jenis;
       r.tgl = e.tgl;
       r.seq = e.seq;
+      r.sku = e.sku;
+      r.gudang = e.gudang;
       hasil[e.id] = r;
     }
   }
@@ -533,7 +698,8 @@
       metode: metodeMinta,
       st: {}, hasil: {}, total: totalKosong(), lastHarga: {},
       defisit: [], snapshots: [], periodeBerjalan: null,
-      urutSalah: 0, layerNegatif: 0, entryBerjalan: null
+      urutSalah: 0, layerNegatif: 0, entryBerjalan: null,
+      returTerpakai: {}, returLebih: [], pasanganTakLengkap: 0
     };
     jalankan(entriesSorted, 0, ctx, opts);
     return bungkus(ctx, entriesSorted, opts);
@@ -556,6 +722,9 @@
       snapshots: ctx.snapshots,
       urutSalah: ctx.urutSalah,
       layerNegatif: ctx.layerNegatif,
+      returLebih: ctx.returLebih,
+      pasanganTakLengkap: ctx.pasanganTakLengkap,
+      periksaUrutan: !!opts.periksaUrutan,
       akhir: { nilai: akhirNilai, qty: akhirQty },
       jumlahEntry: sorted.length
     };
@@ -585,10 +754,14 @@
     var mulaiIdx = 0;
     while (mulaiIdx < entriesSorted.length && D.periodeOf(entriesSorted[mulaiIdx].tgl) < snap.periode) mulaiIdx++;
 
+    /* Pre-boundary results are COPIED, not aliased. Handing bandingkan() the
+     * very same object for "before" and "after" would make its comparison
+     * b.nilai !== a.nilai unable to fire for those documents no matter what the
+     * engine did — the panel would be reporting a tautology as evidence. */
     var hasil = {};
     for (var j = 0; j < mulaiIdx; j++) {
       var e = entriesSorted[j];
-      if (sebelumnya.hasil[e.id]) hasil[e.id] = sebelumnya.hasil[e.id];
+      if (sebelumnya.hasil[e.id]) hasil[e.id] = cloneHasil(sebelumnya.hasil[e.id]);
     }
     var ctx = {
       metode: metode,
@@ -597,7 +770,8 @@
       total: cloneTotal(snap.total),
       lastHarga: cloneMap(snap.lastHarga),
       defisit: [], snapshots: [], periodeBerjalan: D.periodeSebelum(snap.periode),
-      urutSalah: 0, layerNegatif: 0, entryBerjalan: null
+      urutSalah: 0, layerNegatif: 0, entryBerjalan: null,
+      returTerpakai: cloneMap(snap.returTerpakai || {}), returLebih: [], pasanganTakLengkap: 0
     };
     jalankan(entriesSorted, mulaiIdx, ctx, opts);
     var out = bungkus(ctx, entriesSorted, opts);
@@ -633,6 +807,180 @@
       transferSeimbang: t.transferMasuk === t.transferKeluar,
       seimbang: (kiri - hasil.akhir.nilai) === 0 && t.transferMasuk === t.transferKeluar
     };
+  };
+
+  /* The DPP of one sale / sales-return entry, for a report that walks entries
+   * itself rather than reading the folded totals. Same fallback as the fold. */
+  L.dppEntry = function (e) {
+    if (D.isInt(e.nilaiDpp)) return e.nilaiDpp;
+    if (!D.isInt(e.nilaiJual)) return 0;
+    return D.hitungPpn(e.nilaiJual, true).dpp;
+  };
+
+  /* --------------------------------------------------------- laba kotor */
+
+  /* Gross profit, on ONE tax base, net of returns on BOTH sides.
+   *
+   * Two mistakes are possible here and both were made:
+   *   1. Subtracting VAT-exclusive cost from VAT-inclusive revenue. The output
+   *      PPN sitting inside an inclusive nota is not margin, it is money owed to
+   *      the state; on the demo book that alone inflated gross profit by 128%.
+   *   2. Netting returns from neither side. A cancelled sale leaves its revenue
+   *      and its cost in the totals and carries phantom margin between them.
+   *
+   * So: revenue = penjualanDpp - returJualDpp, cost = hppJual - returJual, and
+   * the function refuses to hand back a figure whose two sides do not agree on
+   * their base. Margin is returned in basis points as an integer — a percentage
+   * of an odd rupiah figure is a float, and this file does not store floats. */
+  L.labaKotor = function (hasil) {
+    var t = hasil.total;
+    var penjualan = t.penjualanDpp - t.returJualDpp;
+    var hpp = t.hppJual - t.returJual;
+    var laba = penjualan - hpp;
+    return {
+      basis: 'dpp',
+      penjualanBruto: t.penjualanBruto - t.returJualBruto,
+      penjualan: penjualan,
+      ppnKeluaran: (t.penjualanBruto - t.returJualBruto) - penjualan,
+      hpp: hpp,
+      hppKotor: t.hppJual,
+      returJualNilai: t.returJual,
+      laba: laba,
+      marginBp: penjualan ? D.divRound(D.mul(laba, 10000), penjualan) : 0,
+      taksiran: t.dppTaksiran
+    };
+  };
+
+  /* Margin in basis points -> a display string, formatted here so every screen
+   * that prints it prints it identically. */
+  L.marginTeks = function (bp) {
+    if (bp === null || bp === undefined) return '—';
+    var neg = bp < 0, a = Math.abs(bp);
+    return (neg ? '-' : '') + D.angka(D.divFloor(a, 100)) + ',' + (a % 100 < 10 ? '0' : '') + (a % 100) + '%';
+  };
+
+  /* -------------------------------------------------- pemeriksaan buku */
+
+  /* The invariants, run over WHATEVER BOOK IS ACTUALLY LOADED — including the
+   * documents the user posted a second ago — rather than over a freshly seeded
+   * copy. A test suite that rebuilds its own book cannot see a corrupted live
+   * one, which is exactly how a green badge came to sit above a negative stock
+   * balance. Each check returns a sentence, because "1 GAGAL" is not an
+   * explanation. */
+  L.periksaBuku = function (hasilRun, entriesSorted) {
+    var cek = [], k, i;
+    var kons = L.konservasi(hasilRun);
+
+    cek.push({
+      nama: 'Identitas nilai tertutup ke rupiah',
+      ok: kons.selisih === 0,
+      pesan: kons.selisih === 0
+        ? 'masuk − keluar = persediaan akhir ' + D.rupiah(kons.persediaanAkhir)
+        : 'selisih ' + D.rupiah(kons.selisih) + ' — aplikasi sedang salah menyebut uang'
+    });
+    cek.push({
+      nama: 'Transfer masuk = transfer keluar',
+      ok: kons.transferSeimbang,
+      pesan: kons.transferSeimbang
+        ? 'keduanya ' + D.rupiah(kons.transferMasuk)
+        : 'masuk ' + D.rupiah(kons.transferMasuk) + ' vs keluar ' + D.rupiah(kons.transferKeluar) +
+          ' — selisih ' + D.rupiah(kons.transferMasuk - kons.transferKeluar)
+    });
+
+    /* Balances derived by pure summation, with no reference to the costing
+     * engine, then compared against the engine's own quantity tracking. */
+    var mentah = L.saldoMentah(entriesSorted);
+    var neg = [], beda = [];
+    for (k in mentah) {
+      if (!Object.prototype.hasOwnProperty.call(mentah, k)) continue;
+      if (mentah[k] < 0) neg.push(k + ' = ' + mentah[k]);
+      var st = hasilRun.st[k];
+      var qtyEngine = st ? st.qty : 0;
+      if (qtyEngine !== mentah[k]) beda.push(k + ': mesin ' + qtyEngine + ' vs buku ' + mentah[k]);
+    }
+    cek.push({
+      nama: 'Tidak ada saldo negatif di satu pun SKU×gudang',
+      ok: neg.length === 0,
+      pesan: neg.length === 0 ? D.angka(Object.keys(mentah).length) + ' pasangan diperiksa'
+        : neg.length + ' saldo negatif: ' + neg.slice(0, 4).join(', ')
+    });
+    cek.push({
+      nama: 'Kuantitas mesin biaya = kuantitas hasil penjumlahan buku',
+      ok: beda.length === 0,
+      pesan: beda.length === 0 ? 'cocok di setiap pasangan' : beda.slice(0, 4).join('; ')
+    });
+
+    var negNilai = [];
+    for (k in hasilRun.st) {
+      if (!Object.prototype.hasOwnProperty.call(hasilRun.st, k)) continue;
+      var s2 = hasilRun.st[k];
+      if (s2.nilai < 0 || s2.qty < 0) negNilai.push(k + ' = ' + s2.qty + ' unit / ' + D.rupiah(s2.nilai));
+      for (i = 0; i < s2.layers.length; i++) if (s2.layers[i].qty <= 0) negNilai.push(k + ' lapisan qty ' + s2.layers[i].qty);
+    }
+    cek.push({
+      nama: 'Tidak ada nilai atau lapisan negatif',
+      ok: negNilai.length === 0,
+      pesan: negNilai.length === 0 ? 'setiap lokasi bernilai ≥ 0' : negNilai.slice(0, 4).join('; ')
+    });
+
+    cek.push({
+      nama: 'Tidak ada pengeluaran yang dihargai tanpa stok (defisit)',
+      ok: hasilRun.defisit.length === 0,
+      pesan: hasilRun.defisit.length === 0 ? 'setiap pengeluaran memakan lapisan yang benar-benar ada'
+        : hasilRun.defisit.length + ' dokumen dihargai pada harga acuan karena stoknya tidak ada'
+    });
+    cek.push({
+      nama: 'Tidak ada nota yang diretur melebihi yang dijual',
+      ok: !hasilRun.returLebih || hasilRun.returLebih.length === 0,
+      pesan: (!hasilRun.returLebih || !hasilRun.returLebih.length) ? 'setiap retur ≤ kuantitas penjualannya'
+        : hasilRun.returLebih.length + ' retur melebihi notanya: ' +
+          hasilRun.returLebih.slice(0, 3).map(function (x) { return x.dok + ' ' + x.sku + ' ' + x.qtyRetur + '>' + x.qtyJual; }).join(', ')
+    });
+    cek.push({
+      nama: 'Setiap kedatangan transfer memakai lapisan kaki kirimnya sendiri',
+      ok: !hasilRun.pasanganTakLengkap,
+      pesan: !hasilRun.pasanganTakLengkap ? 'nilai yang tiba = nilai yang berangkat, per dokumen'
+        : hasilRun.pasanganTakLengkap + ' kedatangan tidak menemukan lapisan kirimannya sendiri di TRANSIT'
+    });
+
+    var bukanInt = 0, cacah = 0;
+    for (k in hasilRun.hasil) {
+      if (!Object.prototype.hasOwnProperty.call(hasilRun.hasil, k)) continue;
+      cacah++;
+      var r = hasilRun.hasil[k];
+      if (!D.isInt(r.nilai) || !D.isInt(r.qty) || !D.isInt(r.unit)) bukanInt++;
+    }
+    cek.push({
+      nama: 'Setiap rupiah dan setiap kuantitas bilangan bulat',
+      ok: bukanInt === 0,
+      pesan: bukanInt === 0 ? D.angka(cacah) + ' dokumen berbiaya, tidak satu pun pecahan' : bukanInt + ' dokumen memuat pecahan'
+    });
+
+    /* Only claimed when the run actually re-derived the minimum layer key inside
+     * the consumption loop; a counter that was never incremented because nobody
+     * looked is not evidence. */
+    if (hasilRun.periksaUrutan && hasilRun.metode === 'fifo') {
+      cek.push({
+        nama: 'Lapisan FIFO diambil paling tua lebih dulu',
+        ok: hasilRun.urutSalah === 0 && hasilRun.layerNegatif === 0,
+        pesan: (hasilRun.urutSalah === 0 && hasilRun.layerNegatif === 0)
+          ? 'kunci terkecil diturunkan ulang di dalam gelung konsumsi, bukan dipercaya dari antrean'
+          : hasilRun.urutSalah + ' pengambilan di luar urutan, ' + hasilRun.layerNegatif + ' lapisan negatif'
+      });
+    }
+
+    var lk = L.labaKotor(hasilRun);
+    cek.push({
+      nama: 'Laba kotor memakai dasar pajak yang sama dengan HPP',
+      ok: lk.basis === 'dpp' && lk.laba === (lk.penjualan - lk.hpp) && lk.taksiran === 0,
+      pesan: lk.taksiran === 0
+        ? 'penjualan DPP ' + D.rupiah(lk.penjualan) + ' − HPP neto ' + D.rupiah(lk.hpp) + ' = ' + D.rupiah(lk.laba)
+        : lk.taksiran + ' baris penjualan tidak membawa DPP-nya sendiri dan ditaksir sebagai inklusif'
+    });
+
+    var lulus = 0;
+    for (i = 0; i < cek.length; i++) if (cek[i].ok) lulus++;
+    return { cek: cek, lulus: lulus, total: cek.length, gagal: cek.length - lulus, seimbang: kons.seimbang };
   };
 
   /* ------------------------------------------------------- kartu stok */
@@ -749,9 +1097,23 @@
       }]);
       var min = L.saldoMinimumSejak(uji, calon.sku, calon.gudang, calon.tgl);
       if (min < 0) {
-        alasan.push('Pengeluaran ini membuat saldo ' + calon.sku + ' di ' + calon.gudang +
-          ' menjadi ' + min + ' pada suatu titik setelah ' + D.tglPanjang(calon.tgl) +
-          '. Stok tidak boleh negatif: yang tampak cukup hari itu sudah terjual sesudahnya.');
+        if (mundur) {
+          alasan.push('Pengeluaran ini membuat saldo ' + calon.sku + ' di ' + calon.gudang +
+            ' menjadi ' + min + ' pada suatu titik setelah ' + D.tglPanjang(calon.tgl) +
+            '. Stok tidak boleh negatif: yang tampak cukup hari itu sudah terjual sesudahnya.');
+        } else {
+          /* A document dated today is not "backdated", and telling a cashier that
+           * the stock goes negative "at some point after today" reads as a bug.
+           * Same rule, present tense, with the figure they can check. */
+          var ada = 0;
+          for (var z = 0; z < buku.entries.length; z++) {
+            var ez = buku.entries[z];
+            if (ez.sku === calon.sku && ez.gudang === calon.gudang) ada += ez.arah * ez.qty;
+          }
+          alasan.push('Stok ' + calon.sku + ' di ' + calon.gudang + ' hanya ' + D.angka(ada) +
+            ' unit dasar, sedangkan pengeluaran ini ' + D.angka(calon.qty) +
+            '. Stok tidak boleh negatif — kurang ' + D.angka(calon.qty - ada) + ' unit.');
+        }
       }
     }
     return { ok: alasan.length === 0, alasan: alasan, peringatan: peringatan, mundur: !!mundur };

@@ -1404,6 +1404,236 @@
     t.eq(lapisanKosong, 0, 'metode rata-rata tidak menyimpan lapisan sama sekali — ia benar-benar metode lain, bukan FIFO yang dirata-ratakan di layar');
   });
 
+  /* ==================================== 18. dasar pajak laba kotor ====== */
+
+  group('Laba kotor — satu dasar pajak, neto retur', function (t) {
+    /* Hand-checkable: a nota of Rp111.000 with prices that already include PPN
+     * is Rp100.000 of DPP and Rp11.000 of output tax. The tax is not margin. */
+    t.eq(D.hitungPpn(111000, true).dpp, 100000, 'PPN inklusif: Rp111.000 berisi DPP Rp100.000');
+    t.eq(D.hitungPpn(111000, true).ppn, 11000, 'dan PPN keluaran Rp11.000');
+
+    var m = mini();
+    m.add({ tgl: '2026-01-01', sku: 'X', gudang: 'G', arah: 1, qty: 100, jenis: 'terima', dok: 'PN-1', harga: 1000 });
+    m.add({ tgl: '2026-01-02', sku: 'X', gudang: 'G', arah: -1, qty: 10, jenis: 'jual', dok: 'KS-1', nilaiJual: 111000, nilaiDpp: 100000 });
+    var r = m.jalan('fifo');
+    var lk = L.labaKotor(r);
+    t.eq(lk.penjualan, 100000, 'penjualan yang dipakai laba kotor adalah DPP-nya, bukan Rp111.000');
+    t.eq(lk.hpp, 10000, 'HPP 10 unit @ Rp1.000');
+    t.eq(lk.laba, 90000, 'laba kotor Rp90.000 — bukan Rp101.000 yang keluar kalau PPN keluaran ikut dihitung sebagai pendapatan');
+    t.eq(lk.ppnKeluaran, 11000, 'selisih antara bruto dan DPP adalah PPN keluaran, dan dilaporkan sebagai itu');
+    t.eq(lk.marginBp, 9000, 'margin 90,00% dalam basis poin — bilangan bulat, bukan float');
+    t.eq(L.marginTeks(9000), '90,00%', 'dan dicetak dari basis poin itu');
+    t.eq(lk.basis, 'dpp', 'fungsi ini menyebut dasar pajaknya sendiri');
+
+    /* A retur leaves neither side of the margin. */
+    m.add({ tgl: '2026-01-03', sku: 'X', gudang: 'G', arah: 1, qty: 10, jenis: 'retur-jual', dok: 'RJ-1', ref: 'E2', nilaiJual: 111000, nilaiDpp: 100000 });
+    var r2 = m.jalan('fifo');
+    var lk2 = L.labaKotor(r2);
+    t.eq(lk2.penjualan, 0, 'nota yang diretur seluruhnya tidak menyisakan penjualan');
+    t.eq(lk2.hpp, 0, 'dan tidak menyisakan HPP');
+    t.eq(lk2.laba, 0, 'jadi tidak menyisakan laba — bukan laba hantu atas transaksi yang dibatalkan');
+    t.eq(L.konservasi(r2).selisih, 0, 'dan identitas nilainya tetap tertutup');
+
+    /* Allocation: the lines of a nota add up to the nota's own single rounded DPP. */
+    var bagi = D.alokasi(100000, [33333, 33333, 33334]);
+    t.eq(bagi[0] + bagi[1] + bagi[2], 100000, 'alokasi DPP per baris berjumlah tepat DPP dokumen');
+    t.eq(D.alokasi(10, [1, 1, 1]).join(','), '4,3,3', 'sisa dibagikan satu rupiah per baris, bukan dibulatkan tiga kali');
+    t.eq(D.alokasi(7, [0, 0]).join(','), '7,0', 'bobot nol tidak membuat rupiah hilang');
+    t.throws(function () { D.alokasi(1.5, [1]); }, 'alokasi menolak total pecahan');
+
+    var d = db(), hf = run('fifo');
+    var lkD = L.labaKotor(hf);
+    t.eq(lkD.taksiran, 0, 'setiap baris penjualan di buku demo membawa DPP-nya sendiri — tidak ada yang ditaksir');
+    t.eq(lkD.penjualan, hf.total.penjualanDpp - hf.total.returJualDpp, 'penjualan neto = DPP penjualan − DPP retur');
+    t.eq(lkD.hpp, hf.total.hppJual - hf.total.returJual, 'HPP neto = HPP penjualan − biaya yang dikembalikan retur');
+    t.ok(lkD.laba < hf.total.penjualanBruto - hf.total.hppJual,
+      'angka yang benar LEBIH KECIL dari bruto minus HPP — itulah PPN keluaran yang dulu dilaporkan sebagai laba');
+    t.eq(lkD.ppnKeluaran, (hf.total.penjualanBruto - hf.total.returJualBruto) - lkD.penjualan, 'dan besarnya PPN itu dilaporkan tersendiri');
+
+    /* The per-entry DPP of one seeded nota sums to the nota's document DPP. */
+    var nota = d.kasir[d.kasir.length - 1], jml = 0, kotor = 0;
+    for (var i = 0; i < nota.baris.length; i++) { jml += nota.baris[i].nilaiDpp; kotor += D.mul(nota.baris[i].qty, nota.baris[i].harga); }
+    t.eq(jml, nota.dpp, 'DPP tiap baris nota ' + nota.id + ' berjumlah tepat DPP notanya');
+    t.eq(kotor, nota.subtotal, 'dan nilai jual tiap barisnya berjumlah tepat subtotal notanya');
+    var byId = {};
+    for (i = 0; i < d.buku.entries.length; i++) byId[d.buku.entries[i].id] = d.buku.entries[i];
+    var jml2 = 0;
+    for (i = 0; i < nota.baris.length; i++) jml2 += byId[nota.baris[i].entryId].nilaiDpp;
+    t.eq(jml2, nota.dpp, 'dan entry buku besarnya membawa angka yang sama, bukan angka yang dihitung ulang di laporan');
+  });
+
+  /* ==================================== 19. retur kumulatif ============= */
+
+  group('Retur penjualan — batas kumulatif dan pemulihan yang tidak dobel', function (t) {
+    function bukuRetur() {
+      var m = mini();
+      m.add({ tgl: '2026-01-01', sku: 'X', gudang: 'G', arah: 1, qty: 4, jenis: 'terima', dok: 'PN-1', harga: 1000 });
+      m.add({ tgl: '2026-01-02', sku: 'X', gudang: 'G', arah: 1, qty: 20, jenis: 'terima', dok: 'PN-2', harga: 1500 });
+      m.jual = m.add({ tgl: '2026-01-03', sku: 'X', gudang: 'G', arah: -1, qty: 10, jenis: 'jual', dok: 'KS-1', nilaiJual: 30000, nilaiDpp: 27027 });
+      return m;
+    }
+    ['fifo', 'rata'].forEach(function (metode) {
+      var satu = bukuRetur();
+      var hppJual = satu.jalan(metode).hasil[satu.jual.id].nilai;
+      satu.add({ tgl: '2026-01-04', sku: 'X', gudang: 'G', arah: 1, qty: 10, jenis: 'retur-jual', dok: 'RJ-1', ref: satu.jual.id, nilaiJual: 30000, nilaiDpp: 27027 });
+      var rSatu = satu.jalan(metode);
+
+      var dua = bukuRetur();
+      dua.add({ tgl: '2026-01-04', sku: 'X', gudang: 'G', arah: 1, qty: 6, jenis: 'retur-jual', dok: 'RJ-1', ref: dua.jual.id, nilaiJual: 18000, nilaiDpp: 16216 });
+      dua.add({ tgl: '2026-01-05', sku: 'X', gudang: 'G', arah: 1, qty: 4, jenis: 'retur-jual', dok: 'RJ-2', ref: dua.jual.id, nilaiJual: 12000, nilaiDpp: 10811 });
+      var rDua = dua.jalan(metode);
+
+      t.eq(rSatu.total.returJual, hppJual, metode + ': satu retur penuh mengembalikan tepat biaya notanya (' + hppJual + ')');
+      t.eq(rDua.total.returJual, hppJual, metode + ': retur yang dipecah dua kali mengembalikan jumlah yang SAMA, bukan lebih');
+      t.eq(rDua.akhir.nilai, rSatu.akhir.nilai, metode + ': nilai persediaan akhirnya juga sama besar');
+      t.eq(L.konservasi(rDua).selisih, 0, metode + ': identitas nilai tetap tertutup setelah retur bertahap');
+      t.eq(rDua.returLebih.length, 0, metode + ': dan tidak ada retur yang melebihi notanya');
+    });
+
+    /* FIFO detail: the sale ate 4 @ 1000 then 6 @ 1500. Returning 6 gives back
+     * the newer six (Rp9.000); the second leg of 4 must give back 4 @ 1000
+     * (Rp4.000), not another 4 @ 1500. */
+    var m2 = bukuRetur();
+    m2.add({ tgl: '2026-01-04', sku: 'X', gudang: 'G', arah: 1, qty: 6, jenis: 'retur-jual', dok: 'RJ-1', ref: m2.jual.id, nilaiJual: 18000 });
+    var rA = m2.jalan('fifo');
+    var idRj1 = m2.buku.entries[m2.buku.entries.length - 1].id;
+    t.eq(rA.hasil[idRj1].nilai, 9000, 'retur pertama 6 unit mengembalikan ekor konsumsi: 6 × Rp1.500 = Rp9.000');
+    m2.add({ tgl: '2026-01-05', sku: 'X', gudang: 'G', arah: 1, qty: 4, jenis: 'retur-jual', dok: 'RJ-2', ref: m2.jual.id, nilaiJual: 12000 });
+    var rB = m2.jalan('fifo');
+    var idRj2 = m2.buku.entries[m2.buku.entries.length - 1].id;
+    t.eq(rB.hasil[idRj2].nilai, 4000, 'retur kedua 4 unit mengembalikan 4 × Rp1.000 = Rp4.000, bukan Rp6.000 dari ekor yang sudah dipakai');
+    t.eq(rB.total.returJual, 13000, 'jumlah keduanya tepat biaya penjualannya');
+
+    /* Over-return is detected by the ENGINE, not only by the posting screen. */
+    var m3 = bukuRetur();
+    m3.add({ tgl: '2026-01-04', sku: 'X', gudang: 'G', arah: 1, qty: 10, jenis: 'retur-jual', dok: 'RJ-1', ref: m3.jual.id, nilaiJual: 30000 });
+    m3.add({ tgl: '2026-01-05', sku: 'X', gudang: 'G', arah: 1, qty: 10, jenis: 'retur-jual', dok: 'RJ-2', ref: m3.jual.id, nilaiJual: 30000 });
+    var rC = m3.jalan('fifo');
+    t.eq(rC.returLebih.length, 1, 'meretur 20 unit atas penjualan 10 unit tercatat sebagai pelanggaran');
+    t.eq(rC.returLebih[0].qtyJual, 10, 'dan pelanggaran itu menyebut kuantitas penjualannya');
+    var pbC = L.periksaBuku(rC, L.urut(m3.buku.entries));
+    t.ok(pbC.gagal > 0, 'pemeriksaan buku hidup GAGAL untuk buku itu — invariannya benar-benar bisa merah');
+
+    /* A retur pointing at something that is not its own sale is refused outright. */
+    var m4 = bukuRetur();
+    m4.add({ tgl: '2026-01-04', sku: 'X', gudang: 'G', arah: 1, qty: 2, jenis: 'retur-jual', dok: 'RJ-1', ref: 'E1', nilaiJual: 6000 });
+    t.throws(function () { m4.jalan('fifo'); }, 'retur yang menunjuk dokumen penerimaan, bukan penjualannya, melempar');
+
+    /* And the cumulative arithmetic the posting screen uses. */
+    var d = db(), retur = d.returJual[0];
+    var terpakai = 0;
+    for (var i = 0; i < d.buku.entries.length; i++) {
+      var e = d.buku.entries[i];
+      if (e.jenis === 'retur-jual' && e.ref === retur.baris[0].refEntry) terpakai += e.qty;
+    }
+    t.gte(terpakai, retur.baris[0].qtyBase, 'kuantitas yang sudah diretur bisa dihitung dari buku besar saja — itu satu-satunya catatan yang selamat dari muat ulang');
+  });
+
+  /* ==================================== 20. TRANSIT per dokumen ========= */
+
+  group('TRANSIT — dua pengiriman satu SKU tidak boleh bertukar biaya', function (t) {
+    function dua() {
+      var b = L.buatBuku();
+      L.tambah(b, { tgl: '2026-01-01', sku: 'X', gudang: 'G1', arah: 1, qty: 10, jenis: 'terima', dok: 'PN-1', harga: 1000 });
+      L.tambah(b, { tgl: '2026-01-02', sku: 'X', gudang: 'G1', arah: 1, qty: 10, jenis: 'terima', dok: 'PN-2', harga: 5000 });
+      var A = { id: 'TF-A', dariGudang: 'G1', keGudang: 'G2', tglKirim: '2026-01-10', baris: [{ sku: 'X', qtyBase: 10 }] };
+      var B = { id: 'TF-B', dariGudang: 'G1', keGudang: 'G3', tglKirim: '2026-01-11', baris: [{ sku: 'X', qtyBase: 10 }] };
+      P.kirimTransfer(b, A);
+      P.kirimTransfer(b, B);
+      /* Received OUT OF ORDER, which is the case that used to swap the costs. */
+      P.terimaTransfer(b, B, '2026-01-12');
+      P.terimaTransfer(b, A, '2026-01-13');
+      return b;
+    }
+    var b = dua(), r = L.replay(L.urut(b.entries), { metode: 'fifo', periksaUrutan: true });
+    t.eq(r.st['X|G2'].nilai, 10000, 'FIFO: kiriman lapisan tua (10 @ Rp1.000) tiba di G2 bernilai Rp10.000');
+    t.eq(r.st['X|G3'].nilai, 50000, 'dan kiriman lapisan baru (10 @ Rp5.000) tiba di G3 bernilai Rp50.000 — tidak tertukar');
+    t.eq(r.st['X|TRANSIT'].qty, 0, 'TRANSIT kosong kembali');
+    t.eq(r.st['X|TRANSIT'].nilai, 0, 'dan bernilai nol, bukan menyimpan sisa rupiah');
+    t.eq(L.konservasi(r).selisih, 0, 'identitas nilai tertutup');
+    t.ok(L.konservasi(r).transferSeimbang, 'transfer masuk = transfer keluar');
+    t.eq(r.pasanganTakLengkap, 0, 'setiap kedatangan menemukan lapisan kiriman miliknya sendiri');
+
+    var rr = L.replay(L.urut(b.entries), { metode: 'rata' });
+    t.eq(rr.total.transferMasuk, rr.total.transferKeluar, 'rata-rata: nilai yang tiba sama dengan yang berangkat');
+    t.eq(L.konservasi(rr).selisih, 0, 'dan identitasnya juga tertutup');
+
+    /* Whole-book claim: on the demo book every arrival is costed at exactly the
+     * value its own send leg carried, per document. */
+    var d = db(), hf = run('fifo'), i, cocok = 0, beda = 0;
+    for (i = 0; i < d.transfer.length; i++) {
+      var tr = d.transfer[i];
+      if (tr.status !== 'tiba') continue;
+      for (var j = 0; j < tr.baris.length; j++) {
+        var br = tr.baris[j];
+        var kirim = hf.hasil[br.entryTransit], tiba = hf.hasil[br.entryMasuk];
+        if (!kirim || !tiba) continue;
+        if (kirim.nilai === tiba.nilai) cocok++; else beda++;
+      }
+    }
+    t.eq(beda, 0, 'di buku demo, ' + cocok + ' kaki transfer tiba dengan nilai yang persis sama dengan saat berangkat');
+    t.eq(hf.pasanganTakLengkap, 0, 'dan tidak satu pun kedatangan harus mengambil lapisan milik kiriman lain');
+
+    /* Pairing is verified, not assumed: a transfer-masuk pointed at an unrelated
+     * document must throw rather than quietly adopting its cost. */
+    var b2 = L.buatBuku();
+    L.tambah(b2, { tgl: '2026-01-01', sku: 'X', gudang: 'G1', arah: 1, qty: 10, jenis: 'terima', dok: 'PN-1', harga: 1000 });
+    var jual = L.tambah(b2, { tgl: '2026-01-02', sku: 'X', gudang: 'G1', arah: -1, qty: 1, jenis: 'jual', dok: 'KS-1', nilaiJual: 2000, nilaiDpp: 1802 });
+    L.tambah(b2, { tgl: '2026-01-03', sku: 'X', gudang: 'G2', arah: 1, qty: 5, jenis: 'transfer-masuk', dok: 'TR-X', pasangan: jual.id });
+    t.throws(function () { L.replay(L.urut(b2.entries), { metode: 'fifo' }); },
+      'transfer masuk yang berpasangan dengan nota penjualan melempar — bukan mengarang stok dari harga dokumen lain');
+  });
+
+  /* ==================================== 21. pemeriksaan buku hidup ====== */
+
+  group('Pemeriksaan buku hidup — invarian atas buku yang dimuat', function (t) {
+    var s = sorted();
+    ['fifo', 'rata'].forEach(function (metode) {
+      var r = L.replay(s, { metode: metode, periksaUrutan: true, hargaAcuan: db().hargaAcuan });
+      var pb = L.periksaBuku(r, s);
+      t.eq(pb.gagal, 0, metode + ': seluruh ' + pb.total + ' invarian buku hidup terpenuhi di buku demo');
+      t.ok(pb.seimbang, metode + ': dan kedua sisi identitasnya seimbang');
+    });
+
+    /* The check has to be able to FAIL, or it is decoration. Three books that are
+     * each wrong in a different way, each caught by a different line. */
+    var neg = L.buatBuku();
+    L.tambah(neg, { tgl: '2026-01-01', sku: 'X', gudang: 'G', arah: 1, qty: 1, jenis: 'terima', dok: 'PN-1', harga: 1000 });
+    L.tambah(neg, { tgl: '2026-01-02', sku: 'X', gudang: 'G', arah: -1, qty: 2, jenis: 'jual', dok: 'KS-1', nilaiJual: 4000, nilaiDpp: 3604 });
+    var rNeg = L.replay(L.urut(neg.entries), { metode: 'fifo', periksaUrutan: true });
+    var pbNeg = L.periksaBuku(rNeg, L.urut(neg.entries));
+    t.ok(pbNeg.gagal > 0, 'saldo negatif membuat pemeriksaan merah');
+    var namaNeg = pbNeg.cek.filter(function (c) { return !c.ok; }).map(function (c) { return c.nama; }).join(' | ');
+    t.ok(/negatif/.test(namaNeg), 'dan yang merah menyebut saldo negatif: ' + namaNeg);
+    t.ok(/defisit/.test(namaNeg), 'serta pengeluaran yang dihargai tanpa stok');
+
+    var taksir = L.buatBuku();
+    L.tambah(taksir, { tgl: '2026-01-01', sku: 'X', gudang: 'G', arah: 1, qty: 10, jenis: 'terima', dok: 'PN-1', harga: 1000 });
+    L.tambah(taksir, { tgl: '2026-01-02', sku: 'X', gudang: 'G', arah: -1, qty: 1, jenis: 'jual', dok: 'KS-1', nilaiJual: 2000 });
+    var rT = L.replay(L.urut(taksir.entries), { metode: 'fifo', periksaUrutan: true });
+    t.eq(rT.total.dppTaksiran, 1, 'baris penjualan tanpa DPP tercatat sebagai taksiran, tidak dianggap benar begitu saja');
+    var pbT = L.periksaBuku(rT, L.urut(taksir.entries));
+    t.ok(pbT.gagal > 0, 'dan pemeriksaan buku hidup menandainya, karena dasar pajaknya jadi tidak pasti');
+  });
+
+  /* ==================================== 22. nomor dokumen ============== */
+
+  group('Nomor dokumen — lebar sama antara seed dan runtime', function (t) {
+    var d = db();
+    var salinan = { entries: [], seqBerikut: 1, tutup: {}, dokBerikut: JSON.parse(JSON.stringify(d.buku.dokBerikut)) };
+    var ks = L.nomorDok(salinan, 'KS');
+    var pn = L.nomorDok(salinan, 'PN');
+    t.eq(ks.length, 'KS-001444'.length, 'nomor nota yang dicetak runtime selebar yang dicetak seed: ' + ks);
+    var terakhir = d.kasir[d.kasir.length - 1].id;
+    t.ok(ks > terakhir, 'dan urut secara leksikografis SETELAH nota terakhir (' + terakhir + ' lalu ' + ks + ') — bukan KS-01445 yang justru mengurut lebih awal');
+    t.eq(pn.length, 'PN-00181'.length, 'penerimaan tetap lima digit: ' + pn);
+    t.eq(L.lebarDok('KS'), 6, 'tabel lebarnya eksplisit untuk KS');
+    t.eq(L.lebarDok('PN'), 5, 'dan default lima untuk sisanya');
+    var semua = d.kasir.map(function (n) { return n.id; });
+    var urut = semua.slice().sort();
+    t.eq(semua.join(',') === urut.join(','), true, 'seluruh nota seed sudah urut leksikografis, jadi urutan itu memang bisa diandalkan');
+  });
+
   /* --------------------------------------------------------------- runner */
 
   function run_() {

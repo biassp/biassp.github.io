@@ -34,12 +34,14 @@ you exactly which documents moved.**
 | **Value conservation** | `saldo awal + pembelian + retur jual + penyesuaian masuk + transfer masuk − retur beli − HPP − penyesuaian keluar − transfer keluar = persediaan akhir`, to the rupiah, under both methods, before and after a backdated insert. |
 | **Unit ladders** | Dus → pak → pcs (and karton/renteng/zak/lusin) with integer factors. All arithmetic in base units; conversions round-trip exactly. |
 | **Stock opname** | Sheet frozen by ledger sequence. Variance against the frozen book. Movements posted during the count are shown separately and are **not** variance. Posting appends a `penyesuaian` entry; it never writes a balance. |
-| **Multi-warehouse transfers** | In-transit stock lives in a first-class ledger location called `TRANSIT`. Send writes two entries, arrival writes two more. Cost is carried, not re-priced. |
+| **Multi-warehouse transfers** | In-transit stock lives in a first-class ledger location called `TRANSIT`. Send writes two entries, arrival writes two more. Cost is carried, not re-priced: the arrival leg references its own send leg and consumes exactly the layers that shipment put into TRANSIT, so two shipments of one SKU on the road at the same time cannot swap costs between destinations. |
 | **Three-way match** | PO → penerimaan (partial allowed) → faktur. Quantity and price discrepancies are flagged with their rupiah impact, never absorbed. |
-| **POS** | Barcode/SKU/name lookup, quantity in any unit, split payment (tunai / transfer / QRIS) with change from the cash leg only, PPN 11% with an explicit inclusive/exclusive setting, printable struk, retur that restores stock at its original cost layer. |
+| **POS** | Barcode/SKU/name lookup, quantity in any unit, split payment (tunai / transfer / QRIS) with change from the cash leg only, PPN 11% with an explicit inclusive/exclusive setting, printable struk, retur that restores stock at its original cost layer and is capped **cumulatively** at what the nota actually sold. |
+| **Gross profit on one tax base** | Every sale entry carries the DPP (VAT-exclusive) share of its own nota, allocated in integers from the one document-level rounded figure. Laba kotor is `penjualan DPP − HPP`, both net of returns. Subtracting VAT-exclusive cost from VAT-inclusive revenue overstates margin by the whole output tax — on this book, by Rp43,6 million. |
 | **Roles** | kasir, staf gudang, pembelian, supervisor. Denied actions explain themselves. Only a supervisor may post an opname adjustment or reopen a closed period. |
-| **Storage** | IndexedDB, in your browser, for the things you posted. Every storage call is wrapped in try/catch; when the database is unavailable the app runs in memory and says so. |
-| **The tests** | 498 assertions, run in the page on load and under node from the same file. |
+| **Storage** | IndexedDB, in your browser, for the things you posted. Every storage call is wrapped in try/catch; when the database is unavailable the app runs in memory and says so. Entries are written with `add()`, never `put()`, and exactly one tab holds the write lock — the others are read-only and say why. |
+| **The tests** | 568 assertions, run in the page on load and under node from the same file — over a book rebuilt from the seed. |
+| **Live-book invariants** | A second, separate check that runs over **the book actually loaded**, including whatever you just posted, under both methods, after every mutation: conservation, transfer balance, no negative balance anywhere, engine quantities against balances summed from the journal alone, no deficits, no over-returned nota, layer discipline, integers, and that laba kotor and HPP share a tax base. It has its own badge in the header, because a suite that rebuilds its own book cannot see a corrupted live one. |
 
 ### Simulated — fabricated, deliberately, and stated in the UI
 
@@ -128,9 +130,20 @@ none.
    (Staf Gudang is refused, and told why) and check the resulting ledger
    entries — an adjustment entry per line, never an overwritten balance.
 6. **Kasir** — sell, then retur. The retur restores value at the cost of the
-   layers the sale actually consumed. Then go back to Tanggal Mundur and post a
+   layers the sale actually consumed. Return part of a line, then reselect the
+   same nota: the *Sudah diretur* and *Sisa boleh retur* columns have moved and
+   the input is capped at what is left — the limit is cumulative, counted from
+   the ledger, not per posting. Then go back to Tanggal Mundur and post a
    backdated purchase for that SKU: the retur's value changes too, because it
    references a document, not a frozen number.
+7. **Transfer** — send a SKU that is *already* on the road in another open
+   transfer, then receive the new one first. Both arrive at exactly the value
+   that left them: TRANSIT is one pooled location, so the arrival is costed from
+   its own send leg rather than from whatever is oldest in the pool.
+8. **Header, right of the assertion badge** — `buku hidup`. That one runs over
+   the book in front of you, after every posting, in both methods. The suite
+   badge next to it runs over a book rebuilt from the seed and cannot see what
+   you just did; both numbers are shown because they mean different things.
 
 ---
 
@@ -221,6 +234,19 @@ branch.
   key, so a restored lot re-enters the queue *where it was*. A consequence:
   a later backdated purchase that changes the sale's cost changes the retur's
   cost with it, which is correct and is asserted.
+* **The retur cursor is per sale, and the limit is cumulative.** The engine
+  remembers how many units each sale has already given back and walks past them
+  before taking from the tail, so a return split into two postings restores
+  exactly what one full return would — not the tail twice. The posting screen
+  refuses more than `qty jual − sudah diretur`, counted from the ledger (the only
+  record that survives a reload), and the engine flags an over-return
+  independently, so a book that got one some other way still shows red.
+* **Revenue and cost are compared on the same tax base.** PPN is a
+  document-level figure, so each sale entry carries its allocated share of its
+  nota's DPP (`D.alokasi`, largest remainder, integers, summing to the document
+  exactly). Gross profit and the ABC ranking use that; the PPN card keeps the
+  gross figure and says which is which. Returns are subtracted from revenue and
+  from COGS, because a cancelled sale is not margin.
 * **PPN is rounded once per document, not per line.** Per-line rounding is legal
   but produces a faktur whose total does not match the sum of its own rows.
 * **Change comes out of the cash leg only.** A QRIS or transfer leg is
@@ -229,6 +255,16 @@ branch.
 * **A retur pembelian is costed by the active method**, not against the specific
   receipt being returned. Documented as a simplification; the layer machinery
   would support the specific-receipt case.
+* **One tab writes; the others read.** Ledger entry ids come from a counter that
+  lives in the book, and the book lives in a tab — two tabs posting at once mint
+  the same id, and with `put()` the second write destroys the first (a document
+  vanishing on reload, two documents sharing a number, stock going negative). A
+  counter cannot be made safe by being careful with it, so the write lock is a
+  single record read and written inside one IndexedDB readwrite transaction
+  (which the browser serialises), refreshed on a timer and expiring if the holder
+  dies. A second tab renders everything and refuses every posting, with the
+  reason. Closed periods live in their own record, written only by the close
+  action, so no unrelated posting can roll a supervisor's close back.
 
 ---
 
@@ -256,14 +292,14 @@ it and rebuilds the demo from the seed.
 
 | File | Lines | What it is |
 |---|---|---|
-| `domain.js` | ~420 | Integer arithmetic and the rounding policy, seeded PRNG, unit ladders, dates, PPN, roles and denial messages, EAN-13, constants. |
-| `ledger.js` | ~840 | The stock ledger, the FIFO and average costing engines, period snapshots, incremental recomputation, the conservation identity, the stock card, posting validation. |
-| `proses.js` | ~380 | Business processes: three-way match, transfers with an in-transit leg, opname freeze/variance/posting, cashier totals and split payment, retur. |
+| `domain.js` | ~460 | Integer arithmetic and the rounding policy, seeded PRNG, unit ladders, dates, PPN, roles and denial messages, EAN-13, constants. |
+| `ledger.js` | ~1190 | The stock ledger, the FIFO and average costing engines, period snapshots, incremental recomputation, the conservation identity, gross profit on one tax base, the live-book invariant check, the stock card, posting validation. |
+| `proses.js` | ~400 | Business processes: three-way match, transfers with an in-transit leg, opname freeze/variance/posting, cashier totals and split payment, retur. |
 | `seed.js` | ~700 | The fabricated dataset and six months of movement, from one seed integer. |
-| `store.js` | ~170 | IndexedDB with a guarded in-memory fallback. |
-| `tests.js` | ~1420 | 498 assertions in 17 groups. |
-| `app.js` | ~2260 | The UI. Renders rules; never re-implements one. |
-| `app.css` | ~1080 | Tokens shared with the CV and the sibling labs. Dark default, full light override, print rules for the struk. |
+| `store.js` | ~250 | IndexedDB with a guarded in-memory fallback, append-only `add()` for entries, and the cross-tab write lock. |
+| `tests.js` | ~1650 | 568 assertions in 22 groups. |
+| `app.js` | ~2770 | The UI. Renders rules; never re-implements one. |
+| `app.css` | ~1130 | Tokens shared with the CV and the sibling labs. Dark default, full light override, print rules for the struk. |
 | `guard.js` | ~100 | Pre-paint theme and the egress counter. |
 
 Sibling labs: [`/labs/rekam/`](../rekam/) (rekam medis klinik),

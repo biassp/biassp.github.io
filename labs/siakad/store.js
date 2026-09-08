@@ -23,8 +23,12 @@
   'use strict';
 
   var DB_NAME = 'siakad-db';
-  var DB_VERSION = 1;
-  var STORES = ['nilai', 'presensi', 'konfig', 'jadwal', 'spp', 'audit'];
+  var DB_VERSION = 2;
+  /* v2 adds 'sikap' (penilaian sikap and the wali's catatan) and renames the
+   * fee store to 'komite'. onupgradeneeded creates whatever is missing, so a
+   * browser still holding a v1 database is upgraded in place rather than
+   * losing the teacher's edits. */
+  var STORES = ['nilai', 'presensi', 'konfig', 'jadwal', 'komite', 'sikap', 'audit'];
 
   var St = {};
   root.SIAKAD_STORE = St;

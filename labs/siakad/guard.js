@@ -38,9 +38,10 @@
 
   var counts = { fetch: 0, xhr: 0, beacon: 0, websocket: 0, eventsource: 0 };
   var log = [];
-  function note(kind, target) {
+  function note(kind, target, asal) {
+    if (counts[kind] === undefined) counts[kind] = 0;
     counts[kind]++;
-    log.push({ kind: kind, target: String(target).slice(0, 200), at: Date.now() });
+    log.push({ kind: kind, target: String(target).slice(0, 200), asal: asal || 'halaman', at: Date.now() });
     if (window.SIAKAD_GUARD && typeof window.SIAKAD_GUARD.onchange === 'function') {
       try { window.SIAKAD_GUARD.onchange(); } catch (e) { }
     }
@@ -83,6 +84,11 @@
 
   window.SIAKAD_GUARD = {
     counts: counts, log: log,
+    /* The page's meta CSP does not reach a dedicated worker's global scope, so
+     * solver.worker.js installs the same wrappers there and posts any attempt
+     * back for counting here. Without this the badge would be a claim about the
+     * document while the footer talks about the whole page. */
+    noteExternal: function (kind, target, asal) { note(kind, target, asal || 'worker'); },
     total: function () {
       var n = 0;
       for (var k in counts) if (Object.prototype.hasOwnProperty.call(counts, k)) n += counts[k];

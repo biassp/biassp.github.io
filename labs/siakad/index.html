@@ -22,6 +22,12 @@
 <body>
     <a class="skip" href="#main">Lompat ke konten</a>
 
+    <!-- One polite live region for the whole app. Every panel is torn down and
+         rebuilt on each state change, which announces nothing on its own: the
+         pick, the accepted move, the specific constraint that rejected a move and
+         the solver outcome are all written here. -->
+    <div id="say" role="status" aria-live="polite" class="sr-only"></div>
+
     <header class="top">
         <div class="brand">
             <span class="mark" aria-hidden="true">SIA</span>
@@ -37,7 +43,7 @@
             <span class="netbadge" id="netBadge" title="Percobaan fetch / XMLHttpRequest / WebSocket / sendBeacon dari halaman ini sejak dimuat">
                 <span class="dot" aria-hidden="true"></span><span id="netCount">panggilan jaringan: 0</span>
             </span>
-            <button type="button" id="themeBtn" class="btn ghost" aria-label="Ganti tema">Terang</button>
+            <button type="button" id="themeBtn" class="btn ghost" aria-pressed="false" title="Ganti ke tema terang">Terang</button>
             <a class="btn ghost" href="../../">CV</a>
         </div>
     </header>
@@ -46,9 +52,11 @@
         <p class="banner" id="fabricBanner">
             <b>Seluruh data di halaman ini fabrikasi.</b> Nama peserta didik, guru dan orang tua disusun
             suku-kata demi suku-kata dari pola fonotaktik buatan; NISN diambil dari blok sintetis
-            <code>99xxxxxxxx</code> yang diterbitkan oleh kode ini sendiri; tidak ada NIK sama sekali.
-            Tidak satu pun merujuk anak, guru atau sekolah yang nyata. Semuanya dibangun ulang dari satu
-            bilangan seed setiap kali halaman dimuat.
+            <code>99xxxxxxxx</code> yang diterbitkan oleh kode ini sendiri. Tidak ada NIK, tidak ada NIP,
+            dan tidak ada nomor telepon orang tua sama sekali &mdash; ketiganya tidak punya bentuk palsu yang
+            aman: nomor 08xx yang dibangkitkan acak berada di dalam ruang penomoran seluler yang hidup dan
+            bisa menghubungi orang sungguhan. Tidak satu pun merujuk anak, guru atau sekolah yang nyata.
+            Semuanya dibangun ulang dari satu bilangan seed setiap kali halaman dimuat.
         </p>
 
         <div class="ctxbar" id="ctxbar"></div>
@@ -63,7 +71,7 @@
             <button type="button" role="tab" id="tab-penilaian" aria-controls="panel-penilaian" aria-selected="false" tabindex="-1" class="tab">Penilaian</button>
             <button type="button" role="tab" id="tab-rapor" aria-controls="panel-rapor" aria-selected="false" tabindex="-1" class="tab">Rapor</button>
             <button type="button" role="tab" id="tab-ppdb" aria-controls="panel-ppdb" aria-selected="false" tabindex="-1" class="tab">PPDB</button>
-            <button type="button" role="tab" id="tab-spp" aria-controls="panel-spp" aria-selected="false" tabindex="-1" class="tab">SPP</button>
+            <button type="button" role="tab" id="tab-komite" aria-controls="panel-komite" aria-selected="false" tabindex="-1" class="tab">Iuran Komite</button>
             <button type="button" role="tab" id="tab-uji" aria-controls="panel-uji" aria-selected="false" tabindex="-1" class="tab">Uji</button>
         </nav>
 
@@ -77,7 +85,7 @@
             <section id="panel-penilaian" role="tabpanel" aria-labelledby="tab-penilaian" tabindex="0" class="panel" hidden></section>
             <section id="panel-rapor" role="tabpanel" aria-labelledby="tab-rapor" tabindex="0" class="panel" hidden></section>
             <section id="panel-ppdb" role="tabpanel" aria-labelledby="tab-ppdb" tabindex="0" class="panel" hidden></section>
-            <section id="panel-spp" role="tabpanel" aria-labelledby="tab-spp" tabindex="0" class="panel" hidden></section>
+            <section id="panel-komite" role="tabpanel" aria-labelledby="tab-komite" tabindex="0" class="panel" hidden></section>
             <section id="panel-uji" role="tabpanel" aria-labelledby="tab-uji" tabindex="0" class="panel" hidden></section>
         </div>
 
@@ -86,8 +94,12 @@
                 <b>Mengapa angka jaringan itu penting di sini.</b> Ini catatan anak. Halaman ini memasang
                 <code>connect-src 'none'</code> di dalam tag
                 <code>&lt;meta http-equiv="Content-Security-Policy"&gt;</code> pada sumbernya sendiri, jadi
-                peramban menolak setiap koneksi keluar apa pun yang diminta JavaScript-nya. Penghitung di
-                header membungkus <code>fetch</code>, <code>XMLHttpRequest</code>, <code>WebSocket</code> dan
+                peramban menolak setiap koneksi keluar yang diminta JavaScript <em>dokumen ini</em>.
+                Satu catatan kejujuran: CSP lewat <code>&lt;meta&gt;</code> tidak berlaku di dalam lingkup
+                global sebuah dedicated worker, jadi <code>solver.worker.js</code> memasang pembungkus yang
+                sama di dalam dirinya sendiri dan melaporkan setiap percobaan kembali ke halaman &mdash;
+                penghitung di header menghitung halaman dan worker. Pembungkusnya menutup <code>fetch</code>,
+                <code>XMLHttpRequest</code>, <code>WebSocket</code>, <code>EventSource</code> dan
                 <code>sendBeacon</code>. Buka DevTools, tab Network akan tetap kosong. Yang tersimpan hanya
                 suntingan Anda, di IndexedDB, di peramban ini. Ini pernyataan tentang <em>halaman ini</em> —
                 beranda CV di biassp.github.io memang memanggil GitHub API untuk daftar repositorinya.

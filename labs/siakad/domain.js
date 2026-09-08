@@ -330,9 +330,12 @@
   };
 
   D.fabricateNamaGuru = function (rnd, mapelId) {
-    return GELAR_DEPAN[Math.floor(rnd() * GELAR_DEPAN.length)] +
-      D.fabricateNama(rnd) +
-      D.gelarUntukMapel(rnd, mapelId);
+    var depan = GELAR_DEPAN[Math.floor(rnd() * GELAR_DEPAN.length)];
+    var belakang = D.gelarUntukMapel(rnd, mapelId);
+    // "Drs. X, S.Si." is not a combination that exists: Drs./Dra. IS the old
+    // undergraduate title, so it pairs with a postgraduate one or with nothing.
+    if (depan) belakang = rnd() < 0.5 ? ', M.Pd.' : '';
+    return depan + D.fabricateNama(rnd) + belakang;
   };
 
   /* ================================================= 5. Penilaian model ==

@@ -104,6 +104,17 @@ const PAYLOAD = [
     description: 'wp scratch', language: 'Perl', stargazers_count: 4, forks_count: 4,
     pushed_at: iso(3), topics: [], fork: false, archived: false, private: false,
   },
+  {
+    // public, but kept off the CV on subject-matter grounds
+    name: 'traffic', html_url: 'https://github.com/biassp/traffic',
+    description: 'traffic', language: 'Perl', stargazers_count: 4, forks_count: 4,
+    pushed_at: iso(2), topics: [], fork: false, archived: false, private: false,
+  },
+  {
+    name: 'billy-kill-1', html_url: 'https://github.com/biassp/billy-kill-1',
+    description: null, language: 'Perl', stargazers_count: 4, forks_count: 4,
+    pushed_at: iso(2), topics: [], fork: false, archived: false, private: false,
+  },
 ];
 
 // The six survivors: skillpath, quran-online, aplikasi-pengarsipan-surat-php,
@@ -213,10 +224,12 @@ test('a) healthy payload: filters, curated overrides, uncurated repos still rend
   }
   // HIDE list: matched case-insensitively, and it beats every other signal
   // (wp1/WordPress are public, non-fork, and have more stars than anything else)
-  for (const hidden of ['biassp', 'wp1', 'WordPress']) {
+  for (const hidden of ['biassp', 'wp1', 'WordPress', 'traffic', 'billy-kill-1']) {
     assert.ok(!hrefs.includes('https://github.com/biassp/' + hidden), hidden + ' is HIDE-listed');
   }
-  assert.ok(!titles(ctx).includes('Wp1') && !titles(ctx).includes('WordPress'));
+  for (const t of ['Wp1', 'WordPress', 'Traffic', 'Billy Kill 1']) {
+    assert.ok(!titles(ctx).includes(t), t + ' must not render a card');
+  }
   // ...and their stars/forks/language must not leak into the counters or chips
   assert.ok(!ctx.chips().map((c) => c.getAttribute('data-lang')).includes('Perl'),
     'a HIDE-listed repo contributes no language chip');

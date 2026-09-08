@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<!--
+  Payroll — part of the biassp.github.io portfolio
+  Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+  Not open source. Readable for evaluation only — copying, modification,
+  re-branding or redistribution is not permitted. See /LICENSE.
+  https://biassp.github.io/
+-->
+<html lang="id" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; worker-src 'self' blob:; form-action 'none'; base-uri 'none'; object-src 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Payroll — sistem informasi kepegawaian dan penggajian</title>
+    <meta name="description" content="Demo payroll Indonesia: PPh 21 di bawah rezim TER PP 58/2023 dengan rekonsiliasi setahun di bulan Desember, PTKP TK/0–K/3, BPJS Kesehatan dan Ketenagakerjaan dengan plafon masing-masing, lembur Kepmenaker 102/2004, THR prorata, slip gaji siap cetak A4, dan pemisahan peran HR / payroll / finance. Seluruh data fabrikasi, tidak ada yang dikirim ke mana pun.">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2032%2032%22%3E%3Crect%20width=%2232%22%20height=%2232%22%20rx=%227%22%20fill=%22%236366f1%22/%3E%3Crect%20x=%227%22%20y=%225%22%20width=%2218%22%20height=%2222%22%20rx=%223%22%20fill=%22%23fff%22%20opacity=%22.92%22/%3E%3Crect%20x=%2210%22%20y=%229%22%20width=%2212%22%20height=%222%22%20fill=%22%236366f1%22/%3E%3Crect%20x=%2210%22%20y=%2213%22%20width=%228%22%20height=%222%22%20fill=%22%2322d3ee%22/%3E%3Crect%20x=%2210%22%20y=%2217%22%20width=%2210%22%20height=%222%22%20fill=%22%236366f1%22%20opacity=%22.6%22/%3E%3Crect%20x=%2210%22%20y=%2221%22%20width=%226%22%20height=%223%22%20fill=%22%23c084fc%22/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="app.css">
+    <script src="guard.js"></script>
+</head>
+
+<body>
+    <a class="skip" href="#main">Lompat ke konten</a>
+
+    <!-- One polite live region for the whole app. Every panel is torn down and
+         rebuilt on each state change, which announces nothing on its own: the
+         run that was posted, the action that was refused and why, the recomputed
+         December true-up and the moved tax figure are all written here. -->
+    <div id="say" role="status" aria-live="polite" class="sr-only"></div>
+
+    <header class="top">
+        <div class="brand">
+            <span class="mark" aria-hidden="true">PAY</span>
+            <div>
+                <h1>Payroll</h1>
+                <p class="sub">Kepegawaian dan penggajian — PPh 21 TER dengan rekonsiliasi Desember, BPJS berplafon, lembur, THR. Data fabrikasi, tidak keluar dari tab ini.</p>
+            </div>
+        </div>
+        <div class="top-actions">
+            <button type="button" class="testbadge" id="testBadge" title="Buka hasil uji">
+                <span class="dot" aria-hidden="true"></span><span id="testText">uji: menunggu…</span>
+            </button>
+            <button type="button" class="testbadge" id="bukuBadge" title="Invarian dihitung ulang dari catatan slip gaji yang sedang dimuat — termasuk run yang baru Anda jalankan">
+                <span class="dot" aria-hidden="true"></span><span id="bukuText">invarian: memeriksa…</span>
+            </button>
+            <span class="netbadge" id="netBadge" title="Percobaan fetch / XMLHttpRequest / WebSocket / EventSource / sendBeacon dari halaman ini sejak dimuat">
+                <span class="dot" aria-hidden="true"></span><span id="netCount">panggilan jaringan: 0</span>
+            </span>
+            <button type="button" id="themeBtn" class="btn ghost" aria-pressed="false" title="Ganti ke tema terang">Terang</button>
+            <a class="btn ghost" href="../../">CV</a>
+        </div>
+    </header>
+
+    <main id="main">
+        <p class="banner" id="fabricBanner">
+            <b>Seluruh data pegawai di halaman ini fabrikasi.</b> Nama disusun suku kata demi suku kata dari pola
+            fonotaktik buatan. Setiap NIK berawalan <code>99</code> &mdash; bukan kode provinsi yang pernah
+            diterbitkan Dukcapil, yang nyata berkisar 11&ndash;94 &mdash; sehingga tidak satu pun bisa menunjuk
+            catatan penduduk yang nyata. NPWP memakai awalan kategori <code>99</code>, yang tidak pernah
+            diterbitkan DJP; nomor BPJS berawalan <code>999</code>; nomor rekening berawalan <code>0000</code>,
+            yang tidak diterbitkan bank mana pun. Tidak ada orang, gaji, NPWP, rekening atau nomor BPJS yang
+            nyata di sini. Yang nyata hanyalah <em>aturannya</em> &mdash; tarif, plafon dan rumusnya &mdash; dan
+            setiap aturan itu dikutip beserta dasar hukum dan vintage-nya.
+        </p>
+
+        <div class="ctxbar" id="ctxbar"></div>
+
+        <nav class="tabs" id="tabs" role="tablist" aria-label="Modul">
+            <button type="button" role="tab" id="tab-beranda" aria-controls="panel-beranda" aria-selected="true" class="tab">Beranda</button>
+            <button type="button" role="tab" id="tab-karyawan" aria-controls="panel-karyawan" aria-selected="false" tabindex="-1" class="tab">Karyawan</button>
+            <button type="button" role="tab" id="tab-absensi" aria-controls="panel-absensi" aria-selected="false" tabindex="-1" class="tab">Absensi &amp; Lembur</button>
+            <button type="button" role="tab" id="tab-cuti" aria-controls="panel-cuti" aria-selected="false" tabindex="-1" class="tab">Cuti</button>
+            <button type="button" role="tab" id="tab-run" aria-controls="panel-run" aria-selected="false" tabindex="-1" class="tab">Payroll Run</button>
+            <button type="button" role="tab" id="tab-slip" aria-controls="panel-slip" aria-selected="false" tabindex="-1" class="tab">Slip Gaji</button>
+            <button type="button" role="tab" id="tab-pph" aria-controls="panel-pph" aria-selected="false" tabindex="-1" class="tab">PPh 21 (TER)</button>
+            <button type="button" role="tab" id="tab-bpjs" aria-controls="panel-bpjs" aria-selected="false" tabindex="-1" class="tab">BPJS</button>
+            <button type="button" role="tab" id="tab-thr" aria-controls="panel-thr" aria-selected="false" tabindex="-1" class="tab">THR</button>
+            <button type="button" role="tab" id="tab-laporan" aria-controls="panel-laporan" aria-selected="false" tabindex="-1" class="tab">Laporan</button>
+            <button type="button" role="tab" id="tab-uji" aria-controls="panel-uji" aria-selected="false" tabindex="-1" class="tab">Uji</button>
+        </nav>
+
+        <div class="panels">
+            <section id="panel-beranda" role="tabpanel" aria-labelledby="tab-beranda" tabindex="0" class="panel"></section>
+            <section id="panel-karyawan" role="tabpanel" aria-labelledby="tab-karyawan" tabindex="0" class="panel" hidden></section>
+            <section id="panel-absensi" role="tabpanel" aria-labelledby="tab-absensi" tabindex="0" class="panel" hidden></section>
+            <section id="panel-cuti" role="tabpanel" aria-labelledby="tab-cuti" tabindex="0" class="panel" hidden></section>
+            <section id="panel-run" role="tabpanel" aria-labelledby="tab-run" tabindex="0" class="panel" hidden></section>
+            <section id="panel-slip" role="tabpanel" aria-labelledby="tab-slip" tabindex="0" class="panel" hidden></section>
+            <section id="panel-pph" role="tabpanel" aria-labelledby="tab-pph" tabindex="0" class="panel" hidden></section>
+            <section id="panel-bpjs" role="tabpanel" aria-labelledby="tab-bpjs" tabindex="0" class="panel" hidden></section>
+            <section id="panel-thr" role="tabpanel" aria-labelledby="tab-thr" tabindex="0" class="panel" hidden></section>
+            <section id="panel-laporan" role="tabpanel" aria-labelledby="tab-laporan" tabindex="0" class="panel" hidden></section>
+            <section id="panel-uji" role="tabpanel" aria-labelledby="tab-uji" tabindex="0" class="panel" hidden></section>
+        </div>
+
+        <footer class="foot">
+            <p>
+                <b>Mengapa angka jaringan itu penting di sini.</b> Ini file payroll: gaji setiap orang, status
+                PTKP-nya, NPWP-nya, nomor rekeningnya. Tidak ada tabel di perusahaan mana pun yang lebih tidak
+                ingin dilihat keluar dari gedungnya. Halaman ini memasang <code>connect-src 'none'</code> di
+                dalam tag <code>&lt;meta http-equiv="Content-Security-Policy"&gt;</code> pada sumbernya sendiri,
+                jadi peramban menolak setiap koneksi keluar yang diminta JavaScript <em>dokumen ini</em>.
+                Pembungkus di <code>guard.js</code> menutup <code>fetch</code>, <code>XMLHttpRequest</code>,
+                <code>WebSocket</code>, <code>EventSource</code> dan <code>sendBeacon</code>, lalu menghitung
+                setiap percobaan. Buka DevTools, tab Network akan tetap kosong. Yang tersimpan hanya perubahan
+                Anda, di IndexedDB, di peramban ini. Ini pernyataan tentang <em>halaman ini</em> &mdash; beranda
+                CV di biassp.github.io memang memanggil GitHub API untuk daftar repositorinya.
+            </p>
+            <p>
+                <b>Ini demo, bukan nasihat pajak.</b> Tarif TER, PTKP, lapisan Pasal 17 dan plafon BPJS yang
+                dikodekan di sini beserta dasar hukum dan tanggal vintage-nya tercantum di
+                <a href="README.md">README</a> dan di tab PPh 21 dan BPJS. Tabel pajak berubah; periksa
+                vintage-nya terhadap peraturan yang berlaku sebelum memercayai angka mana pun.
+            </p>
+            <p class="small">
+                Tanpa framework, tanpa bundler, tanpa dependensi, tanpa build step:
+                <code>guard.js</code>, <code>domain.js</code>, <code>pajak.js</code>, <code>payroll.js</code>,
+                <code>seed.js</code>, <code>store.js</code>, <code>tests.js</code>, <code>app.js</code>,
+                <code>app.css</code>.
+                <a href="README.md">README</a>
+            </p>
+        </footer>
+    </main>
+
+    <script src="domain.js"></script>
+    <script src="pajak.js"></script>
+    <script src="payroll.js"></script>
+    <script src="seed.js"></script>
+    <script src="store.js"></script>
+    <script src="tests.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

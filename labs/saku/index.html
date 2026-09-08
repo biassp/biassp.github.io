@@ -198,7 +198,7 @@
         <li class="no">Not a backend. The sync peer is an IndexedDB store in this page, labelled as such everywhere it appears.</li>
         <li class="no">Not Flutter, Dart, a native build or a store release. This is web-platform engineering and is filed as exactly that.</li>
         <li class="no">Not Web Push. Server push needs a push service and VAPID keys; neither can exist on static hosting, so it is not shipped.</li>
-        <li class="no">"No network" is a claim about this page only. It makes zero requests after load — the CV's own home page does call the GitHub API.</li>
+        <li class="no">"No network" is a claim about <em>this</em> page only, and it is a claim about <em>your data</em>: the share POST never leaves the browser, and nothing on this page contacts a third party. The one request the browser may still make is a same-origin re-fetch of this app's own <code>sw.js</code> when it checks for a worker update — you can force that with "Re-read state". The CV's own home page, separately, does call the GitHub API.</li>
       </ul>
     </article>
 
@@ -217,10 +217,10 @@
   </div>
   <ul class="entries" id="entryList"></ul>
   <div class="empty-state" id="inboxEmpty">
-    <h2>Nothing captured yet</h2>
-    <p>Fire <strong>Simulate a share</strong> in the Engine view, paste a bank alert in Capture, or
+    <h2 id="inboxEmptyTitle">Nothing captured yet</h2>
+    <p id="inboxEmptyText">Fire <strong>Simulate a share</strong> in the Engine view, paste a bank alert in Capture, or
       load the sample entries. Every path writes through the same atomic transaction.</p>
-    <button type="button" class="btn primary" data-goto="capture">Capture something</button>
+    <button type="button" class="btn primary" id="inboxEmptyCta" data-goto="capture">Capture something</button>
   </div>
 </section>
 
@@ -328,6 +328,7 @@
 <div class="snackbar" id="snackbar" role="status" aria-live="polite" hidden>
   <span id="snackText"></span>
   <button type="button" class="btn small" id="snackAction" hidden></button>
+  <button type="button" class="btn small ghost snack-close" id="snackClose" aria-label="Dismiss this message">✕</button>
 </div>
 
 <footer class="foot">

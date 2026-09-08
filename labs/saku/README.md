@@ -66,8 +66,11 @@ This is **web-platform engineering**: service workers, IndexedDB, lifecycle and 
 boundaries. It is not evidence of Flutter, Dart, a native build, a store release or background
 native services, and it is not filed as such.
 
-"Makes no network requests" is a claim about **this lab page only**. The CV's own home page does
-call `api.github.com` for its live repo feed.
+"Makes no network requests" is a claim about **this lab page only**, and it is a claim about *your
+data*: the share POST never leaves the browser, and nothing here contacts a third party. The one
+request the browser may still issue is a same-origin re-fetch of this app's own `sw.js` when it
+checks for a worker update — "Re-read state" calls `registration.update()` and will show up in a
+server log. The CV's own home page, separately, does call `api.github.com` for its live repo feed.
 
 ## Browser matrix
 

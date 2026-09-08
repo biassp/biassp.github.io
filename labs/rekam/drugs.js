@@ -44,7 +44,7 @@
     ['ibuprofen', 'Ibuprofen', 'Tablet', '400 mg', ['nsaid', 'analgesik'], 700, true],
     ['na-diklofenak', 'Natrium diklofenak', 'Tablet', '50 mg', ['nsaid', 'analgesik'], 900, true],
     ['as-mefenamat', 'Asam mefenamat', 'Tablet', '500 mg', ['nsaid', 'analgesik'], 800, true],
-    ['aspirin', 'Asam asetilsalisilat', 'Tablet', '80 mg', ['nsaid', 'antiplatelet'], 400, true],
+    ['aspirin', 'Asam asetilsalisilat', 'Tablet', '80 mg', ['antiplatelet', 'salisilat', 'nsaid-dosis-rendah'], 400, true],
     ['klopidogrel', 'Klopidogrel', 'Tablet', '75 mg', ['antiplatelet'], 3500, true],
     ['warfarin', 'Warfarin', 'Tablet', '2 mg', ['antikoagulan'], 2500, true],
 
@@ -92,7 +92,8 @@
     ['kaptopril', 'Kaptopril', 'Tablet', '25 mg', ['antihipertensi', 'ace-inhibitor', 'teratogenik'], 400, true],
     ['lisinopril', 'Lisinopril', 'Tablet', '10 mg', ['antihipertensi', 'ace-inhibitor', 'teratogenik'], 900, true],
     ['valsartan', 'Valsartan', 'Tablet', '80 mg', ['antihipertensi', 'arb', 'teratogenik'], 2400, true],
-    ['bisoprolol', 'Bisoprolol', 'Tablet', '5 mg', ['antihipertensi', 'beta-bloker'], 1200, true],
+    ['bisoprolol', 'Bisoprolol', 'Tablet', '5 mg', ['antihipertensi', 'beta-bloker', 'beta-bloker-selektif'], 1200, true],
+    ['propranolol', 'Propranolol', 'Tablet', '40 mg', ['antihipertensi', 'beta-bloker', 'beta-bloker-nonselektif'], 500, true],
     ['furosemid', 'Furosemid', 'Tablet', '40 mg', ['diuretik', 'diuretik-loop', 'sulfonamid-turunan'], 400, true],
     ['hct', 'Hidroklorotiazid', 'Tablet', '25 mg', ['diuretik', 'diuretik-tiazid', 'sulfonamid-turunan'], 350, true],
     ['spironolakton', 'Spironolakton', 'Tablet', '25 mg', ['diuretik', 'diuretik-hemat-kalium'], 900, true],
@@ -168,7 +169,10 @@
     { id: 'penisilin', label: 'Penisilin', blocks: ['penisilin'], warns: ['sefalosporin'] },
     { id: 'sefalosporin', label: 'Sefalosporin', blocks: ['sefalosporin'], warns: ['penisilin'] },
     { id: 'sulfonamid', label: 'Sulfonamid (sulfa)', blocks: ['sulfonamid'], warns: ['sulfonamid-turunan'] },
-    { id: 'nsaid', label: 'NSAID / AINS', blocks: ['nsaid'], warns: [] },
+    // The allergy block deliberately spans BOTH nsaid tags: 80 mg aspirin is
+    // not an analgesic-dose NSAID for interaction purposes, but it is very much
+    // an NSAID for a patient with aspirin-exacerbated respiratory disease.
+    { id: 'nsaid', label: 'NSAID / AINS', blocks: ['nsaid', 'nsaid-dosis-rendah', 'salisilat'], warns: [] },
     { id: 'makrolida', label: 'Makrolida', blocks: ['makrolida'], warns: [] },
     { id: 'kuinolon', label: 'Kuinolon', blocks: ['kuinolon'], warns: [] },
     { id: 'tetrasiklin', label: 'Tetrasiklin', blocks: ['tetrasiklin'], warns: [] }
@@ -210,6 +214,7 @@
 
     { a: { cls: 'ssri' }, b: { cls: 'antidepresan-trisiklik' }, sev: 'mayor', why: 'Kombinasi serotonergik: risiko sindrom serotonin; fluoksetin juga menghambat metabolisme TCA.', act: 'Hindari kombinasi. Bila berganti obat, perlukan periode wash-out.' },
     { a: { cls: 'ssri' }, b: { cls: 'nsaid' }, sev: 'moderat', why: 'SSRI menurunkan agregasi trombosit; bersama AINS risiko perdarahan saluran cerna naik.', act: 'Tambahkan PPI bila terapi berlanjut.' },
+    { a: { cls: 'ssri' }, b: { cls: 'antiplatelet' }, sev: 'moderat', why: 'SSRI menurunkan agregasi trombosit; bersama antiplatelet risiko perdarahan saluran cerna naik — berlaku juga untuk aspirin dosis antiplatelet.', act: 'Pertimbangkan gastroproteksi bila terapi berjalan lama.' },
     { a: { cls: 'benzodiazepin' }, b: { cls: 'depresan-ssp' }, sev: 'moderat', why: 'Depresi SSP aditif — sedasi berlebih dan risiko depresi napas.', act: 'Hindari duplikasi golongan; bila perlu, turunkan dosis keduanya.' },
     { a: { cls: 'qt-prolonging' }, b: { cls: 'qt-prolonging' }, sev: 'mayor', why: 'Dua obat pemanjang interval QT: risiko torsades de pointes.', act: 'Hindari kombinasi, atau lakukan EKG dan koreksi elektrolit.' },
 
@@ -231,9 +236,144 @@
     { match: { cls: 'nsaid' }, when: 'pregnant', sev: 'mayor', why: 'AINS pada trimester III menutup duktus arteriosus prematur dan mengganggu ginjal janin.', act: 'Parasetamol adalah analgesik pilihan dalam kehamilan.' },
     { match: { cls: 'nsaid' }, when: 'diagnosis', arg: ['N18.9'], sev: 'mayor', why: 'AINS pada penyakit ginjal kronik mempercepat penurunan fungsi ginjal.', act: 'Hindari AINS; gunakan parasetamol.' },
     { match: { cls: 'nsaid' }, when: 'diagnosis', arg: ['K29.7', 'K21.9'], sev: 'moderat', why: 'AINS memperberat gastritis / GERD.', act: 'Tambahkan gastroprotektor atau ganti ke parasetamol.' },
-    { match: { cls: 'beta-bloker' }, when: 'diagnosis', arg: ['J45.9', 'J45.0', 'J46', 'J44.9'], sev: 'mayor', why: 'Beta-bloker non-selektif memicu bronkospasme pada asma / PPOK.', act: 'Bila perlu, gunakan beta-1 selektif dosis rendah dengan pemantauan.' },
-    { match: { id: 'metformin' }, when: 'diagnosis', arg: ['N18.9'], sev: 'mayor', why: 'Metformin pada PGK lanjut berisiko asidosis laktat.', act: 'Sesuaikan atau hentikan berdasarkan eGFR.' }
+    /* The beta-blocker alert used to be self-contradictory: the only
+     * beta-blocker in the formulary was cardioselective, yet the text warned
+     * about non-selective agents and advised switching to a beta-1 selective
+     * one — telling the prescriber to replace bisoprolol with bisoprolol, at a
+     * severity that demanded a typed override. Two rules now, and the
+     * formulary carries propranolol so the non-selective branch has a subject.
+     * Grading matches current GINA/GOLD practice: a cardioselective agent in
+     * well-controlled asthma is a monitoring decision, not a near-stop. */
+    { match: { cls: 'beta-bloker-nonselektif' }, when: 'diagnosis', arg: ['J45.9', 'J45.0', 'J46', 'J44.9'], sev: 'mayor', why: 'Beta-bloker non-selektif memblok reseptor beta-2 bronkus dan dapat memicu bronkospasme berat pada asma / PPOK.', act: 'Hindari. Bila indikasi kardiovaskularnya kuat, gunakan beta-1 selektif (bisoprolol) dosis rendah dengan pemantauan gejala dan APE.' },
+    { match: { cls: 'beta-bloker-selektif' }, when: 'diagnosis', arg: ['J45.9', 'J45.0', 'J46', 'J44.9'], sev: 'moderat', why: 'Beta-bloker kardioselektif umumnya dapat ditoleransi pada asma / PPOK, tetapi selektivitasnya berkurang pada dosis tinggi.', act: 'Mulai dari dosis terendah, naikkan perlahan, dan pantau gejala napas serta kebutuhan pereda.' },
+    { match: { id: 'metformin' }, when: 'diagnosis', arg: ['N18.9'], sev: 'mayor', why: 'Metformin pada PGK lanjut berisiko asidosis laktat.', act: 'Sesuaikan atau hentikan berdasarkan eGFR.' },
+
+    /* DENGUE. The single prescribing rule an Indonesian FKTP most needs
+     * enforced, and the one the app's own seeded plan text for A91 already
+     * states ("AINS dihindari — parasetamol saja") while the engine did not
+     * check it. Thrombocytopenia plus platelet inhibition plus gastric
+     * erosion, in a disease whose feared complication is bleeding. */
+    { match: { cls: 'nsaid' }, when: 'diagnosis', arg: ['A90', 'A91', 'D69.6'], key: 'dengue-bleeding', sev: 'kontraindikasi', why: 'AINS pada dengue / DBD dan pada trombositopenia menambah risiko perdarahan: fungsi trombosit ditekan sementara jumlahnya sudah turun, ditambah erosi mukosa lambung.', act: 'Parasetamol saja untuk demam dan nyeri. Pantau tanda perdarahan dan hematokrit.' },
+    { match: { cls: 'nsaid-dosis-rendah' }, when: 'diagnosis', arg: ['A90', 'A91', 'D69.6'], key: 'dengue-bleeding', sev: 'kontraindikasi', why: 'Aspirin — termasuk dosis antiplatelet 80 mg — dihindari pada dengue / DBD dan trombositopenia karena menghambat fungsi trombosit secara ireversibel.', act: 'Hentikan sementara dan gunakan parasetamol. Keputusan menghentikan antiplatelet pada pasien jantung diambil dokter, bukan diam-diam.' },
+    { match: { cls: 'antiplatelet' }, when: 'diagnosis', arg: ['A90', 'A91', 'D69.6'], key: 'dengue-bleeding', sev: 'kontraindikasi', why: 'Antiplatelet pada dengue / DBD dan trombositopenia menambah risiko perdarahan.', act: 'Tunda selama fase akut; nilai ulang setelah trombosit pulih.' },
+
+    /* Pregnancy gaps the table used to have: doxycycline was covered, the two
+     * antibiotics this clinic actually reaches for were not — and it
+     * prescribes ciprofloxacin for N39.0 while modelling a KIA poli. */
+    { match: { cls: 'kuinolon' }, when: 'pregnant', sev: 'kontraindikasi', why: 'Kuinolon pada kehamilan dihindari karena efek pada tulang rawan yang sedang tumbuh pada data hewan.', act: 'Untuk ISK dalam kehamilan gunakan alternatif yang aman (mis. amoksisilin, nitrofurantoin di luar trimester III) sesuai pola kepekaan setempat.' },
+    { match: { cls: 'sulfonamid' }, when: 'pregnant', sev: 'mayor', why: 'Kotrimoksazol pada trimester I bersifat antagonis folat (risiko defek tabung saraf) dan pada trimester III berisiko kernikterus pada neonatus.', act: 'Pilih antibiotik lain. Bila tidak ada alternatif, berikan bersama suplementasi asam folat dan hindari mendekati aterm.' }
   ];
+
+  /* Pharmacological classes where a second member adds toxicity without adding
+   * effect, with the severity each one deserves. Value is the severity. */
+  var DUP_CLASSES = {
+    'nsaid': 'mayor', 'antiplatelet': 'moderat', 'salisilat': 'moderat',
+    'ppi': 'moderat', 'benzodiazepin': 'mayor', 'antihistamin': 'moderat',
+    'ssri': 'mayor', 'antidepresan-trisiklik': 'mayor', 'kortikosteroid': 'moderat',
+    'statin': 'mayor', 'ace-inhibitor': 'mayor', 'arb': 'mayor',
+    'sulfonilurea': 'mayor', 'beta-bloker': 'mayor', 'ccb': 'moderat',
+    'makrolida': 'moderat', 'penisilin': 'moderat', 'sefalosporin': 'moderat',
+    'kuinolon': 'moderat', 'tetrasiklin': 'moderat', 'sulfonamid': 'moderat',
+    'diuretik-tiazid': 'moderat', 'diuretik-loop': 'moderat',
+    'antasida': 'moderat', 'beta-agonis': 'moderat', 'laksatif': 'moderat'
+  };
+
+  /* ------------------------------------------------------------ dose limits */
+
+  /* MAXIMUM DAILY DOSE, in the unit the strength is written in.
+   *
+   * The completeness check asked whether dose/freq/days/qty were non-empty and
+   * never asked what was in them, so "Paracetamol 10 tablet, 4× sehari" — 20 g
+   * a day, five times the hepatotoxic ceiling — signed cleanly. This table is
+   * short on purpose: it covers the drugs where the ceiling is a hard number a
+   * GP can recite, and the check STAYS SILENT where the signa cannot be parsed
+   * rather than guessing. What it does not do is stated in the UI: this is a
+   * ceiling check, not a dosing calculator, and it computes no paediatric dose.
+   */
+  var MAX_DAILY = {
+    paracetamol: 4000, ibuprofen: 2400, 'na-diklofenak': 150, 'as-mefenamat': 1500,
+    aspirin: 320, amoksisilin: 3000, 'ko-amoksiklav': 2000, sefadroksil: 2000,
+    sefiksim: 400, siprofloksasin: 1500, levofloksasin: 750, kotrimoksazol: 1920,
+    eritromisin: 2000, azitromisin: 500, klaritromisin: 1000, doksisiklin: 200,
+    metronidazol: 2000, amlodipin: 10, kaptopril: 150, lisinopril: 40,
+    valsartan: 320, bisoprolol: 10, propranolol: 320, furosemid: 160, hct: 50,
+    spironolakton: 100, simvastatin: 40, atorvastatin: 80, metformin: 2000,
+    glibenklamid: 20, glimepirid: 8, allopurinol: 300, ondansetron: 24,
+    domperidon: 30, omeprazol: 40, lansoprazol: 60, cetirizine: 10,
+    loratadine: 10, ctm: 24, deksametason: 8, metilprednisolon: 32, prednison: 60,
+    salbutamol: 32, diazepam: 30, alprazolam: 4, kolkisin: 2
+  };
+
+  /* Adult solid oral forms and the age below which they are the wrong product,
+   * not merely the wrong number. A 2-year-old cannot swallow a 500 mg kaplet,
+   * and the paediatric equivalent already sits in the formulary. */
+  var MIN_AGE_FORM = {
+    paracetamol: 6, ibuprofen: 6, 'as-mefenamat': 12, 'na-diklofenak': 12,
+    amoksisilin: 6, 'ko-amoksiklav': 6, sefadroksil: 6, sefiksim: 6,
+    eritromisin: 6, azitromisin: 6, klaritromisin: 6, kotrimoksazol: 6,
+    metronidazol: 6, cetirizine: 6, loratadine: 6, ctm: 6, ambroksol: 6,
+    gg: 6, antasida: 6, domperidon: 6, attapulgit: 6
+  };
+
+  /* Reads the leading number out of a free-text field. Returns null when there
+   * is nothing to read, and null is what keeps the check quiet. */
+  function leadingNumber(s) {
+    var m = /(\d+(?:[.,]\d+)?)/.exec(String(s == null ? '' : s));
+    return m ? parseFloat(m[1].replace(',', '.')) : null;
+  }
+
+  function strengthValue(d) {
+    if (!d) return null;
+    // Only single-ingredient "N mg" / "N mcg" strengths are parsed. Combination
+    // and per-volume strengths ("500/125 mg", "120 mg/5 mL") are left alone.
+    var m = /^(\d+(?:[.,]\d+)?)\s*(mg|mcg|g)$/i.exec(String(d.strength).trim());
+    if (!m) return null;
+    var n = parseFloat(m[1].replace(',', '.'));
+    var unit = m[2].toLowerCase();
+    if (unit === 'g') n *= 1000;
+    if (unit === 'mcg') n /= 1000;
+    return n;
+  }
+
+  /* "3x1" is a complete Indonesian signa in one field: three times a day, one
+   * unit each time — NOT three units. Reading the leading number as a unit
+   * count and then multiplying by the frequency field again turns a routine
+   * prescription into a threefold overdose alert, which is precisely the false
+   * alarm this check exists to avoid producing. */
+  var SIGNA = /(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)/;
+
+  function parseSigna(s) {
+    var m = SIGNA.exec(String(s == null ? '' : s));
+    if (!m) return null;
+    return { times: parseFloat(m[1].replace(',', '.')), units: parseFloat(m[2].replace(',', '.')) };
+  }
+
+  /**
+   * dailyDose(item, drug) -> { perDay, mgPerDay } | null
+   * "1 tablet" × "3x sehari", or "3x1" written whole in either field.
+   * Returns null — and the check then stays silent — whenever the signa cannot
+   * be read with confidence.
+   */
+  function dailyDose(it, d) {
+    var mg = strengthValue(d);
+    var whole = parseSigna(it.dose) || parseSigna(it.freq);
+    var units, times;
+    if (whole) {
+      units = whole.units;
+      times = whole.times;
+    } else {
+      units = leadingNumber(it.dose);
+      times = leadingNumber(it.freq);
+    }
+    if (units == null || times == null || units <= 0 || times <= 0) return null;
+    // A dose written directly in milligrams ("500 mg") is not a unit count.
+    if (!whole && /mg|mcg|gram/i.test(String(it.dose)) && mg) {
+      var written = units;
+      if (/mcg/i.test(String(it.dose))) written /= 1000;
+      return { perDay: (written / mg) * times, mgPerDay: written * times };
+    }
+    return { perDay: units * times, mgPerDay: mg == null ? null : units * times * mg };
+  }
 
   function matches(d, m) {
     if (!d || !m) return false;
@@ -242,7 +382,10 @@
     return false;
   }
 
-  var SEV_RANK = { kontraindikasi: 4, mayor: 3, moderat: 2, minor: 1 };
+  /* 'kelengkapan' is not a clinical severity — it is a clerical block. It
+   * ranks above the clinical rungs only so it sorts to the top of the panel,
+   * and it is reported through its own list rather than through `blocking`. */
+  var SEV_RANK = { kelengkapan: 5, kontraindikasi: 4, mayor: 3, moderat: 2, minor: 1 };
 
   function sevRank(s) { return SEV_RANK[s] || 0; }
 
@@ -340,9 +483,35 @@
       }
     })();
 
-    /* 3. duplicate therapy — two members of the same pharmacological class */
-    var DUP_CLASSES = ['nsaid', 'ppi', 'benzodiazepin', 'antihistamin', 'ssri', 'kortikosteroid', 'statin', 'ace-inhibitor', 'sulfonilurea', 'makrolida'];
-    DUP_CLASSES.forEach(function (cls) {
+    /* 3a. the same drug written twice.
+     * The single commonest double-dosing slip, and the class check could not
+     * see it: it deduplicated by drug NAME before counting, so two identical
+     * paracetamol lines collapsed to one and produced no finding at all. */
+    var byDrug = {};
+    list.forEach(function (x) { byDrug[x.d.id] = (byDrug[x.d.id] || 0) + 1; });
+    Object.keys(byDrug).forEach(function (id) {
+      if (byDrug[id] < 2) return;
+      var d = drug(id);
+      push({
+        kind: 'duplikasi', rule: 'dup-item:' + id, sev: 'mayor',
+        subjects: [d.name],
+        title: d.name + ' ditulis ' + byDrug[id] + '× pada resep yang sama',
+        why: 'Obat yang sama muncul lebih dari satu baris. Bila keduanya diserahkan, pasien menerima kelipatan dosis yang dimaksud — dan ini adalah kesalahan peresepan yang paling sering terjadi, bukan yang paling jarang.',
+        act: 'Gabungkan menjadi satu baris dengan aturan pakai yang benar, atau hapus baris yang berlebih.'
+      });
+    });
+
+    /* 3b. duplicate therapy — two members of the same pharmacological class.
+     *
+     * The list is explicit rather than derived from every class tag, because
+     * deriving it produces nonsense: 'antibiotik', 'antihipertensi' and
+     * 'antidiabetik' are broad categories whose members are routinely and
+     * correctly combined (metformin + glibenklamid is standard therapy), and a
+     * duplication alert on standard therapy is how an alert system gets
+     * clicked through. The classes below are the ones where a second member
+     * adds toxicity without adding effect. The UI states the list so silence
+     * is not misread as an all-clear. */
+    Object.keys(DUP_CLASSES).forEach(function (cls) {
       var members = list.filter(function (x) { return has(x.d, cls); });
       // Topicals do not duplicate systemically; a hydrocortisone cream beside an
       // oral steroid is normal practice, not a duplication error.
@@ -352,7 +521,7 @@
       var uniq = Object.keys(names);
       if (uniq.length > 1) {
         push({
-          kind: 'duplikasi', rule: 'dup:' + cls, sev: cls === 'nsaid' ? 'mayor' : 'moderat',
+          kind: 'duplikasi', rule: 'dup:' + cls, sev: DUP_CLASSES[cls],
           subjects: uniq,
           title: 'Duplikasi golongan ' + cls.toUpperCase() + ': ' + uniq.join(' + '),
           why: cls === 'nsaid'
@@ -384,7 +553,7 @@
         }
         if (!fire) return;
         push({
-          kind: 'populasi', rule: 'pop:' + ri, sev: rule.sev,
+          kind: 'populasi', rule: 'pop:' + (rule.key || ri), sev: rule.sev,
           subjects: [x.d.name],
           title: x.d.name + ' — ' + (rule.when === 'pregnant' ? 'kehamilan' : rule.when === 'ageUnder' ? 'batasan usia' : 'kondisi penyerta'),
           why: ctxNote + ' ' + rule.why, act: rule.act
@@ -392,7 +561,49 @@
       });
     });
 
-    /* 5. incomplete prescription lines — a dose-less line is not signable */
+    /* 5. dose magnitude, where the signa can be read.
+     * Deliberately silent when it cannot: a check that guesses at free text is
+     * worse than one that declines, and declining is stated rather than hidden. */
+    list.forEach(function (x) {
+      var d = x.d, it = x.it;
+      var dd = dailyDose(it, d);
+      var maxD = MAX_DAILY[d.id];
+      if (!dd || dd.mgPerDay == null || maxD == null) return;
+      if (dd.mgPerDay > maxD) {
+        var factor = Math.round((dd.mgPerDay / maxD) * 10) / 10;
+        push({
+          kind: 'dosis', rule: 'maxdose:' + d.id, sev: dd.mgPerDay >= maxD * 2 ? 'kontraindikasi' : 'mayor',
+          subjects: [d.name],
+          title: d.name + ' — dosis harian ' + fmtDose(dd.mgPerDay) + ' melampaui batas ' + fmtDose(maxD) + '/hari',
+          why: 'Aturan pakai "' + it.dose + ', ' + it.freq + '" pada sediaan ' + d.strength +
+            ' setara ' + fmtDose(dd.mgPerDay) + ' per hari, yaitu ' + factor + '× batas maksimum dewasa (' + fmtDose(maxD) + '/hari).',
+          act: 'Perbaiki dosis atau frekuensinya. Batas ini adalah batas dewasa — dosis anak dihitung per kilogram berat badan dan tidak dihitung oleh demo ini.'
+        });
+      }
+    });
+
+    /* 5b. form and age appropriateness. An adult 500 mg kaplet prescribed to a
+     * two-year-old is not a dosing error, it is the wrong product. */
+    if (typeof ctx.age === 'number') {
+      list.forEach(function (x) {
+        var min = MIN_AGE_FORM[x.d.id];
+        if (min == null || ctx.age >= min) return;
+        push({
+          kind: 'sediaan', rule: 'form-age:' + x.d.id, sev: 'mayor',
+          subjects: [x.d.name],
+          title: x.d.name + ' ' + x.d.form + ' ' + x.d.strength + ' — sediaan dewasa untuk pasien usia ' + ctx.age + ' th',
+          why: 'Sediaan padat oral kekuatan dewasa tidak sesuai untuk usia di bawah ' + min + ' tahun: sulit ditelan dan tidak dapat dibagi ke dosis per kilogram dengan andal.',
+          act: 'Gunakan sediaan sirup / dispersibel yang tersedia di formularium, dengan dosis dihitung berdasarkan berat badan.'
+        });
+      });
+    }
+
+    /* 6. incomplete prescription lines — a dose-less line is not signable.
+     *
+     * Its own category, not 'kontraindikasi'. A missing signa blocks signing
+     * just as firmly, but calling it an "absolute contraindication" spends the
+     * top rung of a four-level ladder on a blank field, and the refusal message
+     * a clinician reads then says the wrong thing about their own prescription. */
     (items || []).forEach(function (it) {
       var d = drug(it.drugId);
       var missing = [];
@@ -402,7 +613,7 @@
       if (!it.qty || it.qty <= 0) missing.push('jumlah');
       if (missing.length) {
         push({
-          kind: 'kelengkapan', rule: 'incomplete:' + it.drugId, sev: 'kontraindikasi',
+          kind: 'kelengkapan', rule: 'incomplete:' + it.drugId, sev: 'kelengkapan',
           subjects: [d ? d.name : it.drugId],
           title: (d ? d.name : it.drugId) + ' — resep belum lengkap',
           why: 'Baris resep tidak memuat ' + missing.join(', ') + '.',
@@ -412,15 +623,24 @@
     });
 
     findings.sort(function (a, b) { return sevRank(b.sev) - sevRank(a.sev); });
-    var worst = findings.length ? findings[0].sev : null;
+    var clinical = findings.filter(function (f) { return f.sev !== 'kelengkapan'; });
+    var worst = clinical.length ? clinical[0].sev : null;
     return {
       findings: findings,
-      // Blocking = cannot be signed at all.
+      // Blocking = a clinical contraindication; cannot be signed at all.
       blocking: findings.filter(function (f) { return f.sev === 'kontraindikasi'; }),
+      // Incomplete = also blocks, but for a clerical reason, and says so.
+      incomplete: findings.filter(function (f) { return f.sev === 'kelengkapan'; }),
       // Overridable = signable only with a documented clinical reason.
       overridable: findings.filter(function (f) { return f.sev === 'mayor'; }),
       worst: worst
     };
+  }
+
+  function fmtDose(mg) {
+    if (mg >= 1000) return (Math.round(mg / 100) / 10) + ' g';
+    if (mg < 1) return Math.round(mg * 1000) + ' mcg';
+    return (Math.round(mg * 10) / 10) + ' mg';
   }
 
   R.rx = {
@@ -430,6 +650,10 @@
     allergyClasses: ALLERGY_CLASSES,
     interactions: INTERACTIONS,
     populationRules: POPULATION_RULES,
+    dupClasses: DUP_CLASSES,
+    maxDaily: MAX_DAILY,
+    minAgeForm: MIN_AGE_FORM,
+    dailyDose: dailyDose,
     check: check,
     sevRank: sevRank
   };

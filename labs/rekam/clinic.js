@@ -71,8 +71,17 @@
   Clinic.prototype.encounterForVisit = function (visitId) {
     return this.state.encounters.filter(function (e) { return e.visitId === visitId; })[0] || null;
   };
+  Clinic.prototype.prescriptionsForVisit = function (visitId) {
+    return this.state.prescriptions.filter(function (p) { return p.visitId === visitId; });
+  };
+  /* A visit can accumulate more than one prescription once cancellation
+   * exists: the wrong one is cancelled and a replacement is written. "The"
+   * prescription is the live one — the last that has not been cancelled —
+   * falling back to the last cancelled one so the history is still reachable. */
   Clinic.prototype.prescriptionForVisit = function (visitId) {
-    return this.state.prescriptions.filter(function (p) { return p.visitId === visitId; })[0] || null;
+    var all = this.prescriptionsForVisit(visitId);
+    var live = all.filter(function (p) { return p.status !== 'dibatalkan'; });
+    return live[live.length - 1] || all[all.length - 1] || null;
   };
   Clinic.prototype.prescription = function (id) {
     return this.state.prescriptions.filter(function (p) { return p.id === id; })[0] || null;
@@ -143,8 +152,51 @@
       return Promise.resolve({ ok: false, code: 'validation', reason: 'Nama pasien wajib diisi.' });
     }
     if (!data.dob) {
-      return Promise.resolve({ ok: false, code: 'validation', reason: 'Tanggal lahir wajib diisi — tanpa itu dosis pediatrik dan pemeriksaan usia tidak dapat dihitung.' });
+      return Promise.resolve({
+        ok: false, code: 'validation',
+        reason: 'Tanggal lahir wajib diisi — tanpa usia, pita tanda vital anak, batasan usia obat dan kesesuaian sediaan tidak dapat diperiksa.'
+      });
     }
+    var dobDate = new Date(String(data.dob) + 'T00:00:00Z');
+    if (isNaN(dobDate.getTime())) {
+      return Promise.resolve({ ok: false, code: 'validation', reason: 'Tanggal lahir "' + data.dob + '" bukan tanggal yang sah.' });
+    }
+    var nowRef = this.now();
+    if (dobDate.getTime() > nowRef.getTime()) {
+      return Promise.resolve({
+        ok: false, code: 'validation',
+        reason: 'Tanggal lahir ' + data.dob + ' berada di masa depan. Usia negatif akan lolos dari setiap pemeriksaan yang bergantung pada usia — pita anak, batas aspirin, kurva IMT dewasa — jadi ditolak di sini, bukan nanti.'
+      });
+    }
+    if (nowRef.getUTCFullYear() - dobDate.getUTCFullYear() > 130) {
+      return Promise.resolve({
+        ok: false, code: 'validation',
+        reason: 'Tanggal lahir ' + data.dob + ' memberi usia di atas 130 tahun. Kemungkinan besar salah ketik tahun.'
+      });
+    }
+
+    /* DUPLICATE SUSPICION.
+     *
+     * Two records for one person is the most expensive data-entry error a
+     * clinic makes: the allergy list, the chronic problems and half the
+     * history stay on the record nobody opened. The check is name + date of
+     * birth + sex, which is what a registration clerk compares by eye anyway,
+     * and it REFUSES rather than merges — merging two patients automatically
+     * is a worse mistake than making someone confirm. Proceeding is possible,
+     * but only as an explicit, separately-audited acknowledgement. */
+    if (!data.acknowledgeDuplicate) {
+      var dupes = this.findDuplicates(data.name, data.dob, data.sex === 'P' ? 'P' : 'L');
+      if (dupes.length) {
+        return Promise.resolve({
+          ok: false, code: 'duplicate-suspect', candidates: dupes,
+          reason: 'Sudah ada ' + dupes.length + ' pasien dengan nama, tanggal lahir dan jenis kelamin yang sama: ' +
+            dupes.map(function (p) { return p.rmNumber + (p.allergies.length ? ' (alergi: ' + p.allergies.join(', ') + ')' : ''); }).join(', ') +
+            '. Nomor RM kedua untuk orang yang sama memecah riwayat — alergi dan penyakit kronis tertinggal di rekam yang tidak dibuka. ' +
+            'Gunakan No. RM yang sudah ada, atau nyatakan secara tegas bahwa ini orang yang berbeda.'
+        });
+      }
+    }
+
     var rm = this.allocateRM();
     var p = {
       rmNumber: rm,
@@ -164,12 +216,29 @@
       demo: true
     };
     return this.log('pasien.daftar', 'patient', rm,
-      'Pasien baru didaftarkan, No. RM ' + rm + ' dialokasikan.',
-      { nama: p.name, kelas: p.klass, alergi: p.allergies }
+      'Pasien baru didaftarkan, No. RM ' + rm + ' dialokasikan.' +
+      (data.acknowledgeDuplicate ? ' Peringatan duplikat diabaikan secara sadar oleh petugas.' : ''),
+      {
+        nama: p.name, kelas: p.klass, alergi: p.allergies,
+        duplikatDiabaikan: data.acknowledgeDuplicate ? this.findDuplicates(p.name, p.dob, p.sex).map(function (x) { return x.rmNumber; }) : null
+      }
     ).then(function () {
       self.state.patients.push(p);
       self.changed();
       return { ok: true, patient: p };
+    });
+  };
+
+  function normName(s) {
+    return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+
+  /** Existing patients matching on normalised name + date of birth + sex. */
+  Clinic.prototype.findDuplicates = function (name, dob, sex) {
+    var n = normName(name);
+    if (!n || !dob) return [];
+    return this.state.patients.filter(function (p) {
+      return normName(p.name) === n && p.dob === dob && (!sex || p.sex === sex);
     });
   };
 
@@ -208,6 +277,15 @@
     if (denied) return Promise.resolve(denied);
     var p = this.patient(data.rmNumber);
     if (!p) return Promise.resolve({ ok: false, code: 'not-found', reason: 'No. RM ' + data.rmNumber + ' tidak ditemukan.' });
+    // The chief complaint is what the nurse triages against and what the
+    // doctor opens the consultation on. A visit without one arrives at the
+    // consulting room as a name and a queue number.
+    if (!data.complaint || !String(data.complaint).trim()) {
+      return Promise.resolve({
+        ok: false, code: 'validation',
+        reason: 'Keluhan utama wajib diisi. Itulah satu-satunya keterangan yang dibawa pasien dari loket ke triase dan ke ruang periksa.'
+      });
+    }
     var poli = D.POLI_BY_ID[data.poli] ? data.poli : 'umum';
     var date = data.date || todayISO(this.now());
 
@@ -236,7 +314,8 @@
       klass: data.klass || p.klass,
       queueNo: q.display,
       queueSeq: q.seq,
-      complaint: data.complaint || '',
+      complaint: String(data.complaint).trim(),
+      kecelakaan: D.KECELAKAAN_BY_ID[data.kecelakaan || ''] ? (data.kecelakaan || null) : null,
       status: 'terdaftar',
       doctorId: data.doctorId || null,
       triage: null,
@@ -248,7 +327,7 @@
     };
     return this.log('kunjungan.buka', 'visit', id,
       'Kunjungan dibuka untuk ' + p.rmNumber + ' di ' + D.POLI_BY_ID[poli].label + ', antrian ' + q.display + '.',
-      { poli: poli, kelas: v.klass, keluhan: v.complaint }
+      { poli: poli, kelas: v.klass, keluhan: v.complaint, kecelakaan: v.kecelakaan }
     ).then(function () {
       self.state.visits.push(v);
       self.changed();
@@ -319,16 +398,39 @@
       note: t.note || '',
       by: this.actor.id, at: this.now().toISOString()
     };
-    if (!triage.acuity) triage.acuity = D.suggestAcuity(triage);
+
+    // An empty form is not a green patient. Saving nothing and then labelling
+    // the result "hijau" is the silent downgrade the design notes call a
+    // hazard — so an unmeasured patient is refused, not graded.
+    if (!D.hasMeasurement(triage)) {
+      return Promise.resolve({
+        ok: false, code: 'validation',
+        reason: 'Tidak ada satu pun tanda vital yang terisi. Triase kosong tidak disimpan dan tidak dinilai "hijau" — pasien yang belum diukur bukan pasien yang tidak gawat.'
+      });
+    }
+    var bad = D.checkVitalRanges(triage);
+    if (bad) {
+      return Promise.resolve({ ok: false, code: 'validation', field: bad.field, reason: bad.reason });
+    }
+
+    var age = this.age(this.patient(v.rmNumber));
+    if (!triage.acuity) triage.acuity = D.suggestAcuity(triage, age);
+    if (!triage.acuity) {
+      return Promise.resolve({ ok: false, code: 'validation', reason: 'Tingkat kegawatan tidak dapat disarankan dari tanda vital yang ada. Tetapkan secara manual.' });
+    }
     return this.log('triase.isi', 'visit', visitId,
       'Tanda vital dicatat, triase ' + triage.acuity + '.',
-      { td: triage.tdSistol + '/' + triage.tdDiastol, nadi: triage.nadi, suhu: triage.suhu, spo2: triage.spo2, acuity: triage.acuity }
+      { td: triage.tdSistol + '/' + triage.tdDiastol, nadi: triage.nadi, suhu: triage.suhu, spo2: triage.spo2, acuity: triage.acuity, usia: age }
     ).then(function () {
       v.triage = triage;
       self.changed();
-      return { ok: true, visit: v, flags: D.flagVitals(triage, self.age(self.patient(v.rmNumber))) };
+      return { ok: true, visit: v, flags: D.flagVitals(triage, age, { knownHypertension: hasChronic(self.patient(v.rmNumber), 'I10') }) };
     });
   };
+
+  function hasChronic(p, code) {
+    return !!(p && p.chronic && p.chronic.indexOf(code) >= 0);
+  }
 
   function num(x) {
     if (x === '' || x == null) return null;
@@ -446,6 +548,21 @@
     if (e.status === 'signed') {
       return Promise.resolve({ ok: false, code: 'already', reason: 'Catatan sudah ditandatangani.' });
     }
+    /* A signature binds to the AUTHOR of the content, not to whoever happens
+     * to be logged in. Letting dr. B sign dr. A's draft produced a note whose
+     * responsible clinician and whose signatory were two different people —
+     * and then locked dr. A out of amending her own note, because the addendum
+     * guard compares against the signatory. A supervisor attesting to someone
+     * else's note is a co-signature: a separate act, separately named and
+     * separately audited, which this demo does not model. */
+    if (e.doctorId && e.doctorId !== this.actor.id) {
+      return Promise.resolve({
+        ok: false, code: 'permission',
+        reason: 'Catatan ini ditulis oleh ' + ((this.staff(e.doctorId) || {}).name || e.doctorId) +
+          '. Tanda tangan melekat pada penulis isinya, bukan pada siapa pun yang sedang membuka layar. ' +
+          'Ko-tanda-tangan penyelia adalah tindakan tersendiri dan tidak dimodelkan di demo ini.'
+      });
+    }
     if (!e.s || !String(e.s).trim()) {
       return Promise.resolve({ ok: false, code: 'validation', reason: 'Subjective (anamnesis) belum diisi.' });
     }
@@ -501,19 +618,44 @@
     if (!D.ADDENDABLE[patch.path]) {
       return Promise.resolve({ ok: false, code: 'validation', reason: 'Bagian "' + patch.path + '" tidak dapat diadendum.' });
     }
+    /* WHO MAY CORRECT WHAT.
+     *
+     * Two separate questions, and treating them as one was the hole. A nurse
+     * correcting a mistyped blood pressure is a typing correction. A nurse
+     * replacing the coded diagnosis on a physician's signed note is a clinical
+     * act performed by someone without the authority to perform it — and
+     * because the addendum takes effect in effectiveEncounter, the record's
+     * operative diagnosis would become one the nurse authored. */
+    var pathVerdict = D.canAddendum(this.actor.role, patch.path);
+    if (!pathVerdict.ok) {
+      return Promise.resolve({ ok: false, code: 'permission', reason: pathVerdict.reason });
+    }
     if (!patch.reason || !String(patch.reason).trim()) {
       return Promise.resolve({ ok: false, code: 'validation', reason: 'Alasan koreksi wajib diisi. Koreksi tanpa alasan tidak dapat dipertanggungjawabkan.' });
     }
-    // A doctor may only amend their own note; anyone else's correction is a
-    // different act with a different name, and this demo does not model it.
-    if (this.actor.role === 'dokter' && e.signedBy !== this.actor.id) {
+    // Clinical content may only be amended by the clinician who signed it.
+    // This check applies to EVERY actor, not just doctors: scoping it to
+    // `role === 'dokter'` meant it never fired for anyone else. The nurse's
+    // vitals correction is the one deliberate exception, and it is confined to
+    // 'o.vitals' by the path table above.
+    if (patch.path !== 'o.vitals' && e.signedBy !== this.actor.id) {
       return Promise.resolve({
         ok: false, code: 'permission',
-        reason: 'Catatan ini ditandatangani oleh dokter lain. Adendum atas catatan dokter lain memerlukan alur persetujuan yang tidak dimodelkan di demo ini.'
+        reason: 'Catatan ini ditandatangani oleh ' + ((this.staff(e.signedBy) || {}).name || e.signedBy) +
+          '. Adendum atas isi klinis catatan orang lain memerlukan alur persetujuan yang tidak dimodelkan di demo ini.'
       });
     }
 
     var current = D.effectiveEncounter(e, this.state.addenda).values[patch.path];
+    // An addendum that changes nothing is not a correction: it is a mandatory
+    // reason, an audit entry and a "diadendum" badge attached to an unchanged
+    // value. The UI could produce one by accident; the model refuses it.
+    if (A.canonical(current === undefined ? null : current) === A.canonical(patch.newValue === undefined ? null : patch.newValue)) {
+      return Promise.resolve({
+        ok: false, code: 'no-change',
+        reason: 'Isi baru sama persis dengan nilai yang berlaku sekarang. Adendum yang tidak mengubah apa pun hanya menambah kebisingan ke rekam medis dan ke rantai audit.'
+      });
+    }
     this.state.counters.addendum += 1;
     var id = 'ADD-' + D.pad(this.state.counters.addendum, 4);
     var add = {
@@ -572,10 +714,15 @@
     var v = this.visit(visitId);
     if (!v) return Promise.resolve({ ok: false, code: 'not-found', reason: 'Kunjungan tidak ditemukan.' });
     var rx = this.prescriptionForVisit(visitId);
+    // A cancelled prescription is history, not a working draft: writing again
+    // starts a NEW prescription beside it rather than editing it back to life.
+    if (rx && rx.status === 'dibatalkan') rx = null;
     if (rx && rx.status !== 'draft') {
       return Promise.resolve({
         ok: false, code: 'immutable',
-        reason: 'Resep sudah ditandatangani dan tidak dapat diubah. Untuk mengubah terapi, batalkan resep di farmasi dan tulis resep baru.'
+        reason: 'Resep ' + rx.id + ' sudah ditandatangani (status: ' + rx.status + ') dan tidak dapat disunting. ' +
+          'Untuk mengubah terapi: batalkan resep ini dengan alasan tertulis — tombol "Batalkan resep" — lalu tulis resep baru. ' +
+          'Pembatalan tidak menghapus apa pun; resep lama tetap terbaca beserta alasannya.'
       });
     }
     if (!rx) {
@@ -624,6 +771,15 @@
     }
 
     var safety = R.rx.check(rx.items, this.rxContext(rx.visitId));
+    // Clerical block, worded as one. An unfinished signa is not an absolute
+    // contraindication and must not be announced as one.
+    if (safety.incomplete.length) {
+      return Promise.resolve({
+        ok: false, code: 'incomplete', safety: safety,
+        reason: 'Resep belum lengkap: ' + safety.incomplete.length + ' baris tanpa aturan pakai yang utuh. ' +
+          safety.incomplete.map(function (f) { return f.title; }).join('; ') + '.'
+      });
+    }
     if (safety.blocking.length) {
       return this.log('resep.ditolak', 'prescription', rxId,
         'Penandatanganan resep ditolak oleh pemeriksaan keamanan (' + safety.blocking.length + ' kontraindikasi).',
@@ -681,6 +837,64 @@
         self.changed();
         return { ok: true, prescription: rx, safety: safety };
       });
+  };
+
+  /**
+   * cancelPrescription — the exit that the refusal message used to name and
+   * the system did not have.
+   *
+   * A signed prescription with the wrong drug on it was previously a dead end:
+   * it could not be edited, could not be cancelled, and the queue guard would
+   * not let the visit reach the cashier while it existed. Cancellation is a
+   * chained, attributed, reasoned act — the prescriber withdraws their own
+   * order, or the pharmacist returns it to the prescriber — and it never
+   * deletes: the cancelled prescription stays readable with its reason.
+   */
+  Clinic.prototype.cancelPrescription = function (rxId, reason) {
+    var self = this;
+    var rx = this.prescription(rxId);
+    if (!rx) return Promise.resolve({ ok: false, code: 'not-found', reason: 'Resep tidak ditemukan.' });
+    if (rx.status === 'dibatalkan') {
+      return Promise.resolve({ ok: false, code: 'already', reason: 'Resep ini sudah dibatalkan.' });
+    }
+    if (rx.status === 'diserahkan') {
+      return Promise.resolve({
+        ok: false, code: 'state',
+        reason: 'Obat sudah diserahkan kepada pasien. Yang sudah keluar dari apotek tidak dapat "dibatalkan" — yang berlaku adalah pencatatan penghentian terapi pada catatan kunjungan berikutnya.'
+      });
+    }
+    var role = this.actor.role;
+    if (role === 'dokter') {
+      if (rx.signedBy && rx.signedBy !== this.actor.id) {
+        return Promise.resolve({
+          ok: false, code: 'permission',
+          reason: 'Resep ini ditandatangani oleh ' + ((this.staff(rx.signedBy) || {}).name || rx.signedBy) + '. Dokter hanya membatalkan resepnya sendiri.'
+        });
+      }
+    } else if (role !== 'apoteker') {
+      return Promise.resolve({
+        ok: false, code: 'permission',
+        reason: 'Peran ' + D.roleLabel(role) + ' tidak dapat membatalkan resep. Pembatalan dilakukan oleh dokter penulisnya, atau oleh apoteker yang mengembalikan resep kepada penulisnya.'
+      });
+    }
+    if (!reason || String(reason).trim().length < 5) {
+      return Promise.resolve({
+        ok: false, code: 'validation',
+        reason: 'Alasan pembatalan wajib ditulis (minimal 5 karakter). Resep yang hilang tanpa keterangan tidak dapat dipertanggungjawabkan.'
+      });
+    }
+    var before = rx.status;
+    return this.log('resep.batal', 'prescription', rxId,
+      'Resep dibatalkan oleh ' + this.actor.name + ' (' + D.roleLabel(role) + '). Isi resep tetap tersimpan.',
+      { statusSebelum: before, alasan: String(reason).trim(), items: rx.items.length }
+    ).then(function () {
+      rx.status = 'dibatalkan';
+      rx.cancelledBy = self.actor.id;
+      rx.cancelledAt = self.now().toISOString();
+      rx.cancelReason = String(reason).trim();
+      self.changed();
+      return { ok: true, prescription: rx };
+    });
   };
 
   Clinic.prototype.reviewPrescription = function (rxId, note) {

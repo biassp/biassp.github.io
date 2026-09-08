@@ -197,7 +197,11 @@
       o: 'Liang telinga kanan tertutup serumen padat. Membran timpani tidak terlihat.',
       p: 'Ekstraksi serumen hari ini. Hindari cotton bud.',
       rx: [], tindakan: ['ganti-verban'] },
-    { code: 'T14.1', poli: 'umum',
+    /* An injury rubric alone does not say how the injury happened. The second
+     * code (chapter XX) is what an Indonesian clinic routes the bill on, so
+     * this presentation carries both, plus the kecelakaan flag that keeps the
+     * value out of the BPJS capitation total. */
+    { code: 'T14.1', poli: 'umum', extraCodes: ['W01'], kecelakaan: 'lalu-lintas',
       s: 'Luka robek di tungkai bawah kanan akibat terjatuh dari sepeda sekitar {n} jam lalu.',
       o: 'Vulnus laceratum regio cruris dextra ± 4 cm, tepi tidak rata, perdarahan aktif minimal. Neurovaskular distal baik.',
       p: 'Hecting, kontrol luka 3 hari, angkat jahitan hari ke-10. Status tetanus dievaluasi.',
@@ -236,6 +240,59 @@
     { id: 'stf-05', name: 'drg. Lestrani Ambara', role: 'dokter', title: 'Dokter Gigi', sip: 'SIP-FIKTIF-21', poli: 'gigi' },
     { id: 'stf-06', name: 'apt. Danurwenda Prasista', role: 'apoteker', title: 'Apoteker Penanggung Jawab', sip: 'SIPA-FIKTIF-31' }
   ];
+
+  /* AGE-APPROPRIATE SEEDED VITALS.
+   *
+   * The old generator drew one range for everybody: respiratory rate 14–21 and
+   * pulse 62–92 for a patient of any age. For an adult that is normal; for a
+   * six-month-old it is bradycardia and bradypnoea, so the demo shipped a ward
+   * full of infants who read as peri-arrest the moment the vitals engine
+   * learned paediatric bands. Vitals are generated FROM the same bands the
+   * engine interprets them with, so a well seeded child is a well child.
+   */
+  function normalVitals(rand, age, opts) {
+    opts = opts || {};
+    var band = D.vitalBand(age);
+    var floor = D.hypotensionFloor(age);
+    var lo = band.hr[0], hi = band.hr[1];
+    var rrLo = band.rr[0], rrHi = band.rr[1];
+    // Fever lifts the pulse; in a child it lifts it a lot.
+    var hrSpan = hi - lo;
+    var nadi = opts.febrile
+      ? D.intBetween(rand, lo + Math.round(hrSpan * 0.45), hi - 1)
+      : D.intBetween(rand, lo + 2, lo + Math.round(hrSpan * 0.6));
+    var rr = opts.febrile
+      ? D.intBetween(rand, rrLo + Math.round((rrHi - rrLo) * 0.4), rrHi)
+      : D.intBetween(rand, rrLo, rrHi - 1);
+
+    var sistol, diastol;
+    if (age < 12) {
+      // Comfortably above the hypotension floor and well below anything that
+      // would read as a paediatric concern.
+      sistol = D.intBetween(rand, floor + 15, floor + 40);
+      diastol = D.intBetween(rand, Math.round(sistol * 0.55), Math.round(sistol * 0.68));
+    } else if (opts.hyper) {
+      sistol = D.intBetween(rand, 138, 168);
+      diastol = D.intBetween(rand, 84, 102);
+    } else {
+      sistol = D.intBetween(rand, 105, 128);
+      diastol = D.intBetween(rand, 65, 82);
+    }
+    return {
+      tdSistol: sistol, tdDiastol: diastol, nadi: nadi, rr: rr,
+      suhu: opts.febrile
+        ? Math.round((37.6 + rand() * 1.8) * 10) / 10
+        : Math.round((36.3 + rand() * 0.8) * 10) / 10,
+      spo2: opts.lowSat ? D.intBetween(rand, 93, 97) : D.intBetween(rand, 96, 99),
+      bb: age < 1 ? Math.round((3.5 + rand() * 5) * 10) / 10
+        : age < 13 ? D.intBetween(rand, 9, 40)
+          : D.intBetween(rand, 44, 92),
+      tb: age < 1 ? D.intBetween(rand, 50, 78)
+        : age < 13 ? D.intBetween(rand, 78, 150)
+          : D.intBetween(rand, 148, 180),
+      note: ''
+    };
+  }
 
   function iso(date) {
     return date.getFullYear() + '-' + D.pad(date.getMonth() + 1, 2) + '-' + D.pad(date.getDate(), 2);
@@ -367,7 +424,8 @@
           return clinic.openVisit({
             rmNumber: p.rmNumber, poli: pres.poli, klass: p.klass, date: dateStr,
             complaint: pres.s.split('.')[0].replace('{n}', String(D.intBetween(rand, 2, 6))),
-            doctorId: doctorId
+            doctorId: doctorId,
+            kecelakaan: pres.kecelakaan || null
           });
         })
         .then(function (res) {
@@ -379,19 +437,11 @@
           if (!visitRef || !res || !res.ok) return null;
           setClock(dateStr, hour, minute + 8);
           asRole('perawat');
-          var hyper = (p.chronic || []).indexOf('I10') >= 0;
-          var febrile = ['A09', 'A91', 'J06.9', 'K04.7'].indexOf(pres.code) >= 0;
-          var t = {
-            tdSistol: hyper ? D.intBetween(rand, 138, 168) : D.intBetween(rand, 105, 132),
-            tdDiastol: hyper ? D.intBetween(rand, 84, 102) : D.intBetween(rand, 65, 84),
-            nadi: febrile ? D.intBetween(rand, 88, 112) : D.intBetween(rand, 62, 92),
-            suhu: febrile ? Math.round((37.6 + rand() * 1.8) * 10) / 10 : Math.round((36.3 + rand() * 0.8) * 10) / 10,
-            rr: D.intBetween(rand, 14, 21),
-            spo2: pres.code === 'J45.9' ? D.intBetween(rand, 93, 97) : D.intBetween(rand, 96, 99),
-            bb: age < 13 ? D.intBetween(rand, 8, 40) : D.intBetween(rand, 44, 92),
-            tb: age < 13 ? D.intBetween(rand, 70, 150) : D.intBetween(rand, 148, 180),
-            note: ''
-          };
+          var t = normalVitals(rand, age, {
+            hyper: (p.chronic || []).indexOf('I10') >= 0,
+            febrile: ['A09', 'A91', 'J06.9', 'K04.7'].indexOf(pres.code) >= 0,
+            lowSat: pres.code === 'J45.9'
+          });
           return clinic.recordTriage(visitRef.id, t);
         })
         .then(function () {
@@ -413,6 +463,10 @@
           encRef = res.encounter;
           var n = String(D.intBetween(rand, 2, 6));
           var assessment = [{ code: pres.code, primary: true, note: '' }];
+          // The external-cause code that says HOW an injury happened.
+          (pres.extraCodes || []).forEach(function (c) {
+            if (R.icd.get(c)) assessment.push({ code: c, primary: false, note: 'Kode sebab luar (bab XX).' });
+          });
           (p.chronic || []).forEach(function (c) {
             if (c !== pres.code && R.icd.get(c) && assessment.length < 3) {
               assessment.push({ code: c, primary: false, note: 'Komorbid, terkontrol.' });
@@ -620,13 +674,10 @@
             asRole('perawat');
             setClock(todayStr, spec.h, spec.m + 7);
             var age = clinic.age(p);
-            return clinic.recordTriage(v.id, {
-              tdSistol: D.intBetween(rand, 108, 158), tdDiastol: D.intBetween(rand, 68, 96),
-              nadi: D.intBetween(rand, 66, 104), suhu: Math.round((36.4 + rand() * 1.9) * 10) / 10,
-              rr: D.intBetween(rand, 14, 22), spo2: D.intBetween(rand, 95, 99),
-              bb: age < 13 ? D.intBetween(rand, 9, 38) : D.intBetween(rand, 45, 90),
-              tb: age < 13 ? D.intBetween(rand, 72, 148) : D.intBetween(rand, 150, 178)
-            }).then(function () { return clinic.transition(v.id, 'menunggu-dokter'); });
+            return clinic.recordTriage(v.id, normalVitals(rand, age, {
+              hyper: (p.chronic || []).indexOf('I10') >= 0,
+              febrile: rand() < 0.3
+            })).then(function () { return clinic.transition(v.id, 'menunggu-dokter'); });
           })
           .then(function () {
             if (!v || ['terdaftar', 'triase', 'menunggu-dokter'].indexOf(spec.status) >= 0) return null;

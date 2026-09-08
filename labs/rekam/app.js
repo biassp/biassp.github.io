@@ -96,7 +96,42 @@
   var icdQuery = '';
   var drugQuery = '';
   var addendumPath = 's';
+  var addendumValue = null;      // backs the "Isi baru" control; survives re-render
+  var addendumReason = '';       // backs "Alasan koreksi"; survives re-render
+  var addendumSeededFor = null;  // '<encounterId>|<path>' the value was seeded from
   var patientQuery = '';
+  var dupCandidates = null;      // duplicate-registration confirmation, pending
+  var dupPending = null;
+  var storeLocked = false;
+
+  var VITAL_FIELDS = [
+    { key: 'tdSistol', label: 'Sistol', unit: 'mmHg' },
+    { key: 'tdDiastol', label: 'Diastol', unit: 'mmHg' },
+    { key: 'nadi', label: 'Nadi', unit: 'x/mnt' },
+    { key: 'suhu', label: 'Suhu', unit: '°C', step: '0.1' },
+    { key: 'rr', label: 'RR', unit: 'x/mnt' },
+    { key: 'spo2', label: 'SpO₂', unit: '%' },
+    { key: 'bb', label: 'BB', unit: 'kg', step: '0.1' },
+    { key: 'tb', label: 'TB', unit: 'cm' }
+  ];
+
+  /* Seed the addendum form from the effective value ONLY when the encounter or
+   * the path changes — never on an ordinary re-render, which is what used to
+   * throw away what the doctor had typed. */
+  function seedAddendumForm(encId, path, current) {
+    var key = encId + '|' + path;
+    if (addendumSeededFor === key) return;
+    addendumSeededFor = key;
+    addendumReason = '';
+    if (path === 'a') {
+      addendumValue = (current || []).map(function (d) { return d.code; }).join(' ');
+    } else if (path === 'o.vitals') {
+      addendumValue = {};
+      VITAL_FIELDS.forEach(function (f) { addendumValue[f.key] = current ? current[f.key] : null; });
+    } else {
+      addendumValue = current == null ? '' : String(current);
+    }
+  }
 
   function today() { return R.todayISO(new Date()); }
 
@@ -112,17 +147,63 @@
     saveTimer = setTimeout(function () {
       saveTimer = null;
       R.store.save(clinic).then(function (res) {
-        if (!res.ok) showStoreWarning('Perubahan tidak tersimpan ke IndexedDB: ' + res.reason + ' — aplikasi tetap berjalan dari memori.');
+        if (res.ok) return;
+        if (res.locked) { showTabLock(); return; }
+        showStoreWarning('Perubahan tidak tersimpan ke IndexedDB: ' + res.reason + ' — aplikasi tetap berjalan dari memori.');
       });
     }, 250);
   }
 
-  function showStoreWarning(msg) {
+  function showStoreWarning(msg, actions) {
     var box = $('storeWarn');
     clear(box);
     box.hidden = false;
     box.className = 'warnbar';
     box.appendChild(h('span', {}, h('b', { text: 'Penyimpanan: ' }), msg));
+    if (actions) box.appendChild(actions);
+  }
+
+  /* TWO TABS ON ONE PROFILE.
+   *
+   * Each tab holds its own Clinic and its own RM counter, so two of them
+   * reissue the same No. RM to two different people, overwrite each other's
+   * snapshot whole, and interleave writes into the shared audit store until a
+   * third tab boots into "Rantai PUTUS" after entirely ordinary use. This demo
+   * cannot merge two divergent clinics and will not pretend to; the tab that
+   * does not own the database stops writing and says so, in words, with the
+   * one button that resolves it. */
+  function showTabLock() {
+    storeLocked = true;
+    showStoreWarning(
+      'Klinik ini sudah terbuka di tab lain pada peramban yang sama. Tab INI berjalan dari memori dan sengaja tidak ' +
+      'menulis ke basis data: dua tab yang menulis bergantian akan menerbitkan ulang No. RM yang sama kepada dua orang ' +
+      'berbeda dan meninggalkan rantai audit tersimpan yang campur aduk — yang lalu terbaca sebagai "Rantai PUTUS" ' +
+      'oleh tab ketiga. Tutup tab yang lain, atau ambil alih basis data dari sini (perubahan yang belum tersimpan di tab lain akan hilang).',
+      h('span', { class: 'controls' }, h('button', {
+        type: 'button', class: 'btn small',
+        onclick: function () {
+          R.store.takeOver();
+          storeLocked = false;
+          R.store.save(clinic).then(function (res) {
+            if (res.ok) {
+              $('storeWarn').hidden = true;
+              say('Tab ini sekarang memiliki basis data klinik. Rantai ditulis ulang dari state di memori.', 'good');
+              verifyFromDisk();
+            } else {
+              showStoreWarning('Pengambilalihan gagal: ' + res.reason);
+            }
+          });
+        }
+      }, 'Ambil alih dari tab ini')));
+  }
+
+  function startHeartbeat() {
+    if (!R.store.heartbeat) return;
+    setInterval(function () {
+      R.store.heartbeat().then(function (res) {
+        if (res && res.locked && !storeLocked) showTabLock();
+      });
+    }, 5000);
   }
 
   /* -------------------------------------------------------------- egress */
@@ -142,17 +223,31 @@
   function applyThemeLabel() {
     $('themeBtn').textContent = currentTheme() === 'light' ? 'Gelap' : 'Terang';
   }
+  /* The button carries NO aria-label. It used to say aria-label="Ganti tema"
+   * over visible text reading "Terang", and an aria-label wins over the
+   * contents — so the accessible name did not contain the visible label, which
+   * is a WCAG 2.5.3 (Label in Name) failure: a voice-control user saying
+   * "click Terang" could not activate it. The visible text IS the name now,
+   * and the change is announced through a live region rather than guessed at
+   * from an aria-pressed whose polarity would contradict the label. */
   $('themeBtn').addEventListener('click', function () {
     var next = currentTheme() === 'light' ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', next);
     R.store.prefSet('theme', next);
     applyThemeLabel();
+    var live = $('themeLive');
+    if (live) live.textContent = 'Tema diubah ke ' + (next === 'light' ? 'terang' : 'gelap') + '.';
   });
   applyThemeLabel();
 
   /* ----------------------------------------------------------------- tabs */
 
   var TABS = ['antrian', 'pendaftaran', 'rekam', 'konsultasi', 'farmasi', 'kasir', 'audit', 'uji'];
+  var TAB_TITLES = {
+    antrian: 'Antrian', pendaftaran: 'Pendaftaran', rekam: 'Rekam Medis',
+    konsultasi: 'Konsultasi', farmasi: 'Farmasi', kasir: 'Kasir',
+    audit: 'Jejak Audit', uji: 'Uji'
+  };
 
   function selectTab(name) {
     active = name;
@@ -282,7 +377,10 @@
     BOARD.forEach(function (st) {
       var col = h('div', { class: 'qcol' });
       var list = todays.filter(function (v) { return v.status === st; });
-      col.appendChild(h('h4', {},
+      // h3, not h4: the panel's own h2 sits above it, and the cards below are
+      // h3 siblings. The outline used to go h1 → h4 → h3, which is not an
+      // outline a screen-reader user can navigate by heading.
+      col.appendChild(h('h3', {},
         h('span', { text: D.QUEUE[st].label }),
         h('span', { class: 'mono', text: String(list.length) })));
       col.appendChild(h('p', { class: 'hint', text: D.QUEUE[st].hint }));
@@ -382,6 +480,44 @@
       card.appendChild(h('div', { class: 'denied' },
         h('b', { text: '→ ' + D.QUEUE[to].label + ' ditolak. ' }), verdict.reason));
     });
+
+    /* ASSIGNING A DOCTOR AFTER THE VISIT IS OPEN.
+     *
+     * The registration form offers "(tentukan nanti)" as its default, and
+     * until now there was no way in any role, on any tab, to answer that
+     * "later": Clinic.assignDoctor existed and was never called, so a visit
+     * opened on the default option reached "Menunggu dokter" and stopped
+     * forever with the button disabled and the guard's reason attached. The
+     * refusal was right; it just had no remedy next to it. */
+    if (!node.terminal) {
+      var doctors = clinic.state.staff.filter(function (s) { return s.role === 'dokter'; });
+      var docSel = h('select', { 'aria-label': 'Dokter penanggung jawab' },
+        h('option', { value: '', text: '(belum ditentukan)' }),
+        doctors.map(function (s) { return h('option', { value: s.id, text: s.name, selected: s.id === v.doctorId }); }));
+      var canAssign = ['pendaftaran', 'perawat', 'dokter'].indexOf(clinic.actor.role) >= 0;
+      var assignRow = h('div', { class: 'field' },
+        h('label', { text: 'Dokter penanggung jawab' }),
+        h('div', { class: 'controls' }, docSel, h('button', {
+          type: 'button', class: 'btn' + (v.doctorId ? '' : ' primary'),
+          disabled: !canAssign,
+          title: canAssign ? '' : 'Peran ' + D.roleLabel(clinic.actor.role) + ' tidak dapat menugaskan dokter.',
+          onclick: function () {
+            if (!docSel.value) { say('Pilih dokter terlebih dahulu.', 'err'); renderAll(); return; }
+            clinic.assignDoctor(v.id, docSel.value).then(function (res) {
+              say(res.ok ? 'Dokter penanggung jawab ditetapkan: ' + ((clinic.staff(docSel.value) || {}).name || docSel.value) + '.' : res.reason, res.ok ? 'good' : 'err');
+              persist(); renderAll();
+            });
+          }
+        }, v.doctorId ? 'Ganti dokter' : 'Tetapkan dokter')),
+        h('span', { class: 'help', text: v.doctorId
+          ? 'Dokter saat ini: ' + ((clinic.staff(v.doctorId) || {}).name || v.doctorId) + '.'
+          : 'Kunjungan ini dibuka tanpa dokter. Tanpa penanggung jawab, pasien tidak dapat dipanggil masuk konsultasi.' }));
+      card.appendChild(assignRow);
+      if (!canAssign) {
+        card.appendChild(h('div', { class: 'denied' }, h('b', { text: 'Penugasan dokter ditolak. ' }),
+          'Peran ' + D.roleLabel(clinic.actor.role) + ' tidak menugaskan dokter. Yang berwenang: Pendaftaran / Admin, Perawat, Dokter.'));
+      }
+    }
 
     var goto = h('div', { class: 'controls' });
     goto.appendChild(h('button', { type: 'button', class: 'btn small', onclick: function () { selectTab('konsultasi'); } }, 'Buka di Konsultasi'));
@@ -485,6 +621,8 @@
 
     var poliSel = h('select', { 'aria-label': 'Poli tujuan' },
       D.POLI.map(function (x) { return h('option', { value: x.id, text: x.label }); }));
+    var kecSel = h('select', { 'aria-label': 'Kasus kecelakaan' },
+      D.KECELAKAAN.map(function (k) { return h('option', { value: k.id, text: k.label }); }));
     var klassSel = h('select', { 'aria-label': 'Kelas pasien' },
       h('option', { value: 'bpjs', text: 'BPJS', selected: p.klass === 'bpjs' }),
       h('option', { value: 'umum', text: 'Umum (bayar sendiri)', selected: p.klass !== 'bpjs' }));
@@ -499,7 +637,12 @@
       h('div', { class: 'field' }, h('label', { text: 'Kelas' }), klassSel),
       h('div', { class: 'field' }, h('label', { text: 'Dokter' }), docSel));
     card.appendChild(grid);
-    card.appendChild(h('div', { class: 'field' }, h('label', { text: 'Keluhan utama' }), complaint));
+    card.appendChild(h('div', { class: 'field' },
+      h('label', { text: 'Kasus kecelakaan' }), kecSel,
+      h('span', { class: 'help', text: 'BPJS Kesehatan bukan penjamin pertama untuk cedera akibat sebab luar: kecelakaan lalu lintas ditanggung Jasa Raharja lebih dulu, kecelakaan kerja oleh BPJS Ketenagakerjaan. Menjalankan semuanya lewat kapitasi memberi tahu klinik bahwa ia sudah dibayar untuk pekerjaan yang sebenarnya harus diklaim ke tempat lain.' })));
+    card.appendChild(h('div', { class: 'field' },
+      h('label', { text: 'Keluhan utama (wajib)' }), complaint,
+      h('span', { class: 'help', text: 'Satu-satunya keterangan yang dibawa pasien dari loket ke triase dan ke ruang periksa. Kunjungan tanpa keluhan utama sampai di meja dokter sebagai nama dan nomor antrian saja.' })));
 
     var can = D.can(clinic.actor.role, 'kunjungan.buka');
     card.appendChild(h('div', { class: 'controls' },
@@ -508,7 +651,8 @@
         onclick: function () {
           clinic.openVisit({
             rmNumber: p.rmNumber, poli: poliSel.value, klass: klassSel.value,
-            doctorId: docSel.value || null, complaint: complaint.value
+            doctorId: docSel.value || null, complaint: complaint.value,
+            kecelakaan: kecSel.value || null
           }).then(function (res) {
             if (res.ok) {
               selVisit = res.visit.id;
@@ -536,7 +680,9 @@
       'menggabungkan riwayat medis dua orang.'));
 
     var name = h('input', { type: 'text', placeholder: 'Nama lengkap', 'aria-label': 'Nama lengkap' });
-    var dob = h('input', { type: 'date', 'aria-label': 'Tanggal lahir', value: '1990-01-01' });
+    // max stops the date picker offering a future birth date at all; the model
+    // refuses one regardless, because a typed value never passes through here.
+    var dob = h('input', { type: 'date', 'aria-label': 'Tanggal lahir', value: '1990-01-01', max: today() });
     var sex = h('select', { 'aria-label': 'Jenis kelamin' },
       h('option', { value: 'L', text: 'Laki-laki' }), h('option', { value: 'P', text: 'Perempuan' }));
     var klass = h('select', { 'aria-label': 'Kelas' },
@@ -564,26 +710,84 @@
     card.appendChild(h('div', { class: 'field' },
       h('label', { class: 'inline', for: 'np-pregnant' }, pregnant, 'Sedang hamil')));
 
+    /* DUPLICATE CONFIRMATION.
+     *
+     * Registering an exact duplicate — same name, same date of birth, same
+     * sex — used to succeed silently and allocate a second No. RM. The second
+     * record carries no allergies, so a penicillin-allergic patient could then
+     * be prescribed amoxicillin with the safety panel reading "BERSIH". The
+     * search card sits directly above this one; the data was always there, it
+     * simply was not consulted. Proceeding is still possible, because two
+     * different people really can share a name and a birthday, but it is now a
+     * deliberate act that says so in the audit chain. */
+    if (dupCandidates && dupCandidates.length) {
+      var warn = h('div', { class: 'denied' });
+      warn.appendChild(h('b', { text: 'Kemungkinan pasien ganda. ' }));
+      warn.appendChild(document.createTextNode(
+        'Sudah ada rekam dengan nama, tanggal lahir dan jenis kelamin yang sama. Nomor RM kedua untuk orang yang sama memecah riwayat: ' +
+        'alergi dan penyakit kronis tertinggal di rekam yang tidak dibuka, dan telaah resep pada rekam baru akan melaporkan "tanpa alergi tercatat".'));
+      var listBox = h('div', {});
+      dupCandidates.forEach(function (c) {
+        listBox.appendChild(h('div', { class: 'dxrow' },
+          h('span', { class: 'dxcode', text: c.rmNumber }),
+          h('span', { text: c.name + ' · ' + fmtDate(c.dob) + ' · ' + c.sex }),
+          c.allergies && c.allergies.length ? h('span', { class: 'pill bad', text: 'alergi: ' + c.allergies.join(', ') }) : null,
+          h('button', {
+            type: 'button', class: 'btn small primary',
+            onclick: function () {
+              selRM = c.rmNumber; patientQuery = ''; dupCandidates = null; dupPending = null;
+              say('Menggunakan rekam yang sudah ada: ' + c.rmNumber + '. Buka kunjungan di kartu di atas.', 'good');
+              renderAll();
+            }
+          }, 'Gunakan ' + c.rmNumber)));
+      });
+      warn.appendChild(listBox);
+      warn.appendChild(h('div', { class: 'controls' },
+        h('button', {
+          type: 'button', class: 'btn danger',
+          onclick: function () {
+            var payload = dupPending;
+            dupCandidates = null; dupPending = null;
+            if (!payload) { renderAll(); return; }
+            payload.acknowledgeDuplicate = true;
+            doRegister(payload);
+          }
+        }, 'Ini orang yang berbeda — tetap daftarkan'),
+        h('button', {
+          type: 'button', class: 'btn',
+          onclick: function () { dupCandidates = null; dupPending = null; renderAll(); }
+        }, 'Batal')));
+      card.appendChild(warn);
+    }
+
+    function doRegister(payload) {
+      clinic.registerPatient(payload).then(function (res) {
+        if (res.ok) {
+          selRM = res.patient.rmNumber;
+          patientQuery = '';
+          say('Pasien terdaftar dengan ' + res.patient.rmNumber + '. Nomor ini tidak akan pernah dipakai ulang.', 'good');
+          persist();
+        } else if (res.code === 'duplicate-suspect') {
+          dupCandidates = res.candidates;
+          dupPending = payload;
+          say(res.reason, 'err');
+        } else {
+          say(res.reason, 'err');
+        }
+        renderAll();
+      });
+    }
+
     var can = D.can(clinic.actor.role, 'pasien.daftar');
     card.appendChild(h('div', { class: 'controls' },
       h('button', {
         type: 'button', class: 'btn primary', disabled: !can.ok, title: can.ok ? '' : can.reason,
         onclick: function () {
-          clinic.registerPatient({
+          doRegister({
             name: name.value, dob: dob.value, sex: sex.value, klass: klass.value,
             allergies: allergyBoxes.filter(function (b) { return b.cb.checked; }).map(function (b) { return b.id; }),
             allergyNote: '',
             pregnant: pregnant.checked
-          }).then(function (res) {
-            if (res.ok) {
-              selRM = res.patient.rmNumber;
-              patientQuery = '';
-              say('Pasien terdaftar dengan ' + res.patient.rmNumber + '. Nomor ini tidak akan pernah dipakai ulang.', 'good');
-              persist();
-            } else {
-              say(res.reason, 'err');
-            }
-            renderAll();
           });
         }
       }, 'Daftarkan & alokasikan No. RM')));
@@ -676,7 +880,7 @@
     var body = h('div', { class: 'soap' });
     body.appendChild(h('p', { class: 'small muted', text: 'ID kunjungan ' + v.id + ' · dokter ' + ((clinic.staff(v.doctorId) || {}).name || '—') + (v.complaint ? ' · keluhan: ' + v.complaint : '') }));
 
-    if (v.triage) body.appendChild(vitalsBlock(v.triage, clinic.age(clinic.patient(v.rmNumber))));
+    if (v.triage) body.appendChild(vitalsBlock(v.triage, clinic.age(clinic.patient(v.rmNumber)), clinic.patient(v.rmNumber)));
 
     if (!enc) {
       body.appendChild(h('p', { class: 'empty', text: 'Kunjungan ini belum memiliki catatan SOAP.' }));
@@ -741,31 +945,63 @@
       return box;
     }
 
-    wrap.appendChild(section('s', 'S — Subjective (anamnesis)', 'soap.lihat-subjektif', textVal));
-    wrap.appendChild(section('o.exam', 'O — Objective (pemeriksaan fisik)', 'soap.lihat-objektif', textVal));
-    wrap.appendChild(section('a', 'A — Assessment (diagnosis ICD-10)', 'soap.lihat-asesmen', dxVal));
-    wrap.appendChild(section('p.plan', 'P — Plan (tata laksana)', 'soap.lihat-plan', textVal));
-    if (allowed('soap.lihat-plan') && enc.p.edukasi) {
-      wrap.appendChild(h('div', { class: 'soap-sec' },
-        h('h4', {}, h('span', { text: 'P — Edukasi' })),
-        h('div', { class: 'body', text: enc.p.edukasi })));
+    function vitalsVal(t) {
+      if (!t) return h('span', { text: '—' });
+      return vitalsGrid(t, clinic.age(clinic.patient(enc.rmNumber)), { bare: true });
     }
 
+    wrap.appendChild(section('s', 'S — Subjective (anamnesis)', 'soap.lihat-subjektif', textVal));
+    wrap.appendChild(section('o.exam', 'O — Objective (pemeriksaan fisik)', 'soap.lihat-objektif', textVal));
+    // Vitals are rendered through the projection only when an addendum exists,
+    // because the unamended copy is already shown by the triage block above.
+    if (eff.supersededBy['o.vitals']) {
+      wrap.appendChild(section('o.vitals', 'O — Tanda vital', 'soap.lihat-objektif', vitalsVal));
+    }
+    wrap.appendChild(section('a', 'A — Assessment (diagnosis ICD-10)', 'soap.lihat-asesmen', dxVal));
+    wrap.appendChild(section('p.plan', 'P — Plan (tata laksana)', 'soap.lihat-plan', textVal));
+    /* Edukasi used to be read straight off the object — `enc.p.edukasi` —
+     * while every other section went through the projection, so an addendum on
+     * this path was accepted, hash-chained, and then never displayed: the
+     * chart went on showing the superseded text, unmarked. That is precisely
+     * the failure the addendum design exists to prevent. It goes through
+     * section() like the rest now, and the section is rendered even when the
+     * original was empty, because an addendum on an empty field is exactly the
+     * case that used to vanish completely. */
+    if (allowed('soap.lihat-plan') && (enc.p.edukasi || eff.supersededBy['p.edukasi'])) {
+      wrap.appendChild(section('p.edukasi', 'P — Edukasi', 'soap.lihat-plan', textVal));
+    }
+    // Follow-up interval: written by the model and, until now, never shown to
+    // anyone. "Kontrol 1 bulan" is an instruction to the patient, not a note
+    // to the database.
+    if (allowed('soap.lihat-plan') && enc.p.kontrol) {
+      wrap.appendChild(h('div', { class: 'soap-sec' },
+        h('h4', {}, h('span', { text: 'P — Kontrol' })),
+        h('div', { class: 'body', text: enc.p.kontrol })));
+    }
+
+    var author = (clinic.staff(enc.doctorId) || {}).name || enc.doctorId;
+    var signer = (clinic.staff(enc.signedBy) || {}).name || enc.signedBy;
     wrap.appendChild(h('p', { class: 'small muted' },
       enc.status === 'signed'
-        ? 'Ditandatangani ' + fmtDateTime(enc.signedAt) + ' oleh ' + ((clinic.staff(enc.signedBy) || {}).name || enc.signedBy) +
-          '. Setelah tanda tangan, catatan ini tidak dapat diubah — hanya diadendum.'
-        : 'Masih berstatus DRAF. Belum menjadi bagian rekam medis yang sah.'));
+        ? (author && signer && enc.doctorId !== enc.signedBy
+            ? 'Ditulis oleh ' + author + ', ditandatangani ' + fmtDateTime(enc.signedAt) + ' oleh ' + signer + '.'
+            : 'Ditandatangani ' + fmtDateTime(enc.signedAt) + ' oleh ' + signer + '.') +
+          ' Setelah tanda tangan, catatan ini tidak dapat diubah — hanya diadendum.'
+        : 'Masih berstatus DRAF, ditulis oleh ' + author + '. Belum menjadi bagian rekam medis yang sah.'));
     return wrap;
   }
 
-  function vitalsBlock(t, age) {
-    var flags = D.flagVitals(t, age);
+  function vitalFlags(t, age, patient) {
+    return D.flagVitals(t, age, {
+      knownHypertension: !!(patient && patient.chronic && patient.chronic.indexOf('I10') >= 0)
+    });
+  }
+
+  function vitalsGrid(t, age, opts) {
+    opts = opts || {};
+    var flags = vitalFlags(t, age, opts.patient);
     var byKey = {};
     flags.forEach(function (f) { byKey[f.key] = f; });
-    var wrap = h('div', { class: 'soap-sec' });
-    wrap.appendChild(h('h4', {}, h('span', { text: 'Tanda vital (triase)' }),
-      t.acuity ? h('span', { class: 'tri ' + t.acuity, text: 'triase ' + t.acuity }) : null));
     var grid = h('div', { class: 'vitals' });
     function vital(key, label, value, unit) {
       if (value == null) return;
@@ -784,8 +1020,24 @@
     vital('tb', 'TB', t.tb, 'cm');
     var b = D.bmi(t.bb, t.tb);
     if (b != null) vital('imt', 'IMT', b, 'kg/m²');
-    wrap.appendChild(grid);
-    if (b != null && age != null && age >= 18) {
+    return grid;
+  }
+
+  function vitalsBlock(t, age, patient) {
+    var wrap = h('div', { class: 'soap-sec' });
+    wrap.appendChild(h('h4', {}, h('span', { text: 'Tanda vital (triase)' }),
+      t.acuity ? h('span', { class: 'tri ' + t.acuity, text: 'triase ' + t.acuity }) : null));
+    wrap.appendChild(vitalsGrid(t, age, { patient: patient }));
+
+    var b = D.bmi(t.bb, t.tb);
+    if (D.isPaediatric(age)) {
+      var band = D.vitalBand(age);
+      wrap.appendChild(h('p', { class: 'small muted', text:
+        'Nadi dan frekuensi napas dinilai dengan pita usia (' + band.label + ': nadi ' + band.hr[0] + '–' + band.hr[1] +
+        ', napas ' + band.rr[0] + '–' + band.rr[1] + ' x/menit), bukan ambang dewasa — nadi 130 pada bayi normal, pada dewasa takikardia berat. ' +
+        'Tekanan darah hanya diperiksa terhadap ambang hipotensi anak (sistol < ' + D.hypotensionFloor(age) + ' mmHg); ' +
+        'hipertensi anak dinilai dengan kurva persentil usia/jenis kelamin/tinggi yang tidak dimuat demo ini. IMT juga tidak dinilai — itu perlu kurva pertumbuhan.' }));
+    } else if (b != null && age != null && age >= 18) {
       wrap.appendChild(h('p', { class: 'small muted', text: 'Ambang IMT memakai kriteria Asia-Pasifik (berisiko ≥ 23; obesitas ≥ 25), bukan ambang WHO global — itu yang dipakai pedoman Kemenkes.' }));
     }
     return wrap;
@@ -829,13 +1081,58 @@
     if (rx.reviewedAt) {
       wrap.appendChild(h('p', { class: 'small muted', text: 'Telaah apoteker ' + fmtDateTime(rx.reviewedAt) + ' oleh ' + ((clinic.staff(rx.reviewedBy) || {}).name || rx.reviewedBy) + (rx.reviewNote ? ' — ' + rx.reviewNote : '') }));
     }
+    // Substitutions were recorded by dispense() and never rendered anywhere,
+    // which made them invisible to the doctor who wrote the order and to the
+    // bill. Both now read them.
+    if (rx.substitutions && rx.substitutions.length) {
+      var sub = h('div', { class: 'addbox' });
+      sub.appendChild(h('div', { class: 'ahead', text: 'Substitusi di apotek (' + rx.substitutions.length + ')' }));
+      rx.substitutions.forEach(function (s) {
+        var from = R.rx.drug(s.from), to = R.rx.drug(s.to);
+        sub.appendChild(h('div', { class: 'body' },
+          (from ? from.name + ' ' + from.strength : s.from) + ' → ' + (to ? to.name + ' ' + to.strength : s.to) +
+          (s.qty != null ? ' × ' + s.qty : '')));
+        if (s.reason) sub.appendChild(h('div', { class: 'areason', text: '“' + s.reason + '”' }));
+      });
+      sub.appendChild(h('div', { class: 'small muted', text: 'Yang ditagihkan di kasir adalah baris yang benar-benar diserahkan, bukan yang semula ditulis.' }));
+      wrap.appendChild(sub);
+    }
     if (rx.dispensedAt) {
       wrap.appendChild(h('p', { class: 'small muted', text: 'Obat diserahkan ' + fmtDateTime(rx.dispensedAt) + ' oleh ' + ((clinic.staff(rx.dispensedBy) || {}).name || rx.dispensedBy) }));
+    }
+    if (rx.status === 'dibatalkan') {
+      wrap.appendChild(h('div', { class: 'denied' },
+        h('b', { text: 'Resep dibatalkan ' + fmtDateTime(rx.cancelledAt) + ' oleh ' + ((clinic.staff(rx.cancelledBy) || {}).name || rx.cancelledBy) + '. ' }),
+        (rx.cancelReason ? '“' + rx.cancelReason + '” ' : '') +
+        'Isinya tetap terbaca dan tetap tercatat di rantai audit — pembatalan menambah, tidak menghapus. Tidak ditagihkan dan tidak diserahkan.'));
+    }
+    if (rx.status === 'draft') {
+      wrap.appendChild(h('p', { class: 'small muted', text: 'Status DRAF: belum ditandatangani, belum ditelaah, belum diserahkan — dan karena itu tidak masuk ke tagihan kasir.' }));
     }
     return wrap;
   }
 
+  function payerPill(l, bill) {
+    if (l.payer === 'penjamin-lain') return h('span', { class: 'pill warn', text: bill.penjaminLain || 'penjamin lain' });
+    if (l.payer === 'bpjs') return h('span', { class: 'pill ok', text: 'BPJS' });
+    if (l.payer === 'iur') return h('span', { class: 'pill warn', text: 'iur biaya' });
+    return h('span', { class: 'pill', text: 'pasien' });
+  }
+
+  /**
+   * billView(bill)
+   *
+   * A drug name on a bill is clinical information: "Permetrin krim" names
+   * scabies, "Metformin" names diabetes, "KB suntik 3 bulan" names the
+   * consultation. The per-field redaction in soapView was being undone one tab
+   * later by an itemised bill visible to registration staff. Real cashiers do
+   * see itemised bills, so the fix is not to hide billing from them — it is to
+   * collapse the lines that carry a diagnosis into a count and a total for the
+   * role that has no clinical need for them, and to stop claiming more than
+   * the app does.
+   */
   function billView(bill) {
+    var collapseDrugs = clinic.actor.role === 'pendaftaran';
     var wrap = h('div', { class: 'soap-sec' });
     wrap.appendChild(h('h4', {}, h('span', { text: 'Rincian tagihan' })));
     var wrapT = h('div', { class: 'tblwrap' });
@@ -844,24 +1141,58 @@
       h('th', { text: 'Uraian' }), h('th', { class: 'num', text: 'Qty' }),
       h('th', { class: 'num', text: 'Tarif' }), h('th', { text: 'Penjamin' }))));
     var tb = h('tbody');
-    bill.lines.forEach(function (l) {
+
+    var rows = bill.lines;
+    if (collapseDrugs) {
+      var drugs = bill.lines.filter(function (l) { return l.group === 'obat'; });
+      rows = bill.lines.filter(function (l) { return l.group !== 'obat'; });
+      // Grouped by payer, because a BPJS-covered drug and a non-formulary one
+      // land on different sides of the counter and must not be merged.
+      var byPayer = {};
+      drugs.forEach(function (l) {
+        var k = l.payer || 'pasien';
+        if (!byPayer[k]) byPayer[k] = { label: 'Obat (0 item)', qty: 0, amount: 0, payer: k, n: 0 };
+        byPayer[k].n += 1;
+        byPayer[k].qty += l.qty;
+        byPayer[k].amount += l.amount;
+      });
+      Object.keys(byPayer).forEach(function (k) {
+        var g = byPayer[k];
+        g.label = 'Obat (' + g.n + ' item)';
+        rows = rows.concat([g]);
+      });
+    }
+
+    rows.forEach(function (l) {
       tb.appendChild(h('tr', {},
         h('td', { text: l.label }),
         h('td', { class: 'num', text: String(l.qty) }),
         h('td', { class: 'num', text: D.rupiah(l.amount) }),
-        h('td', {}, h('span', {
-          class: 'pill ' + (l.payer === 'bpjs' ? 'ok' : l.payer === 'iur' ? 'warn' : ''),
-          text: l.payer === 'bpjs' ? 'BPJS' : l.payer === 'iur' ? 'iur biaya' : 'pasien'
-        }))));
+        h('td', {}, payerPill(l, bill))));
     });
     tbl.appendChild(tb);
     wrapT.appendChild(tbl);
     wrap.appendChild(wrapT);
-    wrap.appendChild(h('dl', { class: 'kv' },
-      h('dt', { text: 'Total tarif' }), h('dd', { class: 'mono', text: D.rupiah(bill.totalTarif) }),
-      h('dt', { text: 'Ditanggung' }), h('dd', { class: 'mono', text: D.rupiah(bill.ditanggung) }),
-      h('dt', { text: 'Dibayar pasien' }), h('dd', { class: 'mono', text: D.rupiah(bill.dibayarPasien) })));
+
+    var kv = h('dl', { class: 'kv' },
+      h('dt', { text: 'Total tarif' }), h('dd', { class: 'mono', text: D.rupiah(bill.totalTarif) }));
+    if (bill.ditanggungLain) {
+      kv.appendChild(h('dt', { text: 'Ditanggung ' + bill.penjaminLain }));
+      kv.appendChild(h('dd', { class: 'mono', text: D.rupiah(bill.ditanggungLain) }));
+    }
+    kv.appendChild(h('dt', { text: 'Ditanggung kapitasi BPJS' }));
+    kv.appendChild(h('dd', { class: 'mono', text: D.rupiah(bill.ditanggung) }));
+    kv.appendChild(h('dt', { text: 'Dibayar pasien' }));
+    kv.appendChild(h('dd', { class: 'mono', text: D.rupiah(bill.dibayarPasien) }));
+    wrap.appendChild(kv);
+
     wrap.appendChild(h('p', { class: 'small muted', text: bill.note }));
+    if (collapseDrugs) {
+      wrap.appendChild(h('p', { class: 'small muted', text:
+        'Baris obat diringkas menjadi jumlah item dan total untuk peran Pendaftaran / Admin: nama obat adalah keterangan klinis — ' +
+        '"Permetrin krim" menyebut skabies, "Metformin" menyebut diabetes — dan loket tidak membutuhkannya untuk menutup tagihan. ' +
+        'Apoteker dan dokter melihat rinciannya per item.' }));
+    }
     return wrap;
   }
 
@@ -916,7 +1247,7 @@
     var can = D.can(clinic.actor.role, 'triase.isi');
     var editable = can.ok && ['terdaftar', 'triase'].indexOf(v.status) >= 0;
 
-    if (v.triage) card.appendChild(vitalsBlock(v.triage, clinic.age(p)));
+    if (v.triage) card.appendChild(vitalsBlock(v.triage, clinic.age(p), p));
 
     if (!can.ok) {
       card.appendChild(h('div', { class: 'denied' }, h('b', { text: 'Hanya dibaca. ' }), can.reason));
@@ -929,8 +1260,13 @@
 
     var fields = {};
     function nf(key, label, unit, step) {
+      // min/max mirror the model's plausibility bounds so the browser refuses
+      // the obvious slips before the model has to. The model still checks —
+      // a typed value bypasses these attributes entirely.
+      var r = D.VITAL_RANGES[key];
       var input = h('input', {
         type: 'number', step: step || '1', 'aria-label': label,
+        min: r ? String(r.min) : null, max: r ? String(r.max) : null,
         value: v.triage && v.triage[key] != null ? String(v.triage[key]) : ''
       });
       fields[key] = input;
@@ -947,7 +1283,16 @@
       D.ACUITY.map(function (a) { return h('option', { value: a.id, text: a.label }); }));
     card.appendChild(h('div', { class: 'field' },
       h('label', { text: 'Tingkat kegawatan' }), acuity,
-      h('span', { class: 'help', text: 'Sistem hanya MENYARANKAN dari tanda vital. Keputusan triase tetap milik perawat — mesin yang diam-diam menurunkan derajat pasien berat adalah bahaya, bukan fitur.' })));
+      h('span', { class: 'help', text: 'Sistem hanya MENYARANKAN dari tanda vital, dengan pita usia: nadi 130 dan napas 35 adalah bayi sehat, bukan dewasa gawat. ' +
+        'Keputusan triase tetap milik perawat — mesin yang diam-diam menurunkan derajat pasien berat adalah bahaya, bukan fitur, dan karena itu formulir kosong ditolak, bukan dinilai "hijau".' })));
+
+    var pAge = clinic.age(p);
+    if (D.isPaediatric(pAge)) {
+      var tband = D.vitalBand(pAge);
+      card.appendChild(h('p', { class: 'note', text:
+        'Pasien anak (' + pAge + ' th). Rentang normal yang dipakai: nadi ' + tband.hr[0] + '–' + tband.hr[1] +
+        ' x/menit, napas ' + tband.rr[0] + '–' + tband.rr[1] + ' x/menit, sistol minimal ' + D.hypotensionFloor(pAge) + ' mmHg.' }));
+    }
 
     card.appendChild(h('div', { class: 'controls' }, h('button', {
       type: 'button', class: 'btn primary',
@@ -996,16 +1341,21 @@
     pBox.value = enc.p.plan || '';
     var eBox = h('textarea', { rows: 2, 'aria-label': 'Edukasi', placeholder: 'Edukasi yang diberikan…' });
     eBox.value = enc.p.edukasi || '';
+    // p.kontrol was modelled, written by the seed and refused by every render
+    // path and every form — a "kontrol 1 bulan" instruction stored where
+    // nobody could read it. It has a field now, and soapView prints it.
+    var kBox = h('input', { type: 'text', 'aria-label': 'Rencana kontrol', placeholder: 'mis. kontrol 1 bulan, atau segera bila sesak' });
+    kBox.value = enc.p.kontrol || '';
 
     function flush() {
       return clinic.saveEncounter(enc.id, {
-        s: sBox.value, exam: oBox.value, plan: pBox.value, edukasi: eBox.value
+        s: sBox.value, exam: oBox.value, plan: pBox.value, edukasi: eBox.value, kontrol: kBox.value
       });
     }
-    [sBox, oBox, pBox, eBox].forEach(function (b) { b.addEventListener('change', function () { flush().then(persist); }); });
+    [sBox, oBox, pBox, eBox, kBox].forEach(function (b) { b.addEventListener('change', function () { flush().then(persist); }); });
 
     card.appendChild(h('div', { class: 'field' }, h('label', { text: 'S — Subjective (anamnesis)' }), sBox));
-    if (v.triage) card.appendChild(vitalsBlock(v.triage, clinic.age(p)));
+    if (v.triage) card.appendChild(vitalsBlock(v.triage, clinic.age(p), p));
     card.appendChild(h('div', { class: 'field' }, h('label', { text: 'O — Objective (pemeriksaan fisik)' }), oBox));
 
     /* ---- assessment: the ICD-10 picker ---- */
@@ -1040,6 +1390,45 @@
     });
     if (!(enc.a || []).length) list.appendChild(h('p', { class: 'small muted', text: 'Belum ada diagnosis.' }));
     aSec.appendChild(list);
+
+    /* ICD SUGGESTIONS FROM THE VITALS.
+     *
+     * flagVitals has always emitted `suggestIcd` and nothing had ever read it,
+     * so the richest part of the vitals model was dead. It is a suggestion
+     * chip, never an auto-applied code — and the code it suggests for a raised
+     * reading is R03.0, not I10, unless the patient already carries I10 as a
+     * chronic problem. One elevated office measurement is not a diagnosis of
+     * essential hypertension, and coding it as one inflates the FKTP
+     * prevalence figure that BPJS reports against. */
+    if (v.triage) {
+      var suggestions = vitalFlags(v.triage, clinic.age(p), p)
+        .filter(function (f) { return f.suggestIcd && R.icd.get(f.suggestIcd); })
+        .filter(function (f) { return !(enc.a || []).some(function (d) { return d.code === f.suggestIcd; }); });
+      // Unique by code.
+      var seenCode = {};
+      suggestions = suggestions.filter(function (f) {
+        if (seenCode[f.suggestIcd]) return false;
+        seenCode[f.suggestIcd] = 1; return true;
+      });
+      if (suggestions.length) {
+        var chips = h('div', { class: 'controls' });
+        suggestions.forEach(function (f) {
+          var e = R.icd.get(f.suggestIcd);
+          chips.appendChild(h('button', {
+            type: 'button', class: 'btn small',
+            title: f.label + ' ' + f.value + ' — ' + f.note,
+            onclick: function () {
+              var existing = enc.a || [];
+              var next = existing.concat([{ code: e.code, primary: existing.length === 0, note: '' }]);
+              clinic.saveEncounter(enc.id, { a: next }).then(function () { persist(); renderPanelOnly('konsultasi'); });
+            }
+          }, '+ ' + e.code + ' · ' + e.id));
+        });
+        aSec.appendChild(h('div', { class: 'field' },
+          h('label', { text: 'Saran kode dari tanda vital' }), chips,
+          h('span', { class: 'help', text: 'Disarankan, tidak pernah diterapkan sendiri. Untuk tekanan darah yang tinggi pada satu kali pengukuran, yang disarankan adalah R03.0 (“tekanan darah tinggi pada pengukuran, tanpa diagnosis hipertensi”) — bukan I10. I10 hanya disarankan bila pasien memang sudah menyandangnya sebagai masalah kronis.' })));
+      }
+    }
 
     var picker = h('div', { class: 'picker' });
     var search = h('input', {
@@ -1086,6 +1475,7 @@
 
     card.appendChild(h('div', { class: 'field' }, h('label', { text: 'P — Plan' }), pBox));
     card.appendChild(h('div', { class: 'field' }, h('label', { text: 'P — Edukasi pasien' }), eBox));
+    card.appendChild(h('div', { class: 'field' }, h('label', { text: 'P — Rencana kontrol' }), kBox));
 
     var canSign = D.can(clinic.actor.role, 'soap.tandatangani');
     card.appendChild(h('div', { class: 'controls' },
@@ -1118,30 +1508,76 @@
       return card;
     }
 
+    /* Which sections THIS role may correct. A nurse gets vitals and nothing
+     * else, so the dropdown never offers "Assessment — diagnosis ICD-10" to
+     * someone who would be refused on submit. The sections a role cannot touch
+     * are still named below, with the reason, rather than silently absent. */
+    var myPaths = D.addendablePathsFor(clinic.actor.role);
+    if (!myPaths.length) {
+      card.appendChild(h('div', { class: 'denied' }, h('b', { text: 'Ditolak. ' }),
+        'Peran ' + D.roleLabel(clinic.actor.role) + ' tidak dapat mengadendum bagian mana pun dari catatan ini.'));
+      return card;
+    }
+    if (myPaths.indexOf(addendumPath) < 0) addendumPath = myPaths[0];
+
     var pathSel = h('select', { 'aria-label': 'Bagian yang dikoreksi', onchange: function (ev) { addendumPath = ev.target.value; renderPanelOnly('konsultasi'); } },
-      Object.keys(D.ADDENDABLE)
-        .filter(function (k) { return k !== 'o.vitals'; })
-        .map(function (k) { return h('option', { value: k, text: D.ADDENDABLE[k].label, selected: k === addendumPath }); }));
+      myPaths.map(function (k) { return h('option', { value: k, text: D.ADDENDABLE[k].label, selected: k === addendumPath }); }));
 
     var eff = clinic.effective(enc.id);
     var current = eff.values[addendumPath];
 
-    var valueInput;
+    /* THE FORM IS BACKED BY STATE, and it has to be.
+     *
+     * These inputs used to be uncontrolled DOM nodes rebuilt on every render,
+     * and every failure path ends in renderAll() — so the app's OWN validation
+     * refusal ("alasan koreksi wajib diisi") wiped the correction the doctor
+     * had just typed and reset the field to the original value. Typing only
+     * the reason then produced an addendum whose new value was byte-identical
+     * to the old one: a mandatory reason, a chain entry and a "diadendum" pill
+     * attached to an unchanged sentence, reported as success. The SOAP draft
+     * textareas were never affected because they flush on `change`; this form
+     * was the outlier. */
+    seedAddendumForm(enc.id, addendumPath, current);
+
+    var valueInput, vitalsFields = null;
     if (addendumPath === 'a') {
       valueInput = h('input', {
         type: 'text', 'aria-label': 'Kode diagnosis baru',
         placeholder: 'Kode ICD-10 dipisah spasi, yang pertama menjadi diagnosis utama — mis. "K21.9 K29.7"',
-        value: (current || []).map(function (d) { return d.code; }).join(' ')
+        value: addendumValue
       });
+      valueInput.addEventListener('input', function () { addendumValue = valueInput.value; });
+    } else if (addendumPath === 'o.vitals') {
+      vitalsFields = {};
+      var grid = h('div', { class: 'formgrid' });
+      VITAL_FIELDS.forEach(function (f) {
+        var r = D.VITAL_RANGES[f.key];
+        var input = h('input', {
+          type: 'number', step: f.step || '1', min: String(r.min), max: String(r.max),
+          'aria-label': f.label, value: addendumValue && addendumValue[f.key] != null ? String(addendumValue[f.key]) : ''
+        });
+        input.addEventListener('input', function () {
+          if (!addendumValue || typeof addendumValue !== 'object') addendumValue = {};
+          addendumValue[f.key] = input.value === '' ? null : Number(input.value);
+        });
+        vitalsFields[f.key] = input;
+        grid.appendChild(h('div', { class: 'field' }, h('label', { text: f.label + (f.unit ? ' (' + f.unit + ')' : '') }), input));
+      });
+      valueInput = grid;
     } else {
       valueInput = h('textarea', { rows: 3, 'aria-label': 'Isi baru' });
-      valueInput.value = current == null ? '' : String(current);
+      valueInput.value = addendumValue == null ? '' : String(addendumValue);
+      valueInput.addEventListener('input', function () { addendumValue = valueInput.value; });
     }
     var reason = h('textarea', { rows: 2, 'aria-label': 'Alasan koreksi', placeholder: 'Mengapa catatan ini dikoreksi? Wajib diisi.' });
+    reason.value = addendumReason;
+    reason.addEventListener('input', function () { addendumReason = reason.value; });
 
     card.appendChild(h('div', { class: 'field' }, h('label', { text: 'Bagian' }), pathSel));
     card.appendChild(h('div', { class: 'field' }, h('label', { text: 'Nilai berlaku sekarang' }),
-      h('div', { class: 'body small muted', text: addendumPath === 'a' ? (current || []).map(function (d) { return d.code; }).join(', ') || '—' : (current || '—') })));
+      addendumPath === 'o.vitals'
+        ? (current ? vitalsGrid(current, clinic.age(clinic.patient(enc.rmNumber))) : h('div', { class: 'body small muted', text: '—' }))
+        : h('div', { class: 'body small muted', text: addendumPath === 'a' ? ((current || []).map(function (d) { return d.code; }).join(', ') || '—') : (current || '—') })));
     card.appendChild(h('div', { class: 'field' }, h('label', { text: 'Isi baru' }), valueInput));
     card.appendChild(h('div', { class: 'field' }, h('label', { text: 'Alasan koreksi (wajib)' }), reason));
 
@@ -1150,21 +1586,51 @@
       onclick: function () {
         var newValue;
         if (addendumPath === 'a') {
-          var codes = valueInput.value.toUpperCase().split(/[\s,]+/).filter(Boolean);
+          var codes = String(addendumValue || '').toUpperCase().split(/[\s,]+/).filter(Boolean);
           var unknown = codes.filter(function (c) { return !R.icd.get(c); });
           if (unknown.length) { say('Kode tidak dikenal: ' + unknown.join(', ') + '.', 'err'); renderAll(); return; }
           if (!codes.length) { say('Isi minimal satu kode diagnosis.', 'err'); renderAll(); return; }
           newValue = codes.map(function (c, i) { return { code: c, primary: i === 0, note: '' }; });
+        } else if (addendumPath === 'o.vitals') {
+          newValue = {};
+          VITAL_FIELDS.forEach(function (f) {
+            var raw = vitalsFields[f.key].value;
+            newValue[f.key] = raw === '' ? null : Number(raw);
+          });
+          var badRange = D.checkVitalRanges(newValue);
+          if (badRange) { say(badRange.reason, 'err'); renderAll(); return; }
+          // Carry forward the fields an addendum does not touch, so a vitals
+          // correction never silently drops the acuity or the nurse's note.
+          if (current) {
+            newValue.acuity = current.acuity || null;
+            newValue.note = current.note || '';
+            newValue.by = current.by;
+            newValue.at = current.at;
+          }
         } else {
-          newValue = valueInput.value;
+          newValue = addendumValue == null ? '' : String(addendumValue);
         }
-        clinic.addAddendum(enc.id, { path: addendumPath, newValue: newValue, reason: reason.value })
+        clinic.addAddendum(enc.id, { path: addendumPath, newValue: newValue, reason: addendumReason })
           .then(function (res) {
-            say(res.ok ? ('Adendum ' + res.addendum.id + ' dibuat. Nilai lama tetap tersimpan dan tetap terbaca.') : res.reason, res.ok ? 'good' : 'err');
+            if (res.ok) {
+              addendumValue = null; addendumReason = ''; addendumSeededFor = null;
+              say('Adendum ' + res.addendum.id + ' dibuat. Nilai lama tetap tersimpan dan tetap terbaca.', 'good');
+            } else {
+              // The typed text survives the refusal — that is the whole point.
+              say(res.reason, 'err');
+            }
             persist(); renderAll();
           });
       }
     }, 'Buat adendum')));
+
+    var blockedPaths = Object.keys(D.ADDENDABLE).filter(function (k) { return myPaths.indexOf(k) < 0; });
+    if (blockedPaths.length) {
+      card.appendChild(h('div', { class: 'denied' },
+        h('b', { text: 'Di luar kewenangan peran ini: ' }),
+        blockedPaths.map(function (k) { return D.ADDENDABLE[k].label; }).join('; ') + '. ' +
+        D.canAddendum(clinic.actor.role, blockedPaths[0]).reason));
+    }
 
     var mine = clinic.addendaFor(enc.id);
     if (mine.length) {
@@ -1178,6 +1644,7 @@
   var rxDraft = null;   // working items for the visit being prescribed
   var rxDraftVisit = null;
   var overrideReason = '';
+  var cancelReason = '';
 
   function ensureDraft(v) {
     var existing = clinic.prescriptionForVisit(v.id);
@@ -1196,10 +1663,15 @@
     card.appendChild(h('h3', { text: 'Resep' }));
     var existing = clinic.prescriptionForVisit(v.id);
 
-    if (existing && existing.status !== 'draft') {
-      card.appendChild(h('p', { class: 'note', text: 'Resep sudah ditandatangani (' + existing.status + ') dan tidak dapat diubah.' }));
+    if (existing && existing.status !== 'draft' && existing.status !== 'dibatalkan') {
+      card.appendChild(h('p', { class: 'note', text: 'Resep sudah ditandatangani (' + existing.status + ') dan tidak dapat disunting. Untuk mengubah terapi: batalkan resep ini dengan alasan tertulis, lalu tulis resep baru. Pembatalan tidak menghapus apa pun.' }));
       card.appendChild(rxView(existing));
+      card.appendChild(cancelRxControls(existing));
       return card;
+    }
+    if (existing && existing.status === 'dibatalkan') {
+      card.appendChild(h('p', { class: 'note', text: 'Resep ' + existing.id + ' dibatalkan. Tulis resep baru di bawah — resep lama tetap terbaca beserta alasan pembatalannya.' }));
+      card.appendChild(rxView(existing));
     }
 
     var canWrite = D.can(clinic.actor.role, 'resep.tulis');
@@ -1293,16 +1765,23 @@
 
     var canSign = D.can(clinic.actor.role, 'resep.tandatangani');
     var blocked = safety.blocking.length > 0;
+    var unfinished = safety.incomplete.length > 0;
     card.appendChild(h('div', { class: 'controls' },
       h('button', {
         type: 'button', class: 'btn', onclick: function () {
-          clinic.savePrescription(v.id, items).then(function () { persist(); say('Draf resep disimpan.', 'good'); renderAll(); });
+          clinic.savePrescription(v.id, items).then(function () {
+            persist();
+            say('Draf resep disimpan. Draf tidak pernah ditagihkan dan tidak pernah diserahkan — hanya resep yang ditandatangani, ditelaah dan diserahkan yang masuk ke tagihan kasir.', 'good');
+            renderAll();
+          });
         }
       }, 'Simpan draf resep'),
       h('button', {
         type: 'button', class: 'btn primary',
-        disabled: !canSign.ok || blocked || !items.length,
-        title: !canSign.ok ? canSign.reason : blocked ? 'Ada kontraindikasi absolut — tidak dapat ditandatangani.' : '',
+        disabled: !canSign.ok || blocked || unfinished || !items.length,
+        title: !canSign.ok ? canSign.reason
+          : blocked ? 'Ada kontraindikasi absolut — tidak dapat ditandatangani.'
+            : unfinished ? 'Ada baris resep yang belum lengkap aturan pakainya.' : '',
         onclick: function () {
           clinic.savePrescription(v.id, items)
             .then(function (res) { return clinic.signPrescription(res.prescription.id, { overrideReason: overrideReason }); })
@@ -1319,8 +1798,44 @@
         h('b', { text: 'Tanda tangan diblokir. ' }),
         'Kontraindikasi absolut tidak dapat di-override dengan alasan apa pun. Ganti obatnya.'));
     }
+    if (unfinished) {
+      card.appendChild(h('div', { class: 'denied' },
+        h('b', { text: 'Resep belum lengkap. ' }),
+        safety.incomplete.length + ' baris belum memuat aturan pakai yang utuh. Ini bukan kontraindikasi klinis — hanya baris yang belum selesai ditulis — tetapi resep tanpa aturan pakai tidak sah dan tidak dapat dilayani apotek.'));
+    }
     if (!canSign.ok) card.appendChild(h('div', { class: 'denied' }, h('b', { text: 'Ditolak. ' }), canSign.reason));
+    if (existing) card.appendChild(cancelRxControls(existing));
     return card;
+  }
+
+  /** The exit the refusal message used to promise and the app did not have. */
+  function cancelRxControls(rx) {
+    var wrap = h('div', {});
+    if (rx.status === 'dibatalkan' || rx.status === 'diserahkan') return wrap;
+    var role = clinic.actor.role;
+    var mayCancel = role === 'apoteker' || (role === 'dokter' && (!rx.signedBy || rx.signedBy === clinic.actor.id));
+    var reason = h('input', {
+      type: 'text', 'aria-label': 'Alasan pembatalan resep', value: cancelReason,
+      placeholder: role === 'apoteker' ? 'Alasan mengembalikan resep kepada penulisnya…' : 'Alasan pembatalan (mis. salah obat, pasien alergi)…'
+    });
+    reason.addEventListener('input', function () { cancelReason = reason.value; });
+    wrap.appendChild(h('div', { class: 'field' }, h('label', { text: 'Pembatalan resep' }), reason));
+    wrap.appendChild(h('div', { class: 'controls' }, h('button', {
+      type: 'button', class: 'btn danger', disabled: !mayCancel,
+      title: mayCancel ? '' : 'Hanya dokter penulisnya atau apoteker yang dapat membatalkan resep ini.',
+      onclick: function () {
+        clinic.cancelPrescription(rx.id, cancelReason).then(function (res) {
+          if (res.ok) { cancelReason = ''; rxDraftVisit = null; }
+          say(res.ok ? 'Resep ' + rx.id + ' dibatalkan. Isinya tetap tersimpan beserta alasannya.' : res.reason, res.ok ? 'good' : 'err');
+          persist(); renderAll();
+        });
+      }
+    }, role === 'apoteker' ? 'Kembalikan ke penulis resep' : 'Batalkan resep')));
+    if (!mayCancel) {
+      wrap.appendChild(h('div', { class: 'denied' }, h('b', { text: 'Pembatalan ditolak. ' }),
+        'Resep dibatalkan oleh dokter yang menuliskannya, atau oleh apoteker yang mengembalikannya kepada penulisnya.'));
+    }
+    return wrap;
   }
 
   function safetyPanel(safety, itemCount) {
@@ -1346,8 +1861,21 @@
     });
     box.appendChild(h('p', { class: 'small muted' },
       'Kontraindikasi menolak tanda tangan tanpa jalan keluar. Mayor memerlukan alasan klinis tertulis yang ikut masuk ' +
-      'ke jejak audit. Moderat dan minor bersifat memberi tahu. Basis aturan ini adalah demonstrasi bentuk telaah, ' +
+      'ke jejak audit. Moderat dan minor bersifat memberi tahu. "Kelengkapan" bukan tingkat klinis: itu baris yang belum ' +
+      'selesai ditulis, dan diblokir dengan kalimatnya sendiri. Basis aturan ini adalah demonstrasi bentuk telaah, ' +
       'bukan rujukan klinis — sistem nyata memakai basis data interaksi berlisensi yang dipelihara terus-menerus.'));
+    box.appendChild(h('details', { class: 'more' },
+      h('summary', { text: 'Apa yang TIDAK diperiksa mesin ini' }),
+      h('p', { class: 'small muted' },
+        'Dinyatakan terbuka supaya diamnya panel tidak terbaca sebagai jaminan aman. (1) Besaran dosis hanya diperiksa ' +
+        'terhadap batas maksimum HARIAN DEWASA, dan hanya untuk obat yang kekuatannya dapat dibaca sebagai angka tunggal ' +
+        'serta aturan pakainya dapat diurai ("1 tablet" + "3x sehari", atau "3x1"). Bila signa tidak terbaca, pemeriksaan ' +
+        'ini diam — bukan lulus. (2) TIDAK ADA perhitungan dosis pediatrik per kilogram berat badan; yang ada hanyalah ' +
+        'penanda bahwa sebuah sediaan padat dewasa tidak sesuai untuk usia tertentu. (3) Duplikasi golongan diperiksa ' +
+        'terhadap daftar golongan tertentu (' + Object.keys(R.rx.dupClasses).slice(0, 8).join(', ') + ', dan seterusnya), ' +
+        'bukan terhadap setiap label golongan — dua antihipertensi atau dua antidiabetik memang lazim dikombinasikan, dan ' +
+        'memperingatkannya adalah cara tercepat membuat peringatan diabaikan. (4) Fungsi ginjal dan hati tidak diketahui ' +
+        'sistem ini, jadi penyesuaian dosis berdasarkan eGFR tidak dilakukan.')));
     return box;
   }
 
@@ -1411,6 +1939,29 @@
       var canReview = D.can(clinic.actor.role, 'resep.telaah');
       var canDispense = D.can(clinic.actor.role, 'resep.serahkan');
       card.appendChild(h('div', { class: 'field' }, h('label', { text: 'Catatan' }), note));
+
+      /* SUBSTITUTION, recorded per line and carried into the bill.
+       * An out-of-stock swap that the cashier never hears about is how a
+       * patient is charged for the branded item they did not receive. */
+      var subSel = {};
+      var subBox = h('div', {});
+      rx.items.forEach(function (it) {
+        var d = R.rx.drug(it.drugId);
+        if (!d) return;
+        var alt = R.rx.drugs.filter(function (x) {
+          return x.id !== d.id && x.classes.some(function (c) { return d.classes.indexOf(c) >= 0; });
+        }).slice(0, 12);
+        var sel = h('select', { 'aria-label': 'Substitusi untuk ' + d.name },
+          h('option', { value: '', text: '(tanpa substitusi)' }),
+          alt.map(function (x) { return h('option', { value: x.id, text: x.name + ' ' + x.strength }); }));
+        subSel[it.drugId] = sel;
+        subBox.appendChild(h('div', { class: 'field' }, h('label', { text: 'Ganti ' + d.name + ' ' + d.strength + ' dengan' }), sel));
+      });
+      if (rx.items.length && rx.status === 'ditelaah') {
+        card.appendChild(h('details', { class: 'more' },
+          h('summary', { text: 'Substitusi (opsional) — mengubah baris yang ditagihkan' }),
+          subBox));
+      }
       card.appendChild(h('div', { class: 'controls' },
         h('button', {
           type: 'button', class: 'btn primary',
@@ -1428,7 +1979,14 @@
           disabled: !canDispense.ok || rx.status !== 'ditelaah',
           title: !canDispense.ok ? canDispense.reason : rx.status !== 'ditelaah' ? 'Obat hanya boleh diserahkan setelah telaah.' : '',
           onclick: function () {
-            clinic.dispense(rx.id, { note: note.value }).then(function (res) {
+            var subs = [];
+            Object.keys(subSel).forEach(function (fromId) {
+              var toId = subSel[fromId].value;
+              if (!toId) return;
+              var line = rx.items.filter(function (i) { return i.drugId === fromId; })[0];
+              subs.push({ from: fromId, to: toId, qty: line ? line.qty : null, reason: note.value || 'Substitusi di apotek.' });
+            });
+            clinic.dispense(rx.id, { note: note.value, substitutions: subs }).then(function (res) {
               if (!res.ok) { say(res.reason, 'err'); persist(); renderAll(); return; }
               return clinic.transition(rx.visitId, 'kasir').then(function (t) {
                 say('Obat diserahkan. ' + (t.ok ? 'Pasien diarahkan ke kasir.' : t.reason), t.ok ? 'good' : 'err');
@@ -1438,6 +1996,7 @@
           }
         }, 'Serahkan obat & kirim ke kasir')));
       if (!canReview.ok) card.appendChild(h('div', { class: 'denied' }, h('b', { text: 'Ditolak. ' }), canReview.reason));
+      card.appendChild(cancelRxControls(rx));
       panel.appendChild(card);
     });
   }
@@ -1458,7 +2017,9 @@
       'membayar apa pun di loket untuk layanan yang dijamin dan tidak ada klaim per kunjungan yang diajukan. ' +
       'Yang dibayar pasien adalah IUR BIAYA atas hal di luar jaminan: obat non-formularium, skeling kosmetik, ' +
       'surat sehat untuk melamar kerja. Karena itu tagihan punya dua angka yang berbeda: nilai tarif dan ' +
-      'yang benar-benar dibayar di loket.'));
+      'yang benar-benar dibayar di loket. Kasus kecelakaan adalah pengecualian ketiga: penjamin pertamanya ' +
+      'Jasa Raharja atau BPJS Ketenagakerjaan, bukan kapitasi. Yang ditagihkan hanyalah obat yang benar-benar ' +
+      'diserahkan apotek — draf resep dan resep yang dibatalkan tidak pernah sampai ke loket.'));
 
     var atKasir = clinic.state.visits.filter(function (v) { return v.status === 'kasir'; });
     if (!atKasir.length) panel.appendChild(h('p', { class: 'empty', text: 'Tidak ada pasien di kasir.' }));
@@ -1490,16 +2051,25 @@
     if (closed.length) {
       var card2 = h('div', { class: 'card' });
       card2.appendChild(h('h3', { text: 'Tagihan tertutup hari ini (' + closed.length + ')' }));
-      var totalTarif = 0, totalBpjs = 0, totalPasien = 0;
+      var totalTarif = 0, totalBpjs = 0, totalPasien = 0, totalLain = 0;
       closed.forEach(function (v) {
         totalTarif += v.billing.totalTarif;
         totalBpjs += v.billing.ditanggung;
         totalPasien += v.billing.dibayarPasien;
+        totalLain += v.billing.ditanggungLain || 0;
       });
-      card2.appendChild(h('dl', { class: 'kv' },
+      var dl = h('dl', { class: 'kv' },
         h('dt', { text: 'Nilai tarif seluruh layanan' }), h('dd', { class: 'mono', text: D.rupiah(totalTarif) }),
-        h('dt', { text: 'Ditanggung kapitasi BPJS' }), h('dd', { class: 'mono', text: D.rupiah(totalBpjs) }),
-        h('dt', { text: 'Diterima tunai di loket' }), h('dd', { class: 'mono', text: D.rupiah(totalPasien) })));
+        h('dt', { text: 'Ditanggung kapitasi BPJS' }), h('dd', { class: 'mono', text: D.rupiah(totalBpjs) }));
+      // Accident cases must not silently inflate the capitated total: their
+      // value is claimed elsewhere and is reported on its own line.
+      if (totalLain) {
+        dl.appendChild(h('dt', { text: 'Diajukan ke penjamin lain (kasus kecelakaan)' }));
+        dl.appendChild(h('dd', { class: 'mono', text: D.rupiah(totalLain) }));
+      }
+      dl.appendChild(h('dt', { text: 'Diterima tunai di loket' }));
+      dl.appendChild(h('dd', { class: 'mono', text: D.rupiah(totalPasien) }));
+      card2.appendChild(dl);
       panel.appendChild(card2);
     }
   }
@@ -1515,11 +2085,17 @@
       h('b', { text: 'Mengapa rantai hash, bukan tabel log. ' }),
       'Rekam medis wajib dapat dikoreksi tetapi tidak boleh dapat ditulis ulang diam-diam. Sebuah tabel log memenuhi ' +
       'syarat itu hanya selama tidak ada orang yang menyunting tabelnya. Setiap entri di bawah membawa hash entri ' +
-      'sebelumnya, jadi menyunting entri #7 membatalkan #7 dan seluruh entri sesudahnya. Itu tidak membuat perusakan ' +
-      'mustahil — yang bisa menyunting baris 7 pada prinsipnya bisa menghitung ulang 8..n — tetapi membuat perusakan ' +
-      'DIAM-DIAM mustahil, dan dalam sengketa justru sifat itulah yang berguna. Sistem produksi menambatkan hash ' +
-      'kepala ke tempat di luar kendali klinik (ditandatangani kunci server, atau dipublikasikan harian); demo ini ' +
-      'memverifikasi di dalam tab dan menyatakannya apa adanya.'));
+      'sebelumnya, jadi menyunting entri #7 membatalkan #7 dan seluruh entri sesudahnya. ' +
+      'Tetapi serangan yang murah bukan menyunting — melainkan MENGHAPUS EKORNYA. Menyunting baris 7 menuntut ' +
+      'perhitungan ulang 8..n; menghapus tiga baris terakhir tidak menuntut apa pun, dan "hapus baris yang mencatat ' +
+      'apa yang baru saja saya lakukan" jauh lebih mungkin terjadi daripada penulisan ulang menyeluruh. Rantai murni ' +
+      'tidak dapat melihatnya: penelusuran hanya kehabisan baris lebih awal lalu melaporkan sisanya utuh. ' +
+      'Karena itu panjang rantai dan hash kepalanya ikut disimpan DI LUAR rantai, di object store "meta", dan ' +
+      'ditulis ulang pada setiap penyimpanan; verifikasi membandingkannya dan melaporkan "rantai terpotong" sebagai ' +
+      'jenis kegagalan keempat di samping hash, tautan dan nomor urut. Itu tidak membuat perusakan mustahil — yang ' +
+      'bisa menghapus baris audit bisa menyunting meta juga — tetapi membuat penghapusan ekor berbiaya sama dengan ' +
+      'penyuntingan, bukan gratis. Yang menutup celah terakhir adalah tanda tangan balik di luar kendali klinik ' +
+      '(kunci server, atau publikasi hash harian); demo ini memverifikasi di dalam tab dan menyatakannya apa adanya.'));
 
     var state = h('div', { class: 'chainstate' + (chainVerdict ? (chainVerdict.ok ? ' good' : ' bad') : '') });
     state.appendChild(h('span', {
@@ -1546,6 +2122,11 @@
         onclick: function () { tamperDemo(); }
       }, 'Rusak satu entri di basis data'),
       h('button', {
+        type: 'button', class: 'btn danger',
+        title: 'Menghapus tiga entri terakhir langsung dari object store IndexedDB — serangan yang tidak memerlukan perhitungan ulang apa pun.',
+        onclick: function () { truncateDemo(); }
+      }, 'Hapus 3 entri terakhir'),
+      h('button', {
         type: 'button', class: 'btn',
         onclick: function () {
           R.store.resetPersistedCount();
@@ -1561,9 +2142,9 @@
     if (tampered) {
       panel.appendChild(h('div', { class: 'denied' },
         h('b', { text: 'Basis data sedang dalam keadaan dirusak. ' }),
-        'Satu entri audit yang tersimpan telah diubah langsung di IndexedDB, tanpa melalui aplikasi — persis serangan ' +
-        'yang seharusnya ditangkap oleh rantai. Tekan "Verifikasi rantai" untuk melihat titik putusnya, lalu ' +
-        '"Pulihkan dari memori" untuk mengembalikannya.'));
+        'Jejak audit yang tersimpan telah diubah atau dipotong langsung di IndexedDB, tanpa melalui aplikasi — persis ' +
+        'serangan yang seharusnya ditangkap. Tekan "Verifikasi rantai" untuk melihat titik putusnya, lalu ' +
+        '"Pulihkan dari memori" untuk mengembalikannya dari state yang masih utuh di memori tab ini.'));
     }
 
     var card = h('div', { class: 'card' });
@@ -1618,14 +2199,22 @@
     say('Memverifikasi…', '');
     renderPanelOnly('audit');
     R.store.readAudit().then(function (res) {
-      var entries = res.ok && res.entries.length ? res.entries : clinic.chain.entries;
-      var source = res.ok && res.entries.length ? 'IndexedDB' : 'memori (basis data tidak terbaca)';
-      return A.verify(entries).then(function (v) {
+      var fromDisk = res.ok && res.entries.length;
+      var entries = fromDisk ? res.entries : clinic.chain.entries;
+      var source = fromDisk ? 'IndexedDB' : 'memori (basis data tidak terbaca)';
+      // The length/head commitment only means anything against the rows on
+      // disk; verifying the in-memory chain against it would compare a thing
+      // to itself.
+      var expected = fromDisk ? res.expected : null;
+      return A.verify(entries, expected).then(function (v) {
         chainVerdict = v;
-        say(v.ok
-          ? 'Rantai terverifikasi dari ' + source + ': ' + v.checked + ' entri, tidak ada penyimpangan.'
-          : 'Rantai PUTUS pada entri #' + (v.entry ? v.entry.seq : '?') + ' — ' + v.reason,
-          v.ok ? 'good' : 'err');
+        if (v.ok) {
+          say('Rantai terverifikasi dari ' + source + ': ' + v.checked + ' entri, tidak ada penyimpangan.', 'good');
+        } else {
+          say('Rantai PUTUS pada entri #' + (v.entry ? v.entry.seq : '?') + ' — ' + v.reason +
+            (tampered ? '' : ' Bila ini muncul tanpa Anda menekan tombol perusak, penyebab yang paling mungkin adalah aplikasi ini terbuka di lebih dari satu tab; tekan "Pulihkan dari memori" untuk menulis ulang basis data dari state tab ini.'),
+            'err');
+        }
         renderAll();
       });
     });
@@ -1642,6 +2231,23 @@
       tampered = true;
       chainVerdict = null;
       say('Entri #' + target + ' diubah langsung di IndexedDB, melewati aplikasi. Tekan "Verifikasi rantai".', 'err');
+      renderAll();
+    });
+  }
+
+  /* The cheap attack, made demonstrable. Nothing is recomputed and no entry is
+   * edited — three rows simply stop existing, and every remaining row still
+   * verifies against the one before it. Only the length/head commitment in
+   * `meta` notices. */
+  function truncateDemo() {
+    R.store.save(clinic).then(function () {
+      return R.store.truncate(3);
+    }).then(function (res) {
+      if (!res.ok) { say('Tidak dapat menghapus entri: ' + res.reason, 'err'); renderAll(); return; }
+      tampered = true;
+      chainVerdict = null;
+      say('Entri ' + res.removed.map(function (s) { return '#' + s; }).join(', ') +
+        ' dihapus langsung dari IndexedDB. Tidak ada hash yang dihitung ulang — tidak perlu. Tekan "Verifikasi rantai".', 'err');
       renderAll();
     });
   }
@@ -1742,6 +2348,13 @@
     var scroll = window.scrollY;
     clear(panel);
 
+    // Every panel opens with an h2 naming the module, so the document outline
+    // descends one level at a time: h1 Rekam → h2 module → h3 card → h4
+    // section. It is visually hidden because the selected tab already names
+    // the module on screen; what it fixes is the heading list a screen-reader
+    // user navigates by.
+    panel.appendChild(h('h2', { class: 'vh', text: TAB_TITLES[name] || name }));
+
     if (toast.text) {
       panel.appendChild(h('p', { class: 'status ' + toast.tone, role: 'status', 'aria-live': 'polite', text: toast.text }));
     }
@@ -1774,6 +2387,7 @@
   function boot() {
     renderNet();
     R.store.load().then(function (res) {
+      if (res.locked) showTabLock();
       if (res.ok && res.state && res.state.patients && res.state.patients.length) {
         clinic = new R.Clinic({ state: res.state, auditEntries: res.auditEntries });
         clinic.state.staff = R.seed.STAFF.slice();
@@ -1804,6 +2418,7 @@
       if (pick) { selVisit = pick.id; selRM = pick.rmNumber; }
 
       clinic.onChange = null;
+      startHeartbeat();
       renderAll();
       // The suite and the chain check run unprompted, so the two claims a
       // reviewer would most want checked are already answered on arrival.

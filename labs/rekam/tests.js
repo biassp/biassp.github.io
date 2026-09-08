@@ -121,13 +121,13 @@
         t.eq(D.parseRM('A-001'), null, 'nomor antrian tidak lolos sebagai No. RM');
       })
       .then(function () {
-        return as(c, 'pendaftaran').openVisit({ rmNumber: 'RM-000001', poli: 'umum', date: '2026-09-08' });
+        return as(c, 'pendaftaran').openVisit({ rmNumber: 'RM-000001', poli: 'umum', date: '2026-09-08', complaint: 'Batuk pilek 3 hari' });
       })
       .then(function (r) {
         t.match(r.visit.id, /^V-20260908-\d{4}$/, 'ID kunjungan memuat tanggal dan bersifat unik permanen');
         t.ne(r.visit.id, r.visit.queueNo, 'ID kunjungan berbeda dari nomor antrian');
         t.eq(r.visit.rmNumber, 'RM-000001', 'kunjungan menunjuk ke No. RM, bukan menyalin identitas pasien');
-        return as(c, 'pendaftaran').openVisit({ rmNumber: 'RM-000001', poli: 'umum', date: '2026-09-08' });
+        return as(c, 'pendaftaran').openVisit({ rmNumber: 'RM-000001', poli: 'umum', date: '2026-09-08', complaint: 'Batuk pilek 3 hari' });
       })
       .then(function (r) {
         t.notOk(r.ok, 'pendaftaran ganda di poli dan hari yang sama ditolak');
@@ -141,7 +141,7 @@
     var c = freshClinic('pendaftaran');
     var visit;
     return samplePatient(c)
-      .then(function () { return c.openVisit({ rmNumber: 'RM-000001', poli: 'umum', date: '2026-09-08', doctorId: 'stf-03' }); })
+      .then(function () { return c.openVisit({ rmNumber: 'RM-000001', poli: 'umum', date: '2026-09-08', complaint: 'Batuk pilek 3 hari', doctorId: 'stf-03' }); })
       .then(function (r) {
         visit = r.visit;
         t.eq(visit.status, 'terdaftar', 'kunjungan baru berstatus Terdaftar');
@@ -270,7 +270,7 @@
     var c = freshClinic('pendaftaran');
     var visit, enc;
     return samplePatient(c)
-      .then(function () { return c.openVisit({ rmNumber: 'RM-000001', poli: 'umum', date: '2026-09-08', doctorId: 'stf-03' }); })
+      .then(function () { return c.openVisit({ rmNumber: 'RM-000001', poli: 'umum', date: '2026-09-08', complaint: 'Batuk pilek 3 hari', doctorId: 'stf-03' }); })
       .then(function (r) { visit = r.visit; return c.transition(visit.id, 'triase'); })
       .then(function () { return as(c, 'perawat').recordTriage(visit.id, { tdSistol: 120, tdDiastol: 80, nadi: 72, suhu: 36.5, rr: 16, spo2: 98 }); })
       .then(function () { return c.transition(visit.id, 'menunggu-dokter'); })
@@ -329,7 +329,7 @@
     var c = freshClinic('pendaftaran');
     var visit, enc, addA, addB;
     return samplePatient(c)
-      .then(function () { return c.openVisit({ rmNumber: 'RM-000001', poli: 'umum', date: '2026-09-08', doctorId: 'stf-03' }); })
+      .then(function () { return c.openVisit({ rmNumber: 'RM-000001', poli: 'umum', date: '2026-09-08', complaint: 'Batuk pilek 3 hari', doctorId: 'stf-03' }); })
       .then(function (r) { visit = r.visit; return asId(c, 'stf-03').startEncounter(visit.id); })
       .then(function (r) {
         enc = r.encounter;
@@ -389,8 +389,58 @@
       })
       .then(function (r) {
         t.notOk(r.ok, 'dokter lain tidak dapat mengadendum catatan yang bukan miliknya');
+
+        /* THE ASSERTION THAT WAS MISSING, and its absence was the hole.
+         * The "own note only" guard was scoped to `role === 'dokter'`, so it
+         * never fired for anyone else, and ADDENDABLE was not role-scoped at
+         * all — a nurse could replace the coded diagnosis on a physician's
+         * signed note, and it took effect in effectiveEncounter. */
+        return as(c, 'perawat').addAddendum(enc.id, {
+          path: 'a', newValue: [{ code: 'A91', primary: true }], reason: 'kode salah menurut saya'
+        });
+      })
+      .then(function (r) {
+        t.notOk(r.ok, 'PERAWAT TIDAK DAPAT mengganti diagnosis berkode pada catatan dokter');
+        t.eq(r.code, 'permission', 'penolakannya soal kewenangan, bukan validasi');
+        t.eq(c.effective(enc.id).values.a[0].code, 'K21.9', 'diagnosis efektif tidak berubah setelah percobaan itu');
+        return c.addAddendum(enc.id, { path: 's', newValue: 'ditulis perawat', reason: 'mencoba narasi subjektif' });
+      })
+      .then(function (r) {
+        t.notOk(r.ok, 'perawat tidak dapat mengadendum narasi subjektif');
+        return c.addAddendum(enc.id, {
+          path: 'o.vitals',
+          newValue: { tdSistol: 130, tdDiastol: 80, nadi: 78, suhu: 36.7, rr: 18, spo2: 98, bb: 60, tb: 165 },
+          reason: 'Sistol salah ketik saat triase: 310 seharusnya 130.'
+        });
+      })
+      .then(function (r) {
+        // The one deliberate exception, and the reason 'perawat' is in
+        // 'soap.addendum' at all: correcting a mistyped vital sign is a typing
+        // correction, not a clinical act.
+        t.ok(r.ok, 'perawat DAPAT mengoreksi tanda vital yang salah ketik');
+        t.eq(c.effective(enc.id).values['o.vitals'].tdSistol, 130, 'koreksi tanda vital berlaku');
+        t.deep(D.addendablePathsFor('perawat'), ['o.vitals'], 'perawat hanya boleh menyentuh tanda vital');
+        t.eq(D.addendablePathsFor('dokter').length, Object.keys(D.ADDENDABLE).length, 'dokter boleh seluruh bagian (pada catatannya sendiri)');
+        t.notOk(D.canAddendum('perawat', 'a').ok, 'canAddendum menolak perawat pada assessment');
+        t.notOk(D.canAddendum('apoteker', 'o.vitals').ok, 'apoteker tidak mengadendum apa pun');
+
+        // Every path the UI offers must be readable back through the
+        // projection — that is what "p.edukasi accepted then never displayed"
+        // looked like from the model side.
+        var eff = c.effective(enc.id);
+        var unread = Object.keys(D.ADDENDABLE).filter(function (k) { return !(k in eff.values); });
+        t.eq(unread.length, 0, 'setiap bagian yang dapat diadendum terbaca kembali lewat proyeksi effectiveEncounter');
+
+        return asId(c, 'stf-03').addAddendum(enc.id, {
+          path: 'p.plan', newValue: 'Antasida, makan teratur.', reason: 'mengetik ulang isi yang sama'
+        });
+      })
+      .then(function (r) {
+        t.notOk(r.ok, 'adendum yang tidak mengubah apa pun ditolak');
+        t.eq(r.code, 'no-change', 'kodenya menyebut sebabnya: tidak ada perubahan');
+
         var logged = c.chain.entries.filter(function (e) { return e.action === 'soap.adendum'; });
-        t.eq(logged.length, 2, 'setiap adendum menghasilkan satu entri audit');
+        t.eq(logged.length, 3, 'setiap adendum menghasilkan satu entri audit');
         t.match(A.canonical(logged[0].detail), /alasan/, 'alasan koreksi ikut masuk ke rantai hash');
       });
   });
@@ -501,7 +551,7 @@
     return samplePatient(c)
       .then(function () {
         t.eq(c.chain.entries.length, before + 1, 'pendaftaran pasien tercatat');
-        return c.openVisit({ rmNumber: 'RM-000001', poli: 'umum', date: '2026-09-08', doctorId: 'stf-03' });
+        return c.openVisit({ rmNumber: 'RM-000001', poli: 'umum', date: '2026-09-08', complaint: 'Batuk pilek 3 hari', doctorId: 'stf-03' });
       })
       .then(function (r) { visit = r.visit; return asId(c, 'stf-03').startEncounter(visit.id); })
       .then(function (r) {
@@ -591,7 +641,10 @@
     t.eq(ckd.overridable.length, 1, 'AINS pada PGK diperingatkan tingkat mayor');
 
     var incomplete = rx.check([{ drugId: 'paracetamol' }], { age: 30 });
-    t.eq(incomplete.blocking.length, 1, 'baris resep tanpa aturan pakai diblokir');
+    t.eq(incomplete.incomplete.length, 1, 'baris resep tanpa aturan pakai diblokir');
+    t.eq(incomplete.blocking.length, 0,
+      'resep belum lengkap BUKAN kontraindikasi absolut — kategorinya sendiri, agar tangga empat tingkat tidak diencerkan');
+    t.eq(incomplete.findings[0].sev, 'kelengkapan', 'severitasnya "kelengkapan"');
     t.match(incomplete.findings[0].why, /dosis/, 'penjelasan menyebut bagian yang kurang');
 
     // Deduplication: the same class pair across four drugs must be reported once.
@@ -609,7 +662,7 @@
     var c = freshClinic('pendaftaran');
     var visit, enc, rxId;
     return samplePatient(c, { name: 'Uji Warfarin', dob: '1958-02-02', allergies: ['penisilin'] })
-      .then(function () { return c.openVisit({ rmNumber: 'RM-000001', poli: 'umum', date: '2026-09-08', doctorId: 'stf-03' }); })
+      .then(function () { return c.openVisit({ rmNumber: 'RM-000001', poli: 'umum', date: '2026-09-08', complaint: 'Batuk pilek 3 hari', doctorId: 'stf-03' }); })
       .then(function (r) { visit = r.visit; return asId(c, 'stf-03').startEncounter(visit.id); })
       .then(function (r) {
         enc = r.encounter;
@@ -754,6 +807,54 @@
     t.eq(D.suggestAcuity({ spo2: 88, tdSistol: 120, nadi: 90, suhu: 37 }), 'merah', 'saturasi 88% memicu triase merah');
     t.eq(D.suggestAcuity({ spo2: 97, tdSistol: 165, nadi: 90, suhu: 37 }), 'kuning', 'sistol 165 memicu triase kuning');
     t.eq(D.suggestAcuity({ spo2: 98, tdSistol: 120, nadi: 78, suhu: 36.6 }), 'hijau', 'tanda vital normal memicu triase hijau');
+
+    /* PAEDIATRIC BANDS. The set below is a textbook-normal 2-year-old and a
+     * textbook-normal 6-month-old. Read against adult thresholds both came out
+     * hypotensive, tachycardic AND tachypnoeic — a description of shock — and
+     * were auto-suggested "merah". The clinic seeds roughly a fifth of its
+     * patients under 13 and runs a KIA poli, so this was half of triage. */
+    var toddler = { tdSistol: 95, tdDiastol: 55, nadi: 110, suhu: 36.8, rr: 28, spo2: 98, bb: 12, tb: 87 };
+    t.eq(D.flagVitals(toddler, 2).length, 0, 'balita 2 th yang sehat: 95/55, nadi 110, napas 28 — tidak ada penanda sama sekali');
+    t.eq(D.suggestAcuity(toddler, 2), 'hijau', 'balita sehat disarankan hijau, bukan merah');
+    t.eq(D.suggestAcuity(toddler), 'merah', 'tanpa usia, pita dewasa tetap dipakai — dan angka yang sama jadi merah');
+
+    var infant = { tdSistol: 85, tdDiastol: 50, nadi: 130, suhu: 37, rr: 35, spo2: 98 };
+    t.eq(D.flagVitals(infant, 0).length, 0, 'bayi 6 bulan sehat: nadi 130, napas 35 — normal untuk usianya');
+    t.eq(D.suggestAcuity(infant, 0), 'hijau', 'bayi sehat hijau');
+
+    // And the child who is genuinely sick must still come out red.
+    t.eq(D.suggestAcuity({ tdSistol: 68, nadi: 180, rr: 50, spo2: 92 }, 2), 'merah',
+      'balita syok (sistol 68, nadi 180, napas 50) tetap merah');
+    t.eq(D.hypotensionFloor(0), 70, 'ambang hipotensi bayi 70 mmHg');
+    t.eq(D.hypotensionFloor(5), 80, 'ambang hipotensi usia 5 mengikuti 70 + 2×usia');
+    t.eq(D.hypotensionFloor(30), 90, 'ambang dewasa 90 mmHg');
+
+    // Paediatric blood pressure above the floor is DECLINED, not guessed.
+    var pedBp = D.bpBand(130, 85, 6);
+    t.eq(pedBp.tone, 'ok', 'tekanan darah anak di atas ambang hipotensi tidak diinterpretasi');
+    t.ok(pedBp.undecided, 'dan menyatakan dirinya tidak menilai, bukan menyatakan normal');
+    t.match(pedBp.label, /persentil/, 'alasannya disebut: perlu kurva persentil');
+
+    // R03.0, not I10, for a single raised office reading.
+    t.eq(D.bpBand(150, 95).icd, 'R03.0', 'satu kali pengukuran tinggi disarankan sebagai R03.0');
+    t.eq(D.flagVitals({ tdSistol: 150, tdDiastol: 95 }, 50)[0].suggestIcd, 'R03.0', 'bukan I10');
+    t.eq(D.flagVitals({ tdSistol: 150, tdDiastol: 95 }, 50, { knownHypertension: true })[0].suggestIcd, 'I10',
+      'I10 hanya untuk pasien yang memang sudah menyandang hipertensi');
+    t.ok(!!R.icd.get('R03.0'), 'R03.0 ada di set rubrik');
+
+    // An empty form is not a green patient.
+    t.eq(D.suggestAcuity({}, 30), null, 'formulir kosong tidak menghasilkan saran apa pun — bukan "hijau"');
+    t.notOk(D.hasMeasurement({}), 'hasMeasurement menolak set kosong');
+    t.ok(D.hasMeasurement({ suhu: 37 }), 'satu pengukuran sudah cukup');
+
+    // Plausibility bounds.
+    t.ok(!!D.checkVitalRanges({ spo2: 500 }), 'SpO₂ 500% ditolak');
+    t.ok(!!D.checkVitalRanges({ suhu: 999 }), 'suhu 999 °C ditolak');
+    t.ok(!!D.checkVitalRanges({ tdSistol: -50 }), 'sistol negatif ditolak');
+    t.match(D.checkVitalRanges({ tb: 1.7 }).reason, /sentimeter/, 'tinggi 1,7 ditolak dan menyebut satuannya');
+    t.ok(!!D.checkVitalRanges({ tdSistol: 100, tdDiastol: 120 }), 'diastol di atas sistol ditolak');
+    t.notOk(D.checkVitalRanges({ tdSistol: 118, tdDiastol: 76, nadi: 72, suhu: 36.6, rr: 16, spo2: 98, bb: 62, tb: 170 }),
+      'set yang wajar lolos tanpa keluhan');
     return Promise.resolve();
   });
 
@@ -761,6 +862,7 @@
 
   group('Tarif, BPJS dan iur biaya', function (t) {
     var rx = {
+      status: 'diserahkan',
       items: [
         { drugId: 'paracetamol', qty: 15 },
         { drugId: 'vit-b-kompleks', qty: 10 }
@@ -787,7 +889,255 @@
     t.eq(D.rupiah(1500000), 'Rp 1.500.000', 'format rupiah memakai titik ribuan');
     t.eq(D.rupiah(0), 'Rp 0', 'nol diformat');
     t.eq(D.rupiah(500), 'Rp 500', 'angka di bawah seribu tanpa pemisah');
+
+    /* ONLY WHAT LEFT THE PHARMACY IS BILLED.
+     * A draft prescription used to be charged at the counter in full: never
+     * signed, never reviewed, never handed to anyone. */
+    var base = D.TARIF_PENDAFTARAN + 40000;
+    ['draft', 'signed', 'ditelaah', 'dibatalkan'].forEach(function (st) {
+      var b = D.computeBill({ poli: 'umum', klass: 'umum', tindakan: [] },
+        { status: st, items: [{ drugId: 'budesonid-inh', qty: 2 }, { drugId: 'salbutamol-inh', qty: 1 }] });
+      t.eq(b.totalTarif, base, 'resep berstatus "' + st + '" tidak ditagihkan sepeser pun');
+      t.eq(b.lines.filter(function (l) { return l.group === 'obat'; }).length, 0, 'tidak ada baris obat untuk resep "' + st + '"');
+    });
+    var served = D.computeBill({ poli: 'umum', klass: 'umum', tindakan: [] },
+      { status: 'diserahkan', items: [{ drugId: 'budesonid-inh', qty: 2 }, { drugId: 'salbutamol-inh', qty: 1 }] });
+    t.eq(served.totalTarif, base + 2 * 145000 + 78000, 'yang diserahkan ditagihkan penuh');
+
+    // A pharmacist substitution moves the money as well as the label.
+    var subbed = D.computeBill({ poli: 'umum', klass: 'umum', tindakan: [] }, {
+      status: 'diserahkan',
+      items: [{ drugId: 'simvastatin', qty: 30 }],
+      substitutions: [{ from: 'simvastatin', to: 'atorvastatin', qty: 30 }]
+    });
+    t.eq(subbed.totalTarif, base + 30 * 2200, 'tagihan mengikuti obat yang benar-benar diserahkan, bukan yang ditulis');
+    t.match(subbed.lines[subbed.lines.length - 1].label, /Atorvastatin/, 'barisnya menyebut obat pengganti');
+
+    /* Accident cases do not run through capitation. */
+    var laka = D.computeBill({ poli: 'umum', klass: 'bpjs', tindakan: ['jahit-luka'], kecelakaan: 'lalu-lintas' }, null);
+    t.eq(laka.ditanggung, 0, 'kasus kecelakaan lalu lintas tidak dibebankan ke kapitasi BPJS');
+    t.eq(laka.ditanggungLain, laka.totalTarif, 'seluruhnya diajukan ke penjamin pertama');
+    t.eq(laka.penjaminLain, 'Jasa Raharja', 'penjamin pertamanya disebut namanya');
+    t.eq(D.computeBill({ poli: 'umum', klass: 'bpjs', tindakan: ['jahit-luka'], kecelakaan: 'kerja' }, null).penjaminLain,
+      'BPJS Ketenagakerjaan', 'kecelakaan kerja ke BPJS Ketenagakerjaan');
     return Promise.resolve();
+  });
+
+  /* =============================================== 9b. chain truncation */
+
+  group('Rantai audit: penghapusan ekor', function (t) {
+    var ch = new A.Chain([]);
+    var p = Promise.resolve();
+    for (var i = 1; i <= 8; i++) {
+      (function (n) {
+        p = p.then(function () {
+          return ch.append({
+            actorId: 'stf-03', actorName: 'dr. Uji', actorRole: 'dokter',
+            action: 'uji.' + n, entity: 'visit', entityId: 'V-1', summary: 'entri ' + n
+          });
+        });
+      })(i);
+    }
+    return p.then(function () {
+      var commit = { count: ch.entries.length, head: ch.head() };
+      var cut = ch.entries.slice(0, 5);
+      return A.verify(cut).then(function (naive) {
+        // The property that made this worth fixing: the shortened chain is
+        // internally PERFECT. Nothing was recomputed because nothing had to be.
+        t.ok(naive.ok, 'tanpa komitmen panjang, rantai yang dipotong ekornya lolos verifikasi — itulah lubangnya');
+        return A.verify(cut, commit);
+      }).then(function (v) {
+        t.notOk(v.ok, 'dengan komitmen panjang/kepala, penghapusan ekor tertangkap');
+        t.eq(v.kind, 'truncated', 'jenis kegagalannya disebut tersendiri: terpotong');
+        t.match(v.reason, /8/, 'penolakan menyebut berapa entri yang seharusnya ada');
+        t.match(v.reason, /3/, 'dan berapa yang hilang');
+        return A.verify(ch.entries, commit);
+      }).then(function (v) {
+        t.ok(v.ok, 'rantai utuh tetap lolos terhadap komitmennya sendiri');
+        t.eq(v.checked, 8, 'delapan entri diperiksa');
+        // A forged extra entry appended outside the app changes the head.
+        return A.verify(ch.entries, { count: 8, head: 'deadbeef'.repeat(8) });
+      }).then(function (v) {
+        t.notOk(v.ok, 'hash kepala yang tidak cocok juga ditolak');
+        t.eq(v.kind, 'truncated', 'dilaporkan lewat jalur yang sama');
+      });
+    });
+  });
+
+  /* ============================================ 9c. registration guards */
+
+  group('Penjagaan pendaftaran dan triase', function (t) {
+    var c = freshClinic('pendaftaran');
+    return c.registerPatient({ name: 'Uji Ganda', sex: 'L', dob: '2099-12-31' })
+      .then(function (r) {
+        t.notOk(r.ok, 'tanggal lahir di masa depan ditolak');
+        t.match(r.reason, /masa depan/, 'penolakan menyebut sebabnya');
+        return c.registerPatient({ name: 'Uji Ganda', sex: 'L', dob: '1800-01-01' });
+      })
+      .then(function (r) {
+        t.notOk(r.ok, 'usia di atas 130 tahun ditolak sebagai salah ketik');
+        return c.registerPatient({ name: 'Uji Ganda', sex: 'L', dob: '1959-04-11', allergies: ['penisilin'] });
+      })
+      .then(function (r) {
+        t.ok(r.ok, 'pasien pertama terdaftar');
+        return c.registerPatient({ name: 'Uji Ganda', sex: 'L', dob: '1959-04-11' });
+      })
+      .then(function (r) {
+        /* The duplicate that used to succeed silently: same name, same dob,
+         * same sex, and the new record carries no allergies — so the safety
+         * check on it reports "tanpa alergi tercatat" for a penicillin-allergic
+         * person. */
+        t.notOk(r.ok, 'duplikat persis ditolak, tidak diberi No. RM kedua diam-diam');
+        t.eq(r.code, 'duplicate-suspect', 'kodenya menyebut dugaan duplikat');
+        t.eq(r.candidates[0].rmNumber, 'RM-000001', 'kandidatnya disebutkan agar petugas bisa memakainya');
+        t.eq(c.state.patients.length, 1, 'tidak ada rekam kedua yang terlanjur dibuat');
+        // Two different people really can share a name and a birthday.
+        return c.registerPatient({ name: 'Uji Ganda', sex: 'L', dob: '1959-04-11', acknowledgeDuplicate: true });
+      })
+      .then(function (r) {
+        t.ok(r.ok, 'petugas dapat menyatakan bahwa ini orang yang berbeda dan melanjutkan');
+        t.eq(c.state.patients.length, 2, 'rekam kedua dibuat setelah pernyataan itu');
+        var last = c.chain.entries[c.chain.entries.length - 1];
+        t.match(last.summary, /diabaikan secara sadar/, 'pengabaian peringatan tercatat di rantai audit');
+        return c.openVisit({ rmNumber: 'RM-000001', poli: 'umum', date: '2026-09-08' });
+      })
+      .then(function (r) {
+        t.notOk(r.ok, 'kunjungan tanpa keluhan utama ditolak');
+        t.match(r.reason, /Keluhan utama/, 'penolakan menyebut kolom yang kurang');
+        return c.openVisit({ rmNumber: 'RM-000001', poli: 'umum', date: '2026-09-08', complaint: 'Demam 2 hari' });
+      })
+      .then(function (r) {
+        t.ok(r.ok, 'dengan keluhan utama, kunjungan dibuka');
+        var vid = r.visit.id;
+        return as(c, 'perawat').recordTriage(vid, {}).then(function (rr) {
+          t.notOk(rr.ok, 'triase kosong ditolak — tidak disimpan dan tidak dinilai hijau');
+          return c.recordTriage(vid, { tdSistol: -50, tdDiastol: -20, nadi: 0, suhu: 999, rr: 0, spo2: 500, bb: 0, tb: 0 });
+        }).then(function (rr) {
+          t.notOk(rr.ok, 'tanda vital yang mustahil ditolak');
+          t.eq(rr.code, 'validation', 'ditolak sebagai kesalahan pengisian');
+          return c.recordTriage(vid, { tdSistol: 120, tdDiastol: 78, nadi: 74, suhu: 36.6, rr: 16, spo2: 98, bb: 70, tb: 170 });
+        }).then(function (rr) {
+          t.ok(rr.ok, 'tanda vital yang wajar tersimpan');
+          t.eq(c.visit(vid).triage.acuity, 'hijau', 'triase disarankan dari angka yang benar-benar diukur');
+        });
+      });
+  });
+
+  /* ========================================= 9d. prescription lifecycle */
+
+  group('Pembatalan resep dan tagihan yang jujur', function (t) {
+    var c = freshClinic('pendaftaran');
+    var vid, encId, rxId;
+    return samplePatient(c)
+      .then(function () { return c.openVisit({ rmNumber: 'RM-000001', poli: 'umum', date: '2026-09-08', complaint: 'Sesak napas', doctorId: 'stf-03' }); })
+      .then(function (r) {
+        vid = r.visit.id;
+        return as(c, 'perawat').transition(vid, 'triase');
+      })
+      .then(function () { return c.recordTriage(vid, { tdSistol: 122, tdDiastol: 78, nadi: 82, suhu: 36.8, rr: 18, spo2: 97, bb: 68, tb: 170 }); })
+      .then(function () { return c.transition(vid, 'menunggu-dokter'); })
+      .then(function () { return asId(c, 'stf-03').transition(vid, 'konsultasi'); })
+      .then(function () { return c.startEncounter(vid); })
+      .then(function (r) {
+        encId = r.encounter.id;
+        return c.saveEncounter(encId, { s: 'Sesak sejak semalam.', a: [{ code: 'J45.9', primary: true }], plan: 'Inhaler.' });
+      })
+      .then(function () { return c.signEncounter(encId); })
+      .then(function () {
+        return c.savePrescription(vid, [
+          { drugId: 'budesonid-inh', dose: '2 semprot', freq: '2x sehari', days: 30, qty: 2 },
+          { drugId: 'salbutamol-inh', dose: '2 semprot', freq: 'bila sesak', days: 30, qty: 1 }
+        ]);
+      })
+      .then(function (r) {
+        rxId = r.prescription.id;
+        t.eq(r.prescription.status, 'draft', 'resep tersimpan sebagai draf');
+        /* A DRAFT MUST NOT REACH THE COUNTER. Previously the konsultasi→kasir
+         * guard only refused a *signed* prescription, so a draft walked
+         * straight through and was billed in full at the cashier. */
+        return c.transition(vid, 'kasir');
+      })
+      .then(function (r) {
+        t.notOk(r.ok, 'kunjungan dengan draf resep berisi obat ditolak menuju kasir');
+        t.match(r.reason, /draf resep/, 'penolakan menyebut drafnya');
+        var bill = D.computeBill(c.visit(vid), c.prescriptionForVisit(vid));
+        t.eq(bill.lines.filter(function (l) { return l.group === 'obat'; }).length, 0,
+          'dan seandainya tagihan dihitung sekarang, obat draf tidak ada di dalamnya');
+        return c.signPrescription(rxId, {});
+      })
+      .then(function (r) {
+        t.ok(r.ok, 'resep ditandatangani');
+        // The exit the refusal message used to name and the app did not have.
+        return as(c, 'perawat').cancelPrescription(rxId, 'Perawat mencoba membatalkan.');
+      })
+      .then(function (r) {
+        t.notOk(r.ok, 'perawat tidak dapat membatalkan resep');
+        return asId(c, 'stf-04').cancelPrescription(rxId, 'Dokter lain mencoba membatalkan.');
+      })
+      .then(function (r) {
+        t.notOk(r.ok, 'dokter lain tidak dapat membatalkan resep yang bukan tulisannya');
+        return asId(c, 'stf-03').cancelPrescription(rxId, '');
+      })
+      .then(function (r) {
+        t.notOk(r.ok, 'pembatalan tanpa alasan tertulis ditolak');
+        return c.cancelPrescription(rxId, 'Salah sediaan: pasien tidak dapat memakai inhaler tanpa spacer.');
+      })
+      .then(function (r) {
+        t.ok(r.ok, 'dokter penulisnya dapat membatalkan resepnya sendiri');
+        t.eq(c.prescription(rxId).status, 'dibatalkan', 'statusnya menjadi dibatalkan');
+        t.eq(c.prescription(rxId).items.length, 2, 'isinya TIDAK dihapus — pembatalan menambah, bukan menghapus');
+        t.match(c.prescription(rxId).cancelReason, /spacer/, 'alasannya tersimpan pada resepnya');
+        var logged = c.chain.entries.filter(function (e) { return e.action === 'resep.batal'; });
+        t.eq(logged.length, 1, 'pembatalan masuk ke rantai audit');
+        // With the prescription cancelled the visit is no longer stuck.
+        return c.transition(vid, 'kasir');
+      })
+      .then(function (r) {
+        t.ok(r.ok, 'setelah dibatalkan, kunjungan tidak lagi tersangkut dan dapat ke kasir');
+        var bill = D.computeBill(c.visit(vid), c.prescriptionForVisit(vid));
+        t.eq(bill.lines.filter(function (l) { return l.group === 'obat'; }).length, 0, 'resep yang dibatalkan tidak ditagihkan');
+        // And a replacement can be written.
+        return c.savePrescription(vid, [{ drugId: 'salbutamol', dose: '1 tablet', freq: '3x sehari', days: 5, qty: 15 }]);
+      })
+      .then(function (r) {
+        t.ok(r.ok, 'resep pengganti dapat ditulis setelah pembatalan');
+        t.ne(r.prescription.id, rxId, 'resep pengganti adalah resep baru, bukan yang lama disunting');
+        t.eq(c.prescriptionsForVisit(vid).length, 2, 'keduanya tersimpan dan tetap dapat dibaca');
+      });
+  });
+
+  /* ================================ 9e. signature binds to the author */
+
+  group('Tanda tangan melekat pada penulis catatan', function (t) {
+    var c = freshClinic('pendaftaran');
+    var vid, encId;
+    return samplePatient(c)
+      .then(function () { return c.openVisit({ rmNumber: 'RM-000001', poli: 'umum', date: '2026-09-08', complaint: 'Nyeri lutut', doctorId: 'stf-03' }); })
+      .then(function (r) { vid = r.visit.id; return asId(c, 'stf-03').startEncounter(vid); })
+      .then(function (r) {
+        encId = r.encounter.id;
+        t.eq(r.encounter.doctorId, 'stf-03', 'catatan mencatat penulisnya');
+        return c.saveEncounter(encId, { s: 'Nyeri lutut kanan.', a: [{ code: 'M17.9', primary: true }], plan: 'Analgesik.' });
+      })
+      .then(function () { return asId(c, 'stf-04').signEncounter(encId); })
+      .then(function (r) {
+        /* dr. B signing dr. A's draft used to succeed, producing a note whose
+         * responsible clinician and whose signatory differed — and then locking
+         * dr. A out of amending her own note, because the addendum guard
+         * compares against the signatory. */
+        t.notOk(r.ok, 'dokter lain tidak dapat menandatangani draf yang bukan tulisannya');
+        t.eq(r.code, 'permission', 'ditolak sebagai kewenangan');
+        t.eq(c.encounter(encId).status, 'draft', 'catatan tetap draf');
+        return asId(c, 'stf-03').signEncounter(encId);
+      })
+      .then(function (r) {
+        t.ok(r.ok, 'penulisnya sendiri dapat menandatangani');
+        t.eq(c.encounter(encId).signedBy, 'stf-03', 'penanda tangan sama dengan penulis');
+        return c.addAddendum(encId, { path: 's', newValue: 'Nyeri lutut KIRI.', reason: 'Salah sisi saat pencatatan.' });
+      })
+      .then(function (r) {
+        t.ok(r.ok, 'dan karena itu tetap dapat mengoreksi catatannya sendiri');
+      });
   });
 
   /* ==================================================== 10. seeded data */

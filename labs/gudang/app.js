@@ -2712,7 +2712,13 @@
       'negatif. Tab ini karena itu hanya membaca. Tutup tab yang lain, lalu muat ulang halaman ini.';
   }
 
-  function ambilKunci() {
+  /* Refreshes the lock this tab holds, or takes it at boot. A tab that is
+   * ALREADY read-only never promotes itself here even when the lock has gone
+   * free: its book does not contain whatever the other tab posted, and posting
+   * on top of a stale book is the bug this whole mechanism exists to prevent.
+   * It offers a reload instead. */
+  function ambilKunci(awal) {
+    if (!state.tulis && !awal) return Promise.resolve({ ok: false, holder: state.lockPemilik });
     return St.lock(state.tabId, LOCK_TTL).then(function (r) {
       var dulu = state.tulis;
       state.tulis = !!r.ok;
@@ -2730,19 +2736,21 @@
     if (lockTimer) return;
     lockTimer = setInterval(function () {
       if (state.tulis) { ambilKunci(); return; }
-      /* Read-only: watch for the lock going free, then invite a reload rather
-       * than promoting silently — this tab's book does not contain whatever the
-       * other tab posted, and posting on top of a stale book is the bug. */
-      St.get('konfig', 'lock').then(function (rec) {
-        var v = rec && rec.v;
-        var bebas = !v || !v.tab || (Date.now() - (v.at || 0)) > LOCK_TTL;
-        if (bebas && !state.lockBebas) {
-          state.lockBebas = true;
-          renderCtxBar();
-          say('Kunci tulis sudah bebas. Muat ulang halaman untuk mulai memposting.');
-        }
-      });
+      lihatKunciBebas();
     }, 3000);
+  }
+
+  /* Read-only: watch for the lock going free and invite a reload. */
+  function lihatKunciBebas() {
+    return St.get('konfig', 'lock').then(function (rec) {
+      var v = rec && rec.v;
+      var bebas = !v || !v.tab || (Date.now() - (v.at || 0)) > LOCK_TTL;
+      if (bebas && !state.lockBebas) {
+        state.lockBebas = true;
+        renderCtxBar();
+        say('Kunci tulis sudah bebas. Muat ulang halaman untuk mulai memposting.');
+      }
+    });
   }
 
   function boot() {
@@ -2760,7 +2768,7 @@
     paintTests();
     wireTabs();
 
-    ambilKunci().then(function () {
+    ambilKunci(true).then(function () {
       return muat();
     }).then(function () {
       renderAll();
@@ -2770,6 +2778,19 @@
 
     window.addEventListener('pagehide', function () {
       if (state.tulis) St.unlock(state.tabId);
+    });
+
+    /* A background tab's timers are throttled, so its heartbeat can be minutes
+     * late and another tab may have taken the lock in the meantime. Re-checking
+     * the moment this tab becomes visible closes almost all of that window; the
+     * rest is caught by the append-only write itself, which fails loudly on a
+     * key that already exists rather than overwriting it. */
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) return;
+      if (state.tulis) ambilKunci(); else lihatKunciBebas();
+    });
+    window.addEventListener('focus', function () {
+      if (state.tulis) ambilKunci(); else lihatKunciBebas();
     });
   }
 

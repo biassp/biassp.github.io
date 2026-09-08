@@ -82,13 +82,13 @@ html[data-theme="light"] {
 
     --sev-critical: #be123c;
     --sev-high: #c2410c;
-    --sev-medium: #a16207;
+    --sev-medium: #8f5405;
     --sev-low: #0369a1;
     --sev-info: #64748b;
     --ok: #047857;
 
     --tri-merah: #be123c;
-    --tri-kuning: #a16207;
+    --tri-kuning: #8f5405;
     --tri-hijau: #047857;
 }
 

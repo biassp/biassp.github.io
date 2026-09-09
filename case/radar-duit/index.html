@@ -76,6 +76,17 @@
                 Aplikasi seperti ini tidak cukup berfungsi — dia harus bisa <em>membuktikan</em> dirinya masih
                 berfungsi, dan memberi tahu pengguna ketika izinnya dicabut atau layanannya dimatikan sistem.
             </div>
+            <div class="solved">
+                <b>Bagaimana ini ditangani</b>
+                Aplikasi mencatat kapan terakhir kali sebuah notifikasi masuk, lalu memperlakukan
+                <strong>kesenyapan yang tidak wajar sebagai sinyal kegagalan</strong> — kalau biasanya ada
+                transaksi dan tiba-tiba hening terlalu lama, pengguna diberi tahu. Ditambah pemeriksaan ulang izin
+                <code>NotificationListener</code> setiap aplikasi dibuka, karena sistem bisa mencabutnya tanpa
+                pemberitahuan apa pun.
+                <span class="trade">Pendekatan ini menerima kenyataan alih-alih melawannya: Android memang akan
+                membunuh layanan ini suatu saat, jadi yang dijamin bukan “tidak pernah mati”, melainkan “tidak
+                pernah mati diam-diam”.</span>
+            </div>
         </div>
 
         <div class="prob">
@@ -111,6 +122,18 @@
                 Jawaban yang paling mudah dibangun — kirim semuanya, olah di server — juga jawaban yang paling
                 sulit dipertahankan ketika ada yang bertanya. Dan orang <em>akan</em> bertanya, karena permintaan
                 izinnya sendiri sudah membuat mereka waspada.
+            </div>
+            <div class="solved">
+                <b>Bagaimana ini ditangani</b>
+                Penguraian dilakukan <strong>di ponsel</strong>. Yang dikirim ke server hanya hasil
+                terstrukturnya — nominal, merchant, waktu, arah transaksi. Teks mentah notifikasi tidak pernah
+                meninggalkan perangkat, jadi tidak ada salinan isi SMS bank kamu di server siapa pun, termasuk
+                milik saya.
+                <span class="trade">Ini pilihan yang lebih mahal, bukan lebih murah. Karena parser-nya ada di
+                dalam aplikasi, memperbaiki format bank yang berubah berarti merilis versi baru dan menunggu
+                pengguna memperbaruinya — bertabrakan langsung dengan masalah nomor 2 di atas. Menaruh parser di
+                server akan membuat perbaikan instan; harganya adalah seluruh isi notifikasi bank pengguna
+                mengalir ke sana, dan harga itu tidak sepadan.</span>
             </div>
         </div>
 

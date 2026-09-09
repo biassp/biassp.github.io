@@ -89,6 +89,52 @@ Last updated: 2026-09-08.
   index.html without `type`, and `test:markup` failed on it. Exactly the class of thing that
   used to reach master unnoticed.
 
+## Rombak — the database lab (added 2026-09-09)
+- `labs/rombak/`. Real SQLite 3.49.1 as WebAssembly (sql.js 1.14.2, MIT, vendored). 33 tables,
+  19 indexes, 3 triggers, 47,611 rows, nine migration versions. Domain is the Rekam clinic, so
+  it reads as "that same domain done properly as a relational schema", not an eighth unrelated demo.
+- Built by two workflows: design (18 agents, 3 competing designs, 9 judges) then build
+  (10 agents, 6 slices + 4 adversarial verifiers). ~5.8M subagent tokens.
+- THE SPEC AGENT FALSIFIED THREE OF THE WINNING DESIGN'S CLAIMS by running them, before any
+  code existed. All three corrections are better than the originals:
+  * "Same bytes, two outcomes" was impossible. The real difference is one word in a child
+    table's DDL, or one child table that happens to be empty this quarter.
+  * The naive audit rebuild is NOT refused by append-only triggers or a self-FK: BEFORE DELETE
+    does not fire on DROP TABLE, and a DEFERRABLE self-FK is checked at COMMIT when the new
+    table already satisfies it. It commits, rows survive, both triggers silently gone.
+  * The typeof-sweep-after-STRICT was tautological — the recurring bug, caught before shipping.
+- 262 distinct properties, 94 negative, 1,012 executions. Count is LOW on purpose: no assertion
+  may have SQLite's own correctness as its subject. Properties and executions are reported
+  separately because conflating them flatters the total.
+- `census.js` is the firewall against the proof-that-can-only-pass bug (shipped 3x before):
+  two globals only, injected exec, own table list from sqlite_master, refuses if its own bare
+  SELECT does not plan as SCAN. CHECK IT WITH:
+  `grep -o 'ROMBAK_[A-Z]*' labs/rombak/census.js | sort -u`  -> must print exactly two names.
+- The self-proof verifier injected 11 mutations one at a time; SEVEN checks stayed green while
+  their subject was corrupted. All seven fixed and re-verified the same way.
+- FOUND BY ME, NOT BY THE VERIFIERS: the suite blocked the main thread for 23.6 SECONDS on load.
+  The page was frozen — no scroll, no tab clicks. The build agent knew (its comment said "before
+  the main thread disappears for twenty seconds") and accepted it; it never reached the
+  still-broken list. Fixed by moving the suite into `tests.worker.js`. Longest block is now 1.2s
+  and every tab responds under 100ms while it runs. Both paths verified to 1012/1012 — the
+  fallback by deleting window.Worker before load.
+  LESSON: verifiers checked "does it finish" and "any console errors", not "is the page usable
+  while it runs". Add main-thread blocking to the verifier brief next time.
+- Vendoring made the suite index's "0 dependencies" FALSE. Corrected everywhere to "7/8 labs
+  with zero dependencies" rather than reworded into something technically defensible. The lab
+  says so above the fold, uncollapsed. CSP gains 'wasm-unsafe-eval'; connect-src 'none' is
+  byte-identical to the other seven.
+- `node tools/vendor-sqljs.js labs/rombak` regenerates all three vendored files byte-identically
+  (verified with md5sum). sql.js pinned to exactly 1.14.2, not a caret range.
+- NEW CI STEPS: `test:i18n` (every data-i18n key resolves in both languages — a missing key
+  blanks the element only for ID readers, and nothing else catches it; proved red three ways),
+  and the labs runner now asserts the zero-network claim for all seven labs instead of trusting
+  the badge (proved red: every guard reads 0 at rest and 1 after one fetch).
+- STILL OPEN, stated in the lab README rather than hidden: app.js has no automated control, so
+  a broken panel would not fail CI; the runner's step-10 refusal branch has never fired; the
+  zero-console-error check cannot be controlled without removing the handlers that make it pass.
+- Spec at scratchpad/skema-spec.md (2,333 lines + Appendix F). Not committed — session-scratch.
+
 ## Standing rules (decided 2026-09-08 — apply without asking again)
 - COPYRIGHT: the repo ships an all-rights-reserved LICENSE and every lab source file carries a
   copyright header. This is NOT open source and must not be relicensed. Keep the headers when

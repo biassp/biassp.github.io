@@ -270,6 +270,37 @@ red is not a check.
 
 ---
 
+## The suite runs in a worker, and that was not the first design
+
+The suite is about twenty seconds of uninterrupted work: booting SQLite, seeding
+roughly 48,000 rows, walking the nine-version ladder twice over to prove each
+step is a no-op the second time, and running four full table rebuilds. That is
+honest work and it is not going to get much faster.
+
+Run on the main thread it was also twenty seconds of frozen page. Measured before
+the change, on this machine: a single **23.6-second block** during which nothing
+scrolled and no tab responded. Yielding between groups would not have fixed it —
+two groups take over seven seconds each on their own, so the page would still
+have locked up for seven.
+
+So the whole engine moved into a worker. After the change the longest main-thread
+block is **1.2 seconds**, and every tab responds in under 100 ms while the suite
+is still running. The badge takes the same ~29 seconds to reach `1012/1012`; the
+difference is that the page works the entire time.
+
+This was possible without touching any of the engine files because they are all
+DOM-free by design — only `app.js` and `store.js` reach for the document or for
+storage. The worker gets the wasm as base64 from the same vendored script the
+page uses, so it makes no network request either.
+
+The main thread keeps `ROMBAK_TESTS.run()` exactly as it was, and that is the
+path CI drives. Moving the badge off-thread changed nothing about what is
+verified on every push. It is also the fallback: a worker can fail to start for
+reasons that have nothing to do with this code, and both paths were verified to
+reach `1012/1012` — the second by deleting `window.Worker` before load.
+
+---
+
 ## Vendored SQLite: 878 KB, and one claim on this site was wrong
 
 This lab checks a WebAssembly build of SQLite into the repository. The suite index
@@ -337,6 +368,7 @@ set to block site data and one unguarded read is enough to blank a page.
 | `runner.js` | The migration ladder, the twelve steps, and the naive rebuild kept as a real function because the page runs it. |
 | `store.js` | IndexedDB for a saved database, `localStorage` for the theme. |
 | `tests.js` | The 262 properties. |
+| `tests.worker.js` | The same suite, off the main thread. |
 | `app.js` | The only file that touches the DOM. |
 | `tools/check-rekam-agreement.js` | Run by hand: checks this lab's canonical JSON and SHA-256 agree with `labs/rekam/audit.js` on six fixed vectors. It will drift silently if that file changes and nobody runs it. |
 | `vendor/` | SQLite. Third party, generated, MIT. |

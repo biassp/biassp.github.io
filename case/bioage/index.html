@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<!--
+  Case study: BioAge — biassp.github.io
+  Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+  Not open source. Readable for evaluation only — copying, modification,
+  re-branding or redistribution is not permitted. See /LICENSE.
+-->
+<html lang="id" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioAge — studi kasus</title>
+    <meta name="description"
+        content="Studi kasus BioAge: pemindai usia biologis berbasis AI untuk web dan mobile. Dua masalah teknis yang membentuk produknya — model vision yang harus menghadapi foto dunia nyata, dan satu backend yang melayani dua klien berbeda.">
+    <meta name="author" content="Bias Satrio Putra">
+    <meta name="copyright" content="Copyright (c) 2026 Bias Satrio Putra. All rights reserved.">
+    <link rel="stylesheet" href="../case.css">
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2032%2032%22%3E%3Crect%20width=%2232%22%20height=%2232%22%20rx=%227%22%20fill=%22%236366f1%22/%3E%3Ccircle%20cx=%2216%22%20cy=%2212%22%20r=%224.5%22%20fill=%22%23fff%22/%3E%3Cpath%20d=%22M7%2026c0-4.4%204-8%209-8s9%203.6%209%208z%22%20fill=%22%23fff%22/%3E%3C/svg%3E">
+</head>
+
+<body>
+    <header class="top">
+        <div class="top-in">
+            <span class="crumb"><a href="../../">CV</a> · Studi kasus</span>
+            <div class="tools">
+                <button class="btn" type="button" id="tema" aria-pressed="false">Terang</button>
+                <a class="btn" href="../../#portfolio">← Portfolio</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="wrap">
+        <div class="hero">
+            <span class="eyebrow">Studi kasus</span>
+            <h1><span class="grad">BioAge</span> — menebak usia biologis dari sebuah foto</h1>
+            <p class="lede">Pemindai usia biologis berbasis AI untuk web dan mobile. Pengguna memindai wajah dan
+                tubuh, model vision memperkirakan usia biologisnya, dan tier premium berbasis kredit membuka hasil
+                yang lebih rinci. Tersedia dalam beberapa bahasa.</p>
+
+            <div class="facts">
+                <div class="fact"><b>Peran</b><span>Dibangun sendiri, dari backend sampai rilis</span></div>
+                <div class="fact"><b>Stack</b><span>Node.js · Flutter · TypeScript</span></div>
+                <div class="fact"><b>Status</b><span>Live di bioage.login.ac.pk</span></div>
+            </div>
+
+            <div class="tags">
+                <span>Node.js</span><span>Flutter</span><span>TypeScript</span><span>AI Vision</span>
+                <span>Sistem kredit</span><span>Multi-bahasa</span>
+            </div>
+        </div>
+
+        <h2>Dua masalah yang membentuk produknya</h2>
+        <p class="muted">Produk ini terlihat sederhana dari luar: unggah foto, dapat angka. Yang membuatnya sulit
+            justru dua hal yang tidak terlihat pengguna.</p>
+
+        <div class="prob">
+            <h3>1. Model vision harus menghadapi foto dunia nyata</h3>
+            <p>Sebuah model yang bekerja rapi di dataset uji akan bertemu kenyataan yang jauh lebih berantakan:
+                kamar remang, cahaya dari belakang, wajah terpotong, kacamata, masker, foto miring, kamera depan
+                murah dengan noise tinggi, atau orang yang memotret layar berisi foto orang lain.</p>
+            <div class="why">
+                <b>Kenapa ini sulit</b>
+                Kegagalan pada produk seperti ini tidak boleh berupa error. Pengguna yang mengirim foto gelap
+                bukan sedang melakukan kesalahan — dia hanya berada di ruangan gelap. Sistemnya harus bisa
+                membedakan “foto ini tidak bisa saya nilai” dari “saya nilai tapi keyakinannya rendah”, dan
+                mengatakannya dengan cara yang tidak membuat orang merasa disalahkan. Ditambah satu hal yang jarang
+                dibahas: keluarannya adalah <em>angka tentang tubuh seseorang</em>. Orang bereaksi secara emosional
+                terhadapnya, jadi kalibrasi dan cara menyampaikan hasil sama pentingnya dengan akurasi modelnya.
+            </div>
+            <div class="why">
+                <b>Beban yang menempel</b>
+                Inferensi berbiaya nyata per permintaan. Itu berarti setiap foto yang diproses adalah uang keluar,
+                sementara tidak semua pengguna membayar — yang langsung menghubungkan masalah model dengan desain
+                tier kredit di bawah.
+            </div>
+        </div>
+
+        <div class="prob">
+            <h3>2. Satu backend, dua klien yang tidak bergerak bersama</h3>
+            <p>Web ditulis dengan TypeScript, aplikasi mobile dengan Flutter, keduanya berbicara ke satu API Node
+                yang sama.</p>
+            <div class="why">
+                <b>Kenapa ini sulit</b>
+                Web bisa di-deploy hari ini dan semua orang langsung memakai versi baru. Aplikasi mobile tidak:
+                versi lama tetap terpasang di ponsel orang selama berbulan-bulan, dan tidak ada cara memaksa mereka
+                memperbarui. Artinya API tidak pernah benar-benar boleh <em>berubah</em> — dia hanya boleh
+                <em>bertambah</em>. Setiap perubahan bentuk respons harus tetap aman bagi klien yang dirilis
+                setahun lalu, atau kamu memutus pengguna yang tidak melakukan apa-apa salah.
+            </div>
+            <div class="why">
+                <b>Yang membuatnya makin rumit</b>
+                Dua klien berarti dua definisi tipe yang bisa melenceng diam-diam: TypeScript di satu sisi, Dart di
+                sisi lain, dan tidak ada kompiler yang memeriksa keduanya sekaligus terhadap API di tengah. Bug
+                jenis ini tidak muncul saat build — dia muncul di ponsel pengguna.
+            </div>
+        </div>
+
+        <h2>Batasan yang menentukan bentuknya</h2>
+        <ul>
+            <li><b>Bayar per inferensi.</b> Model AI bukan biaya tetap. Setiap pemindaian menambah tagihan, jadi
+                tier kredit bukan sekadar cara monetisasi — dia rem biaya.</li>
+            <li><b>Mobile tidak bisa dipaksa update.</b> Kompatibilitas mundur bukan pilihan, tapi syarat.</li>
+            <li><b>Multi-bahasa sejak awal.</b> Bukan cuma menerjemahkan tombol: hasil pemindaian juga teks yang
+                harus terbaca wajar di tiap bahasa.</li>
+            <li><b>Foto wajah adalah data pribadi.</b> Apa yang disimpan, berapa lama, dan untuk apa — pertanyaan
+                yang harus dijawab sebelum baris pertama ditulis, bukan sesudahnya.</li>
+        </ul>
+
+        <div class="honest">
+            <b>Batas halaman ini.</b> Ini menjelaskan masalah yang saya pilih untuk dihadapi dan alasan
+            masalah-masalah itu sulit — bukan panduan implementasi, dan tidak memuat angka pengguna maupun
+            pendapatan. Kalau kamu sedang menilai saya untuk sebuah pekerjaan dan ingin tahu <em>bagaimana</em>
+            tiap masalah di atas diselesaikan, hubungi saya; saya lebih suka membicarakannya langsung daripada
+            menuliskannya di halaman publik.
+        </div>
+
+        <div class="next">
+            <a class="btn" href="https://bioage.login.ac.pk" target="_blank" rel="noopener">Buka produknya →</a>
+            <a class="btn" href="../radar-duit/">Studi kasus berikutnya: Radar Duit</a>
+        </div>
+
+        <footer>
+            <p>© 2026 Bias Satrio Putra. Seluruh hak dilindungi. Bukan open source — lihat
+                <a href="../../LICENSE">LICENSE</a>.</p>
+        </footer>
+    </main>
+
+    <script src="../case.js"></script>
+</body>
+
+</html>

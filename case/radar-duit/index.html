@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<!--
+  Case study: Radar Duit — biassp.github.io
+  Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+  Not open source. Readable for evaluation only — copying, modification,
+  re-branding or redistribution is not permitted. See /LICENSE.
+-->
+<html lang="id" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radar Duit — studi kasus</title>
+    <meta name="description"
+        content="Studi kasus Radar Duit: pencatat keuangan otomatis yang membaca notifikasi bank di Android. Tiga masalah teknis — bertahan hidup di background Android, membaca format notifikasi yang berubah-ubah, dan meminta kepercayaan atas data paling sensitif seseorang.">
+    <meta name="author" content="Bias Satrio Putra">
+    <meta name="copyright" content="Copyright (c) 2026 Bias Satrio Putra. All rights reserved.">
+    <link rel="stylesheet" href="../case.css">
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2032%2032%22%3E%3Crect%20width=%2232%22%20height=%2232%22%20rx=%227%22%20fill=%22%236366f1%22/%3E%3Cpath%20d=%22M6%2020l6-7%205%204%209-10%22%20stroke=%22%23fff%22%20stroke-width=%223%22%20fill=%22none%22%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22/%3E%3C/svg%3E">
+</head>
+
+<body>
+    <header class="top">
+        <div class="top-in">
+            <span class="crumb"><a href="../../">CV</a> · Studi kasus</span>
+            <div class="tools">
+                <button class="btn" type="button" id="tema" aria-pressed="false">Terang</button>
+                <a class="btn" href="../../#portfolio">← Portfolio</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="wrap">
+        <div class="hero">
+            <span class="eyebrow">Studi kasus</span>
+            <h1><span class="grad">Radar Duit</span> — mencatat pengeluaran tanpa disuruh</h1>
+            <p class="lede">Pencatat keuangan otomatis. Alih-alih meminta pengguna mengetik tiap transaksi, aplikasi
+                ini membaca notifikasi yang sudah dikirim bank dan e-wallet ke ponsel, menguraikannya, dan memberi
+                peringatan tepat saat uang bergerak. Tersedia sebagai aplikasi Android dan web.</p>
+
+            <div class="facts">
+                <div class="fact"><b>Peran</b><span>Dibangun sendiri, dari backend sampai rilis</span></div>
+                <div class="fact"><b>Stack</b><span>Flutter · Node.js</span></div>
+                <div class="fact"><b>Status</b><span>Live di radarduit.com</span></div>
+            </div>
+
+            <div class="tags">
+                <span>Flutter</span><span>Node.js</span><span>NotificationListener</span><span>Parsing</span>
+                <span>Realtime</span><span>Privasi</span>
+            </div>
+        </div>
+
+        <h2>Kenapa pendekatannya berbeda</h2>
+        <p class="muted">Hampir semua aplikasi keuangan kalah oleh hal yang sama: mengetik manual itu melelahkan,
+            dan orang berhenti setelah dua minggu. Radar Duit menghindari masalah itu dengan tidak pernah meminta
+            pengguna mencatat apa pun — sumber datanya adalah notifikasi yang toh sudah masuk ke ponsel. Keputusan
+            itu memindahkan seluruh kesulitan ke tempat lain, dan di situlah proyek ini sebenarnya berada.</p>
+
+        <div class="prob">
+            <h3>1. Bertahan hidup di background Android</h3>
+            <p>Menangkap notifikasi butuh <code>NotificationListenerService</code> — layanan yang harus terus hidup,
+                dengan izin khusus yang tidak bisa diminta lewat dialog biasa dan mengharuskan pengguna masuk ke
+                pengaturan sistem sendiri.</p>
+            <div class="why">
+                <b>Kenapa ini sulit</b>
+                Android memang dirancang untuk membunuh proses latar belakang, dan produsen ponsel membuatnya jauh
+                lebih agresif lagi. Xiaomi, Oppo, Vivo dan Realme punya lapisan manajemen baterai sendiri yang
+                mematikan layanan tanpa memberi tahu siapa pun — termasuk aplikasinya. Yang berbahaya bukan
+                aplikasinya berhenti, tapi aplikasinya berhenti <em>diam-diam</em>: pengguna mengira semua
+                transaksinya tercatat, padahal tidak ada yang tercatat sejak tiga hari lalu. Sebuah pencatat
+                keuangan yang bolong tanpa memberi tahu lebih buruk daripada tidak ada pencatat sama sekali.
+            </div>
+            <div class="why">
+                <b>Konsekuensinya ke desain</b>
+                Aplikasi seperti ini tidak cukup berfungsi — dia harus bisa <em>membuktikan</em> dirinya masih
+                berfungsi, dan memberi tahu pengguna ketika izinnya dicabut atau layanannya dimatikan sistem.
+            </div>
+        </div>
+
+        <div class="prob">
+            <h3>2. Format notifikasi bank yang tidak pernah diam</h3>
+            <p>Setiap bank dan e-wallet menulis notifikasinya dengan cara berbeda, dan tidak ada satu pun yang
+                menganggapnya sebagai antarmuka publik.</p>
+            <div class="why">
+                <b>Kenapa ini sulit</b>
+                Tidak ada spesifikasi, tidak ada versi, tidak ada pemberitahuan saat berubah. Satu bank memakai
+                <code>Rp1.250.000,00</code>, yang lain <code>IDR 1,250,000</code>, yang lain lagi menyingkat
+                merchant sampai tak terbaca. Arah transaksi kadang ditulis “debit”, kadang “dr”, kadang hanya
+                tersirat dari kalimatnya. Dan format itu bisa berubah minggu depan karena bank memperbarui
+                aplikasinya — tanpa memberi tahu siapa pun. Artinya parser-nya tidak pernah selesai; dia harus
+                dirancang untuk gagal dengan sopan, memberi tahu bahwa ada notifikasi yang tidak dikenali, bukan
+                diam-diam salah mencatat nominal.
+            </div>
+            <div class="why">
+                <b>Kesalahan yang paling mahal</b>
+                Salah baca angka lebih berbahaya daripada gagal baca. Gagal baca terlihat; salah baca masuk ke
+                laporan keuangan seseorang dan dipercaya.
+            </div>
+        </div>
+
+        <div class="prob">
+            <h3>3. Meminta izin membaca notifikasi bank</h3>
+            <p>Untuk bekerja, aplikasi ini meminta akses ke salah satu aliran data paling sensitif di ponsel
+                seseorang.</p>
+            <div class="why">
+                <b>Kenapa ini sulit</b>
+                Ini bukan masalah teknis, tapi menentukan arsitektur. Pertanyaannya sederhana dan tidak bisa
+                dihindari: apa yang meninggalkan ponsel, dan apa yang tidak? Setiap byte yang dikirim ke server
+                adalah sesuatu yang harus dijaga, harus dijelaskan, dan suatu saat harus dipertanggungjawabkan.
+                Jawaban yang paling mudah dibangun — kirim semuanya, olah di server — juga jawaban yang paling
+                sulit dipertahankan ketika ada yang bertanya. Dan orang <em>akan</em> bertanya, karena permintaan
+                izinnya sendiri sudah membuat mereka waspada.
+            </div>
+        </div>
+
+        <h2>Batasan yang menentukan bentuknya</h2>
+        <ul>
+            <li><b>Sumber datanya milik orang lain.</b> Format notifikasi bisa berubah kapan saja tanpa kabar, jadi
+                sistemnya harus menua dengan anggun, bukan rusak sekaligus.</li>
+            <li><b>Diam adalah mode gagal terburuk.</b> Pengguna hanya percaya pencatat otomatis kalau dia tahu
+                kapan pencatatnya berhenti mencatat.</li>
+            <li><b>Android bukan lingkungan yang ramah.</b> Aplikasi ini melawan sistem operasi yang tugasnya
+                justru mematikan hal-hal seperti ini.</li>
+            <li><b>Kepercayaan harus didahulukan.</b> Keputusan tentang apa yang dikirim ke server dibuat sebelum
+                fitur, bukan sesudah.</li>
+        </ul>
+
+        <div class="honest">
+            <b>Batas halaman ini.</b> Ini menjelaskan masalah yang saya pilih untuk dihadapi dan alasan
+            masalah-masalah itu sulit — bukan panduan implementasi, dan tidak memuat angka pengguna maupun
+            pendapatan. Kalau kamu sedang menilai saya untuk sebuah pekerjaan dan ingin tahu <em>bagaimana</em>
+            tiap masalah di atas diselesaikan, hubungi saya.
+        </div>
+
+        <div class="next">
+            <a class="btn" href="https://radarduit.com" target="_blank" rel="noopener">Buka produknya →</a>
+            <a class="btn" href="../repbout/">Studi kasus berikutnya: RepBout</a>
+        </div>
+
+        <footer>
+            <p>© 2026 Bias Satrio Putra. Seluruh hak dilindungi. Bukan open source — lihat
+                <a href="../../LICENSE">LICENSE</a>.</p>
+        </footer>
+    </main>
+
+    <script src="../case.js"></script>
+</body>
+
+</html>

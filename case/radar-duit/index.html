@@ -5,14 +5,14 @@
   Not open source. Readable for evaluation only — copying, modification,
   re-branding or redistribution is not permitted. See /LICENSE.
 -->
-<html lang="id" data-theme="dark">
+<html lang="en" data-theme="dark">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Radar Duit — studi kasus</title>
+    <title>Radar Duit — case study</title>
     <meta name="description"
-        content="Studi kasus Radar Duit: pencatat keuangan otomatis yang membaca notifikasi bank di Android. Tiga masalah teknis — bertahan hidup di background Android, membaca format notifikasi yang berubah-ubah, dan meminta kepercayaan atas data paling sensitif seseorang.">
+        content="Radar Duit case study: an automatic finance tracker that reads bank notifications on Android. Three technical problems — staying alive in the Android background, parsing notification formats that never hold still, and earning trust over someone's most sensitive data.">
     <meta name="author" content="Bias Satrio Putra">
     <meta name="copyright" content="Copyright (c) 2026 Bias Satrio Putra. All rights reserved.">
     <link rel="stylesheet" href="../case.css">
@@ -23,154 +23,185 @@
 <body>
     <header class="top">
         <div class="top-in">
-            <span class="crumb"><a href="../../">CV</a> · Studi kasus</span>
+            <span class="crumb" data-i18n-html="rd.crumb"><a href="../../">CV</a> · Case study</span>
             <div class="tools">
-                <button class="btn" type="button" id="tema" aria-pressed="false">Terang</button>
-                <a class="btn" href="../../#portfolio">← Portfolio</a>
+                <button class="btn" type="button" id="tema" aria-pressed="false">Light</button>
+                <button class="btn" type="button" id="langToggle">ID</button>
+                <a class="btn" href="../../#portfolio" data-i18n="rd.nav.portfolio">← Portfolio</a>
             </div>
         </div>
     </header>
 
     <main class="wrap">
         <div class="hero">
-            <span class="eyebrow">Studi kasus</span>
-            <h1><span class="grad">Radar Duit</span> — mencatat pengeluaran tanpa disuruh</h1>
-            <p class="lede">Pencatat keuangan otomatis. Alih-alih meminta pengguna mengetik tiap transaksi, aplikasi
-                ini membaca notifikasi yang sudah dikirim bank dan e-wallet ke ponsel, menguraikannya, dan memberi
-                peringatan tepat saat uang bergerak. Tersedia sebagai aplikasi Android dan web.</p>
+            <span class="eyebrow" data-i18n="rd.hero.eyebrow">Case study</span>
+            <h1 data-i18n-html="rd.hero.title"><span class="grad">Radar Duit</span> — logging your spending without being asked</h1>
+            <p class="lede" data-i18n="rd.hero.lede">An automatic finance tracker. Instead of asking users to type in every transaction, the app reads the notifications banks and e-wallets already push to the phone, parses them, and alerts you the instant money moves. Available as both an Android and a web app.</p>
 
             <div class="facts">
-                <div class="fact"><b>Peran</b><span>Dibangun sendiri, dari backend sampai rilis</span></div>
-                <div class="fact"><b>Stack</b><span>Flutter · Node.js</span></div>
-                <div class="fact"><b>Status</b><span>Live di radarduit.com</span></div>
+                <div class="fact"><b data-i18n="rd.facts.role.k">Role</b><span data-i18n="rd.facts.role.v">Built solo, from backend to release</span></div>
+                <div class="fact"><b data-i18n="rd.facts.stack.k">Stack</b><span data-i18n="rd.facts.stack.v">Flutter · Node.js</span></div>
+                <div class="fact"><b data-i18n="rd.facts.status.k">Status</b><span data-i18n="rd.facts.status.v">Live at radarduit.com</span></div>
             </div>
 
             <div class="tags">
                 <span>Flutter</span><span>Node.js</span><span>NotificationListener</span><span>Parsing</span>
-                <span>Realtime</span><span>Privasi</span>
+                <span>Realtime</span><span data-i18n="rd.tags.privacy">Privacy</span>
             </div>
         </div>
 
-        <h2>Kenapa pendekatannya berbeda</h2>
-        <p class="muted">Hampir semua aplikasi keuangan kalah oleh hal yang sama: mengetik manual itu melelahkan,
-            dan orang berhenti setelah dua minggu. Radar Duit menghindari masalah itu dengan tidak pernah meminta
-            pengguna mencatat apa pun — sumber datanya adalah notifikasi yang toh sudah masuk ke ponsel. Keputusan
-            itu memindahkan seluruh kesulitan ke tempat lain, dan di situlah proyek ini sebenarnya berada.</p>
+        <h2 data-i18n="rd.approach.h">Why the approach is different</h2>
+        <p class="muted" data-i18n="rd.approach.body">Almost every finance app loses to the same thing: typing everything in by hand is exhausting, and people quit after two weeks. Radar Duit sidesteps that by never asking the user to record anything — its data source is the notifications that land on the phone anyway. That single decision moves all the difficulty somewhere else, and that somewhere is where this project actually lives.</p>
 
         <div class="prob">
-            <h3>1. Bertahan hidup di background Android</h3>
-            <p>Menangkap notifikasi butuh <code>NotificationListenerService</code> — layanan yang harus terus hidup,
-                dengan izin khusus yang tidak bisa diminta lewat dialog biasa dan mengharuskan pengguna masuk ke
-                pengaturan sistem sendiri.</p>
-            <div class="why">
-                <b>Kenapa ini sulit</b>
-                Android memang dirancang untuk membunuh proses latar belakang, dan produsen ponsel membuatnya jauh
-                lebih agresif lagi. Xiaomi, Oppo, Vivo dan Realme punya lapisan manajemen baterai sendiri yang
-                mematikan layanan tanpa memberi tahu siapa pun — termasuk aplikasinya. Yang berbahaya bukan
-                aplikasinya berhenti, tapi aplikasinya berhenti <em>diam-diam</em>: pengguna mengira semua
-                transaksinya tercatat, padahal tidak ada yang tercatat sejak tiga hari lalu. Sebuah pencatat
-                keuangan yang bolong tanpa memberi tahu lebih buruk daripada tidak ada pencatat sama sekali.
-            </div>
-            <div class="why">
-                <b>Konsekuensinya ke desain</b>
-                Aplikasi seperti ini tidak cukup berfungsi — dia harus bisa <em>membuktikan</em> dirinya masih
-                berfungsi, dan memberi tahu pengguna ketika izinnya dicabut atau layanannya dimatikan sistem.
-            </div>
-            <div class="solved">
-                <b>Bagaimana ini ditangani</b>
-                Aplikasi mencatat kapan terakhir kali sebuah notifikasi masuk, lalu memperlakukan
-                <strong>kesenyapan yang tidak wajar sebagai sinyal kegagalan</strong> — kalau biasanya ada
-                transaksi dan tiba-tiba hening terlalu lama, pengguna diberi tahu. Ditambah pemeriksaan ulang izin
-                <code>NotificationListener</code> setiap aplikasi dibuka, karena sistem bisa mencabutnya tanpa
-                pemberitahuan apa pun.
-                <span class="trade">Pendekatan ini menerima kenyataan alih-alih melawannya: Android memang akan
-                membunuh layanan ini suatu saat, jadi yang dijamin bukan “tidak pernah mati”, melainkan “tidak
-                pernah mati diam-diam”.</span>
-            </div>
+            <h3 data-i18n="rd.p1.h">1. Staying alive in the Android background</h3>
+            <p data-i18n-html="rd.p1.intro">Capturing notifications needs a <code>NotificationListenerService</code> — a service that has to stay running, with a special permission that can't be requested through an ordinary dialog and forces the user to walk into system settings themselves.</p>
+            <div class="why" data-i18n-html="rd.p1.why1"><b>Why this is hard</b> Android is built to kill background processes, and phone makers make it far more aggressive still. Xiaomi, Oppo, Vivo and Realme each run their own battery-management layer that shuts services down without telling anyone — the app included. The danger isn't that the app stops; it's that it stops <em>silently</em>: the user assumes every transaction is being recorded when nothing has been recorded for three days. A finance tracker with silent gaps is worse than no tracker at all.</div>
+            <div class="why" data-i18n-html="rd.p1.why2"><b>What it means for the design</b> An app like this can't just work — it has to be able to <em>prove</em> it's still working, and tell the user the moment its permission is revoked or its service is killed by the system.</div>
+            <div class="solved" data-i18n-html="rd.p1.solved"><b>How this was handled</b> The app re-checks the <code>NotificationListener</code> permission whenever the onboarding and health screens resume, and warns the user if access has been revoked or if battery optimization is throttling the service — because the system can cut it off with no notice. <span class="trade">The honest caveat: detecting an <em>unusual silence</em> in incoming notifications and proactively telling the user “nothing has come through in a while” is a planned guardrail, not yet built. So today the guarantee is narrower than the ideal above — the app can prove its permission is intact, but not yet that the stream itself is still flowing.</span></div>
         </div>
 
         <div class="prob">
-            <h3>2. Format notifikasi bank yang tidak pernah diam</h3>
-            <p>Setiap bank dan e-wallet menulis notifikasinya dengan cara berbeda, dan tidak ada satu pun yang
-                menganggapnya sebagai antarmuka publik.</p>
-            <div class="why">
-                <b>Kenapa ini sulit</b>
-                Tidak ada spesifikasi, tidak ada versi, tidak ada pemberitahuan saat berubah. Satu bank memakai
-                <code>Rp1.250.000,00</code>, yang lain <code>IDR 1,250,000</code>, yang lain lagi menyingkat
-                merchant sampai tak terbaca. Arah transaksi kadang ditulis “debit”, kadang “dr”, kadang hanya
-                tersirat dari kalimatnya. Dan format itu bisa berubah minggu depan karena bank memperbarui
-                aplikasinya — tanpa memberi tahu siapa pun. Artinya parser-nya tidak pernah selesai; dia harus
-                dirancang untuk gagal dengan sopan, memberi tahu bahwa ada notifikasi yang tidak dikenali, bukan
-                diam-diam salah mencatat nominal.
-            </div>
-            <div class="why">
-                <b>Kesalahan yang paling mahal</b>
-                Salah baca angka lebih berbahaya daripada gagal baca. Gagal baca terlihat; salah baca masuk ke
-                laporan keuangan seseorang dan dipercaya.
-            </div>
+            <h3 data-i18n="rd.p2.h">2. Bank notification formats that never hold still</h3>
+            <p data-i18n="rd.p2.intro">Every bank and e-wallet writes its notifications differently, and not one of them treats that text as a public interface.</p>
+            <div class="why" data-i18n-html="rd.p2.why1"><b>Why this is hard</b> There's no spec, no versioning, no warning when it changes. One bank uses <code>Rp1.250.000,00</code>, another <code>IDR 1,250,000</code>, another abbreviates the merchant until it's unreadable. The direction of a transaction is sometimes "debit", sometimes "dr", sometimes only implied by the sentence. And any of it can change next week when the bank updates its app — without telling anyone. Which means the parser is never finished; it has to be built to fail politely, to flag that a notification wasn't recognised rather than quietly record the wrong amount.</div>
+            <div class="why" data-i18n-html="rd.p2.why2"><b>The most expensive mistake</b> Misreading a number is more dangerous than failing to read one. A failure is visible; a misread lands in someone's financial records and gets trusted.</div>
+            <div class="solved" data-i18n-html="rd.p2.solved"><b>How this was handled</b> Every parse carries a <strong>confidence score</strong>, and nothing reaches the ledger on the strength of a guess: a per-type gate holds back anything below its threshold — expenses judged more strictly than money-in — so an unrecognised or half-read notification is <em>parked for review rather than recorded with an invented number</em>. The parser is also told to abstain — to mark a notification as <em>not a transaction</em> whenever it isn't clearly one — so the failure mode is a visible gap, never a silent wrong figure. And because a bank's wording drifts without warning, the categories a user corrects are captured in a <code>corrections</code> override table that teaches each fix back into future parsing, promoting a correction to everyone once enough people independently agree on the same one. <span class="trade">Erring toward silence has a cost: some genuine transactions wait in an inbox for a tap of confirmation instead of appearing on their own. That is the deliberate side to land on — a line the user can add back is recoverable; a wrong number they already trusted is not.</span></div>
         </div>
 
         <div class="prob">
-            <h3>3. Meminta izin membaca notifikasi bank</h3>
-            <p>Untuk bekerja, aplikasi ini meminta akses ke salah satu aliran data paling sensitif di ponsel
-                seseorang.</p>
-            <div class="why">
-                <b>Kenapa ini sulit</b>
-                Ini bukan masalah teknis, tapi menentukan arsitektur. Pertanyaannya sederhana dan tidak bisa
-                dihindari: apa yang meninggalkan ponsel, dan apa yang tidak? Setiap byte yang dikirim ke server
-                adalah sesuatu yang harus dijaga, harus dijelaskan, dan suatu saat harus dipertanggungjawabkan.
-                Jawaban yang paling mudah dibangun — kirim semuanya, olah di server — juga jawaban yang paling
-                sulit dipertahankan ketika ada yang bertanya. Dan orang <em>akan</em> bertanya, karena permintaan
-                izinnya sendiri sudah membuat mereka waspada.
-            </div>
-            <div class="solved">
-                <b>Bagaimana ini ditangani</b>
-                Notifikasi disaring dulu <strong>di ponsel</strong>: sebuah pra-filter ringan membuang yang jelas
-                bukan transaksi, dan pola yang sudah dikenal langsung diuraikan di perangkat. Sisanya — format
-                yang belum dikenali — dikirim ke server dan diuraikan oleh AI, lalu hasilnya di-cache per
-                pengguna. Konsekuensinya jujur: sebagian teks notifikasi memang mencapai server. Jadi keputusan
-                desainnya bukan <em>“tidak ada yang keluar dari ponsel”</em>, melainkan membatasi seketat mungkin
-                <strong>apa</strong> yang keluar dan <strong>untuk siapa</strong> — dan menaruh jalur cepat
-                perbaikan format di sisi server yang bisa diperbaiki tanpa menunggu pengguna memperbarui aplikasi.
-                <span class="trade">Ini pilihan hibrida, bukan yang termurah maupun yang paling privat secara
-                mutlak. Andai seluruh penguraian dipaksa di dalam aplikasi, tidak ada teks yang keluar sama
-                sekali — tapi tiap kali sebuah bank mengubah format, perbaikannya menuntut rilis versi baru dan
-                menunggu pengguna memperbaruinya, bertabrakan langsung dengan masalah nomor 2 di atas. Menaruh
-                penguraian AI di server membuat sebagian besar perbaikan itu instan; harganya adalah sebagian teks
-                notifikasi mengalir ke sana, dan yang dijaga adalah menekan bagian itu sekecil mungkin.</span>
-            </div>
+            <h3 data-i18n="rd.p3.h">3. Asking permission to read bank notifications</h3>
+            <p data-i18n="rd.p3.intro">To work, the app asks for access to one of the most sensitive data streams on someone's phone.</p>
+            <div class="why" data-i18n-html="rd.p3.why1"><b>Why this is hard</b> This isn't a technical problem, it's an architectural one. The question is simple and unavoidable: what leaves the phone, and what doesn't? Every byte sent to a server is something that has to be protected, has to be explained, and one day has to be accounted for. The answer that's easiest to build — send everything, process it on the server — is also the hardest to defend when someone asks. And people <em>will</em> ask, because the permission request itself has already put them on guard.</div>
+            <div class="solved" data-i18n-html="rd.p3.solved"><b>How this was handled</b> On the phone, a package whitelist decides <strong>which apps</strong> may be read at all — anything outside it (chats, email, social) is never touched. But there is no on-device parser: the full text of every matched notification is batched and sent to the server, where a per-user cache, a <strong>DeepSeek</strong> AI parser and a merchant-override table turn it into a transaction. <span class="trade">Parsing lives on the server, and that is the honest trade-off: the notification text of a user’s financial apps does leave the phone. The upside is that when a bank changes its format the fix ships instantly, with no app update to wait for — so the discipline sits on the other side: keep what leaves as narrow as possible in scope and retention, and say so plainly rather than claim nothing leaves at all.</span></div>
         </div>
 
-        <h2>Batasan yang menentukan bentuknya</h2>
+        <h2 data-i18n="rd.limits.h">The constraints that shaped it</h2>
         <ul>
-            <li><b>Sumber datanya milik orang lain.</b> Format notifikasi bisa berubah kapan saja tanpa kabar, jadi
-                sistemnya harus menua dengan anggun, bukan rusak sekaligus.</li>
-            <li><b>Diam adalah mode gagal terburuk.</b> Pengguna hanya percaya pencatat otomatis kalau dia tahu
-                kapan pencatatnya berhenti mencatat.</li>
-            <li><b>Android bukan lingkungan yang ramah.</b> Aplikasi ini melawan sistem operasi yang tugasnya
-                justru mematikan hal-hal seperti ini.</li>
-            <li><b>Kepercayaan harus didahulukan.</b> Keputusan tentang apa yang dikirim ke server dibuat sebelum
-                fitur, bukan sesudah.</li>
+            <li data-i18n-html="rd.limits.1"><b>The data source belongs to someone else.</b> Notification formats can change at any time without warning, so the system has to age gracefully rather than break all at once.</li>
+            <li data-i18n-html="rd.limits.2"><b>Silence is the worst failure mode.</b> Users only trust an automatic tracker if they know when it has stopped tracking.</li>
+            <li data-i18n-html="rd.limits.3"><b>Android is not a friendly environment.</b> This app fights an operating system whose very job is to shut things like it down.</li>
+            <li data-i18n-html="rd.limits.4"><b>Trust comes first.</b> The decision about what gets sent to the server is made before features, not after.</li>
         </ul>
 
-        <div class="honest">
-            <b>Batas halaman ini.</b> Ini menjelaskan masalah yang saya pilih untuk dihadapi dan alasan
-            masalah-masalah itu sulit — bukan panduan implementasi, dan tidak memuat angka pengguna maupun
-            pendapatan. Kalau kamu sedang menilai saya untuk sebuah pekerjaan dan ingin tahu <em>bagaimana</em>
-            tiap masalah di atas diselesaikan, hubungi saya.
-        </div>
+        <div class="honest" data-i18n-html="rd.honest"><b>The limit of this page.</b> It explains the problems I chose to take on and why they're hard — not an implementation guide, and it contains no user or revenue numbers. If you're evaluating me for a role and want to know <em>how</em> each problem above was solved, get in touch.</div>
 
         <div class="next">
-            <a class="btn" href="https://radarduit.com" target="_blank" rel="noopener">Buka produknya →</a>
-            <a class="btn" href="../repbout/">Studi kasus berikutnya: RepBout</a>
+            <a class="btn" href="https://radarduit.com" target="_blank" rel="noopener" data-i18n="rd.next.open">Open the product →</a>
+            <a class="btn" href="../repbout/" data-i18n="rd.next.next">Next case study: RepBout</a>
         </div>
 
         <footer>
-            <p>© 2026 Bias Satrio Putra. Seluruh hak dilindungi. Bukan open source — lihat
-                <a href="../../LICENSE">LICENSE</a>.</p>
+            <p data-i18n-html="rd.footer">© 2026 Bias Satrio Putra. All rights reserved. Not open source — see <a href="../../LICENSE">LICENSE</a>.</p>
         </footer>
     </main>
 
+    <script>
+    window.PAGE_I18N = {
+        meta_title: { en: `Radar Duit — case study`, id: `Radar Duit — studi kasus` },
+        meta_desc: {
+            en: `Radar Duit case study: an automatic finance tracker that reads bank notifications on Android. Three technical problems — staying alive in the Android background, parsing notification formats that never hold still, and earning trust over someone's most sensitive data.`,
+            id: `Studi kasus Radar Duit: pencatat keuangan otomatis yang membaca notifikasi bank di Android. Tiga masalah teknis — bertahan hidup di background Android, membaca format notifikasi yang berubah-ubah, dan meminta kepercayaan atas data paling sensitif seseorang.`
+        },
+        "rd.crumb": { en: `<a href="../../">CV</a> · Case study`, id: `<a href="../../">CV</a> · Studi kasus` },
+        "rd.nav.portfolio": { en: `← Portfolio`, id: `← Portfolio` },
+        "rd.hero.eyebrow": { en: `Case study`, id: `Studi kasus` },
+        "rd.hero.title": {
+            en: `<span class="grad">Radar Duit</span> — logging your spending without being asked`,
+            id: `<span class="grad">Radar Duit</span> — mencatat pengeluaran tanpa disuruh`
+        },
+        "rd.hero.lede": {
+            en: `An automatic finance tracker. Instead of asking users to type in every transaction, the app reads the notifications banks and e-wallets already push to the phone, parses them, and alerts you the instant money moves. Available as both an Android and a web app.`,
+            id: `Pencatat keuangan otomatis. Alih-alih meminta pengguna mengetik tiap transaksi, aplikasi ini membaca notifikasi yang sudah dikirim bank dan e-wallet ke ponsel, menguraikannya, dan memberi peringatan tepat saat uang bergerak. Tersedia sebagai aplikasi Android dan web.`
+        },
+        "rd.facts.role.k": { en: `Role`, id: `Peran` },
+        "rd.facts.role.v": { en: `Built solo, from backend to release`, id: `Dibangun sendiri, dari backend sampai rilis` },
+        "rd.facts.stack.k": { en: `Stack`, id: `Stack` },
+        "rd.facts.stack.v": { en: `Flutter · Node.js`, id: `Flutter · Node.js` },
+        "rd.facts.status.k": { en: `Status`, id: `Status` },
+        "rd.facts.status.v": { en: `Live at radarduit.com`, id: `Live di radarduit.com` },
+        "rd.tags.privacy": { en: `Privacy`, id: `Privasi` },
+        "rd.approach.h": { en: `Why the approach is different`, id: `Kenapa pendekatannya berbeda` },
+        "rd.approach.body": {
+            en: `Almost every finance app loses to the same thing: typing everything in by hand is exhausting, and people quit after two weeks. Radar Duit sidesteps that by never asking the user to record anything — its data source is the notifications that land on the phone anyway. That single decision moves all the difficulty somewhere else, and that somewhere is where this project actually lives.`,
+            id: `Hampir semua aplikasi keuangan kalah oleh hal yang sama: mengetik manual itu melelahkan, dan orang berhenti setelah dua minggu. Radar Duit menghindari masalah itu dengan tidak pernah meminta pengguna mencatat apa pun — sumber datanya adalah notifikasi yang toh sudah masuk ke ponsel. Keputusan itu memindahkan seluruh kesulitan ke tempat lain, dan di situlah proyek ini sebenarnya berada.`
+        },
+        "rd.p1.h": { en: `1. Staying alive in the Android background`, id: `1. Bertahan hidup di background Android` },
+        "rd.p1.intro": {
+            en: `Capturing notifications needs a <code>NotificationListenerService</code> — a service that has to stay running, with a special permission that can't be requested through an ordinary dialog and forces the user to walk into system settings themselves.`,
+            id: `Menangkap notifikasi butuh <code>NotificationListenerService</code> — layanan yang harus terus hidup, dengan izin khusus yang tidak bisa diminta lewat dialog biasa dan mengharuskan pengguna masuk ke pengaturan sistem sendiri.`
+        },
+        "rd.p1.why1": {
+            en: `<b>Why this is hard</b> Android is built to kill background processes, and phone makers make it far more aggressive still. Xiaomi, Oppo, Vivo and Realme each run their own battery-management layer that shuts services down without telling anyone — the app included. The danger isn't that the app stops; it's that it stops <em>silently</em>: the user assumes every transaction is being recorded when nothing has been recorded for three days. A finance tracker with silent gaps is worse than no tracker at all.`,
+            id: `<b>Kenapa ini sulit</b> Android memang dirancang untuk membunuh proses latar belakang, dan produsen ponsel membuatnya jauh lebih agresif lagi. Xiaomi, Oppo, Vivo dan Realme punya lapisan manajemen baterai sendiri yang mematikan layanan tanpa memberi tahu siapa pun — termasuk aplikasinya. Yang berbahaya bukan aplikasinya berhenti, tapi aplikasinya berhenti <em>diam-diam</em>: pengguna mengira semua transaksinya tercatat, padahal tidak ada yang tercatat sejak tiga hari lalu. Sebuah pencatat keuangan yang bolong tanpa memberi tahu lebih buruk daripada tidak ada pencatat sama sekali.`
+        },
+        "rd.p1.why2": {
+            en: `<b>What it means for the design</b> An app like this can't just work — it has to be able to <em>prove</em> it's still working, and tell the user the moment its permission is revoked or its service is killed by the system.`,
+            id: `<b>Konsekuensinya ke desain</b> Aplikasi seperti ini tidak cukup berfungsi — dia harus bisa <em>membuktikan</em> dirinya masih berfungsi, dan memberi tahu pengguna ketika izinnya dicabut atau layanannya dimatikan sistem.`
+        },
+        "rd.p1.solved": {
+            en: `<b>How this was handled</b> The app re-checks the <code>NotificationListener</code> permission whenever the onboarding and health screens resume, and warns the user if access has been revoked or if battery optimization is throttling the service — because the system can cut it off with no notice. <span class="trade">The honest caveat: detecting an <em>unusual silence</em> in incoming notifications and proactively telling the user “nothing has come through in a while” is a planned guardrail, not yet built. So today the guarantee is narrower than the ideal above — the app can prove its permission is intact, but not yet that the stream itself is still flowing.</span>`,
+            id: `<b>Bagaimana ini ditangani</b> Aplikasi memeriksa ulang izin <code>NotificationListener</code> setiap kali layar onboarding dan pemantauan dibuka kembali, lalu memperingatkan pengguna jika akses dicabut atau jika optimasi baterai mencekik layanannya — karena sistem bisa memutusnya tanpa pemberitahuan. <span class="trade">Catatan jujurnya: mendeteksi <em>kesenyapan yang tidak wajar</em> pada notifikasi masuk lalu proaktif memberi tahu pengguna “sudah lama tidak ada yang masuk” adalah pengaman yang direncanakan, belum dibuat. Jadi untuk saat ini jaminannya lebih sempit dari ideal di atas — aplikasi bisa membuktikan izinnya utuh, tapi belum bisa membuktikan alirannya sendiri masih mengalir.</span>`
+        },
+        "rd.p2.h": { en: `2. Bank notification formats that never hold still`, id: `2. Format notifikasi bank yang tidak pernah diam` },
+        "rd.p2.intro": {
+            en: `Every bank and e-wallet writes its notifications differently, and not one of them treats that text as a public interface.`,
+            id: `Setiap bank dan e-wallet menulis notifikasinya dengan cara berbeda, dan tidak ada satu pun yang menganggapnya sebagai antarmuka publik.`
+        },
+        "rd.p2.why1": {
+            en: `<b>Why this is hard</b> There's no spec, no versioning, no warning when it changes. One bank uses <code>Rp1.250.000,00</code>, another <code>IDR 1,250,000</code>, another abbreviates the merchant until it's unreadable. The direction of a transaction is sometimes "debit", sometimes "dr", sometimes only implied by the sentence. And any of it can change next week when the bank updates its app — without telling anyone. Which means the parser is never finished; it has to be built to fail politely, to flag that a notification wasn't recognised rather than quietly record the wrong amount.`,
+            id: `<b>Kenapa ini sulit</b> Tidak ada spesifikasi, tidak ada versi, tidak ada pemberitahuan saat berubah. Satu bank memakai <code>Rp1.250.000,00</code>, yang lain <code>IDR 1,250,000</code>, yang lain lagi menyingkat merchant sampai tak terbaca. Arah transaksi kadang ditulis “debit”, kadang “dr”, kadang hanya tersirat dari kalimatnya. Dan format itu bisa berubah minggu depan karena bank memperbarui aplikasinya — tanpa memberi tahu siapa pun. Artinya parser-nya tidak pernah selesai; dia harus dirancang untuk gagal dengan sopan, memberi tahu bahwa ada notifikasi yang tidak dikenali, bukan diam-diam salah mencatat nominal.`
+        },
+        "rd.p2.why2": {
+            en: `<b>The most expensive mistake</b> Misreading a number is more dangerous than failing to read one. A failure is visible; a misread lands in someone's financial records and gets trusted.`,
+            id: `<b>Kesalahan yang paling mahal</b> Salah baca angka lebih berbahaya daripada gagal baca. Gagal baca terlihat; salah baca masuk ke laporan keuangan seseorang dan dipercaya.`
+        },
+        "rd.p2.solved": {
+            en: `<b>How this was handled</b> Every parse carries a <strong>confidence score</strong>, and nothing reaches the ledger on the strength of a guess: a per-type gate holds back anything below its threshold — expenses judged more strictly than money-in — so an unrecognised or half-read notification is <em>parked for review rather than recorded with an invented number</em>. The parser is also told to abstain — to mark a notification as <em>not a transaction</em> whenever it isn't clearly one — so the failure mode is a visible gap, never a silent wrong figure. And because a bank's wording drifts without warning, the categories a user corrects are captured in a <code>corrections</code> override table that teaches each fix back into future parsing, promoting a correction to everyone once enough people independently agree on the same one. <span class="trade">Erring toward silence has a cost: some genuine transactions wait in an inbox for a tap of confirmation instead of appearing on their own. That is the deliberate side to land on — a line the user can add back is recoverable; a wrong number they already trusted is not.</span>`,
+            id: `<b>Bagaimana ini ditangani</b> Setiap penguraian membawa <strong>skor kepercayaan</strong>, dan tidak ada yang masuk ke catatan hanya berdasarkan tebakan: sebuah gerbang per-jenis menahan apa pun yang di bawah ambangnya — pengeluaran dinilai lebih ketat daripada uang masuk — sehingga notifikasi yang tak dikenali atau setengah terbaca <em>ditahan untuk ditinjau, bukan dicatat dengan angka karangan</em>. Parser-nya juga diperintahkan untuk mengaku tidak tahu — menandai sebuah notifikasi sebagai <em>bukan transaksi</em> setiap kali tidak jelas — sehingga mode gagalnya adalah celah yang terlihat, bukan angka salah yang diam-diam. Dan karena susunan kata sebuah bank berubah tanpa kabar, kategori yang diperbaiki pengguna ditangkap dalam tabel penimpa <code>corrections</code> yang mengajarkan tiap perbaikan kembali ke penguraian berikutnya, lalu mempromosikannya ke semua orang begitu cukup banyak pengguna secara mandiri menyetujui perbaikan yang sama. <span class="trade">Cenderung memilih diam ada harganya: sebagian transaksi asli menunggu satu ketukan konfirmasi di kotak masuk alih-alih muncul sendiri. Itulah sisi yang sengaja dipilih — baris yang bisa ditambahkan kembali oleh pengguna masih bisa dipulihkan; angka salah yang sudah terlanjur dipercaya tidak.</span>`
+        },
+        "rd.p3.h": { en: `3. Asking permission to read bank notifications`, id: `3. Meminta izin membaca notifikasi bank` },
+        "rd.p3.intro": {
+            en: `To work, the app asks for access to one of the most sensitive data streams on someone's phone.`,
+            id: `Untuk bekerja, aplikasi ini meminta akses ke salah satu aliran data paling sensitif di ponsel seseorang.`
+        },
+        "rd.p3.why1": {
+            en: `<b>Why this is hard</b> This isn't a technical problem, it's an architectural one. The question is simple and unavoidable: what leaves the phone, and what doesn't? Every byte sent to a server is something that has to be protected, has to be explained, and one day has to be accounted for. The answer that's easiest to build — send everything, process it on the server — is also the hardest to defend when someone asks. And people <em>will</em> ask, because the permission request itself has already put them on guard.`,
+            id: `<b>Kenapa ini sulit</b> Ini bukan masalah teknis, tapi menentukan arsitektur. Pertanyaannya sederhana dan tidak bisa dihindari: apa yang meninggalkan ponsel, dan apa yang tidak? Setiap byte yang dikirim ke server adalah sesuatu yang harus dijaga, harus dijelaskan, dan suatu saat harus dipertanggungjawabkan. Jawaban yang paling mudah dibangun — kirim semuanya, olah di server — juga jawaban yang paling sulit dipertahankan ketika ada yang bertanya. Dan orang <em>akan</em> bertanya, karena permintaan izinnya sendiri sudah membuat mereka waspada.`
+        },
+        "rd.p3.solved": {
+            en: `<b>How this was handled</b> On the phone, a package whitelist decides <strong>which apps</strong> may be read at all — anything outside it (chats, email, social) is never touched. But there is no on-device parser: the full text of every matched notification is batched and sent to the server, where a per-user cache, a <strong>DeepSeek</strong> AI parser and a merchant-override table turn it into a transaction. <span class="trade">Parsing lives on the server, and that is the honest trade-off: the notification text of a user’s financial apps does leave the phone. The upside is that when a bank changes its format the fix ships instantly, with no app update to wait for — so the discipline sits on the other side: keep what leaves as narrow as possible in scope and retention, and say so plainly rather than claim nothing leaves at all.</span>`,
+            id: `<b>Bagaimana ini ditangani</b> Di ponsel, sebuah daftar-putih paket memutuskan <strong>aplikasi mana</strong> yang boleh dibaca sama sekali — apa pun di luarnya (chat, email, media sosial) tidak pernah disentuh. Tapi tidak ada parser di perangkat: teks lengkap setiap notifikasi yang cocok dikumpulkan dan dikirim ke server, tempat sebuah cache per-pengguna, parser AI <strong>DeepSeek</strong>, dan tabel penimpa merchant mengubahnya menjadi transaksi. <span class="trade">Penguraian berada di server, dan itulah trade-off jujurnya: teks notifikasi aplikasi keuangan pengguna memang meninggalkan ponsel. Sisi baiknya, saat sebuah bank mengubah format, perbaikannya langsung tayang tanpa menunggu pembaruan aplikasi — jadi disiplinnya ada di sisi lain: menjaga apa yang keluar sesempit mungkin dalam cakupan dan masa simpan, dan mengatakannya terus terang alih-alih mengklaim tidak ada yang keluar.</span>`
+        },
+        "rd.limits.h": { en: `The constraints that shaped it`, id: `Batasan yang menentukan bentuknya` },
+        "rd.limits.1": {
+            en: `<b>The data source belongs to someone else.</b> Notification formats can change at any time without warning, so the system has to age gracefully rather than break all at once.`,
+            id: `<b>Sumber datanya milik orang lain.</b> Format notifikasi bisa berubah kapan saja tanpa kabar, jadi sistemnya harus menua dengan anggun, bukan rusak sekaligus.`
+        },
+        "rd.limits.2": {
+            en: `<b>Silence is the worst failure mode.</b> Users only trust an automatic tracker if they know when it has stopped tracking.`,
+            id: `<b>Diam adalah mode gagal terburuk.</b> Pengguna hanya percaya pencatat otomatis kalau dia tahu kapan pencatatnya berhenti mencatat.`
+        },
+        "rd.limits.3": {
+            en: `<b>Android is not a friendly environment.</b> This app fights an operating system whose very job is to shut things like it down.`,
+            id: `<b>Android bukan lingkungan yang ramah.</b> Aplikasi ini melawan sistem operasi yang tugasnya justru mematikan hal-hal seperti ini.`
+        },
+        "rd.limits.4": {
+            en: `<b>Trust comes first.</b> The decision about what gets sent to the server is made before features, not after.`,
+            id: `<b>Kepercayaan harus didahulukan.</b> Keputusan tentang apa yang dikirim ke server dibuat sebelum fitur, bukan sesudah.`
+        },
+        "rd.honest": {
+            en: `<b>The limit of this page.</b> It explains the problems I chose to take on and why they're hard — not an implementation guide, and it contains no user or revenue numbers. If you're evaluating me for a role and want to know <em>how</em> each problem above was solved, get in touch.`,
+            id: `<b>Batas halaman ini.</b> Ini menjelaskan masalah yang saya pilih untuk dihadapi dan alasan masalah-masalah itu sulit — bukan panduan implementasi, dan tidak memuat angka pengguna maupun pendapatan. Kalau kamu sedang menilai saya untuk sebuah pekerjaan dan ingin tahu <em>bagaimana</em> tiap masalah di atas diselesaikan, hubungi saya.`
+        },
+        "rd.next.open": { en: `Open the product →`, id: `Buka produknya →` },
+        "rd.next.next": { en: `Next case study: RepBout`, id: `Studi kasus berikutnya: RepBout` },
+        "rd.footer": {
+            en: `© 2026 Bias Satrio Putra. All rights reserved. Not open source — see <a href="../../LICENSE">LICENSE</a>.`,
+            id: `© 2026 Bias Satrio Putra. Seluruh hak dilindungi. Bukan open source — lihat <a href="../../LICENSE">LICENSE</a>.`
+        }
+    };
+    </script>
     <script src="../case.js"></script>
 </body>
 

@@ -5,14 +5,14 @@
   Not open source. Readable for evaluation only — copying, modification,
   re-branding or redistribution is not permitted. See /LICENSE.
 -->
-<html lang="id" data-theme="dark">
+<html lang="en" data-theme="dark">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RepBout — studi kasus</title>
+    <title>RepBout — case study</title>
     <meta name="description"
-        content="Studi kasus RepBout: aplikasi Android adu latihan head-to-head dengan ekonomi dalam aplikasi. Dua masalah teknis — ledger gems yang tidak boleh menciptakan saldo dari udara kosong, dan memverifikasi hasil latihan yang mudah dicurangi.">
+        content="RepBout case study: a head-to-head Android workout-battle app with an in-app economy. Two technical problems — a gems ledger that must never create balance from thin air, and verifying workout results that are easy to cheat.">
     <meta name="author" content="Bias Satrio Putra">
     <meta name="copyright" content="Copyright (c) 2026 Bias Satrio Putra. All rights reserved.">
     <link rel="stylesheet" href="../case.css">
@@ -23,135 +23,175 @@
 <body>
     <header class="top">
         <div class="top-in">
-            <span class="crumb"><a href="../../">CV</a> · Studi kasus</span>
+            <span class="crumb" data-i18n-html="rb.crumb"><a href="../../">CV</a> · Case study</span>
             <div class="tools">
-                <button class="btn" type="button" id="tema" aria-pressed="false">Terang</button>
-                <a class="btn" href="../../#portfolio">← Portfolio</a>
+                <button class="btn" type="button" id="tema" aria-pressed="false">Light</button>
+                <button class="btn" type="button" id="langToggle">ID</button>
+                <a class="btn" href="../../#portfolio" data-i18n="rb.nav.portfolio">← Portfolio</a>
             </div>
         </div>
     </header>
 
     <main class="wrap">
         <div class="hero">
-            <span class="eyebrow">Studi kasus</span>
-            <h1><span class="grad">RepBout</span> — adu latihan, dengan uang di dalamnya</h1>
-            <p class="lede">Aplikasi Android tempat dua orang saling menantang pada set latihan. Yang membuatnya
-                bukan sekadar aplikasi kebugaran: ada ekonomi di dalamnya — saldo gems, order yang dibayar, dan
-                penarikan yang keluar ke dunia nyata. Begitu ada uang, semua asumsi berubah.</p>
+            <span class="eyebrow" data-i18n="rb.hero.eyebrow">Case study</span>
+            <h1 data-i18n-html="rb.hero.title"><span class="grad">RepBout</span> — workout battles, with money inside</h1>
+            <p class="lede" data-i18n="rb.hero.lede">An Android app where two people challenge each other on a set of exercises. What makes it more than a fitness app is the economy inside it: a gems balance, paid orders, and withdrawals that flow out into the real world. Once money is involved, every assumption changes.</p>
 
             <div class="facts">
-                <div class="fact"><b>Peran</b><span>Dibangun sendiri, aplikasi dan backend</span></div>
-                <div class="fact"><b>Stack</b><span>Flutter · Android · backend wallet</span></div>
-                <div class="fact"><b>Status</b><span>Dalam pengerjaan · rilis bertanda tangan</span></div>
+                <div class="fact"><b data-i18n="rb.facts.role.k">Role</b><span data-i18n="rb.facts.role.v">Built solo, app and backend</span></div>
+                <div class="fact"><b data-i18n="rb.facts.stack.k">Stack</b><span data-i18n="rb.facts.stack.v">Flutter · Android · wallet backend</span></div>
+                <div class="fact"><b data-i18n="rb.facts.status.k">Status</b><span data-i18n="rb.facts.status.v">In progress · signed release</span></div>
             </div>
 
             <div class="tags">
                 <span>Flutter</span><span>Android</span><span>Ledger</span><span>Matchmaking</span>
-                <span>Verifikasi hasil</span><span>Signed release</span>
+                <span data-i18n="rb.tags.verify">Result verification</span><span>Signed release</span>
             </div>
         </div>
 
-        <h2>Dua masalah yang membentuk produknya</h2>
-        <p class="muted">Aplikasi kebugaran biasa hanya perlu benar secara kira-kira — salah hitung repetisi tidak
-            merugikan siapa pun. RepBout tidak punya kemewahan itu: hasil latihan menentukan siapa menang, dan
-            kemenangan menggerakkan saldo yang bisa ditarik.</p>
+        <h2 data-i18n="rb.problems.h">Two problems that shaped the product</h2>
+        <p class="muted" data-i18n="rb.problems.body">An ordinary fitness app only needs to be roughly right — miscounting reps costs no one anything. RepBout doesn't have that luxury: a workout result decides who wins, and winning moves a balance that can be withdrawn.</p>
 
         <div class="prob">
-            <h3>1. Ledger gems dan siklus order</h3>
-            <p>Tiap pengguna punya saldo gems. Saldo bertambah lewat order yang dibayar, berkurang saat dipakai
-                bertanding, dan berpindah saat seseorang menang. Order sendiri punya siklus: dibuat, dibayar, atau
-                kedaluwarsa.</p>
-            <div class="why">
-                <b>Kenapa ini sulit</b>
-                Saldo tidak boleh pernah tercipta dari udara kosong. Itu terdengar sepele sampai kamu menghitung
-                jalur yang bisa melanggarnya: pembayaran yang dikonfirmasi dua kali, order yang kedaluwarsa
-                bersamaan dengan pembayarannya masuk, pertandingan yang selesai dua kali karena koneksi terputus
-                lalu dicoba ulang, atau dua permintaan yang tiba bersamaan dan sama-sama membaca saldo lama sebelum
-                salah satunya menulis. Setiap satu dari jalur itu, kalau salah, menciptakan uang.
-            </div>
-            <div class="why">
-                <b>Yang membuatnya berbeda dari fitur biasa</b>
-                Bug tampilan bisa diperbaiki besok. Bug ledger sudah terlanjur membayar orang. Dan begitu saldonya
-                bisa ditarik keluar, kesalahannya tidak bisa dibatalkan dengan menekan tombol undo — sama seperti
-                sistem persediaan atau akuntansi, satu-satunya cara aman adalah membuat saldo <em>diturunkan</em>
-                dari catatan transaksi, bukan disimpan sebagai angka yang bisa ditimpa.
-            </div>
-            <div class="solved">
-                <b>Bagaimana ini ditangani</b>
-                Dua hal yang saling menutup. Pertama, <strong>saldo tidak pernah disimpan sebagai kolom</strong> —
-                dia selalu dijumlahkan dari tabel transaksi yang hanya bisa ditambah, tidak pernah ditimpa. Kedua,
-                setiap transaksi membawa <strong>idempotency key</strong>, jadi permintaan yang sama masuk dua kali
-                — webhook pembayaran yang dikirim ulang, aplikasi yang mencoba lagi setelah koneksi putus — hanya
-                dihitung sekali.
-                <span class="trade">Kombinasi itu menutup dua jalur berbeda: saldo turunan menghilangkan
-                kemungkinan angka ditimpa keliru, sementara idempotency key menghilangkan pencatatan ganda dari
-                percobaan ulang. Menutup salah satunya saja masih menyisakan lubang yang bisa menciptakan uang.
-                Prinsip yang sama saya pakai di <a href="../../labs/gudang/">Gudang</a>, di mana saldo stok juga
-                tidak pernah disimpan.</span>
-            </div>
+            <h3 data-i18n="rb.p1.h">1. The gems ledger and the order cycle</h3>
+            <p data-i18n="rb.p1.intro">Every user has a gems balance. It grows through paid orders, shrinks when spent on a match, and moves when someone wins. Orders have a cycle of their own: created, paid, or expired.</p>
+            <div class="why" data-i18n-html="rb.p1.why1"><b>Why this is hard</b> A balance must never be created from thin air. That sounds trivial until you count the paths that can break it: a payment confirmed twice, an order that expires at the same moment its payment lands, a match that finishes twice because a connection dropped and the request was retried, or two requests arriving at once and both reading the old balance before either one writes. Every single one of those paths, if it goes wrong, creates money.</div>
+            <div class="why" data-i18n-html="rb.p1.why2"><b>What makes it different from an ordinary feature</b> A display bug can be fixed tomorrow. A ledger bug has already paid someone. And once the balance can be withdrawn, the mistake can't be undone with a press of undo — just like an inventory or accounting system, the only safe way is to make the balance <em>derived</em> from the record of transactions, not stored as a number that can be overwritten.</div>
+            <div class="solved" data-i18n-html="rb.p1.solved"><b>How this was handled</b> Two safeguards, aimed at two different layers. The <strong>company vault</strong> — the fiat side that holds real money — derives its balance from an <strong>append-only ledger</strong>: revenue in, payouts out, never a figure that can be overwritten. The <strong>user gem balance</strong> is a server-authoritative field guarded by an <strong>idempotency key</strong> on every credit, so the same event arriving twice — a re-sent payment webhook, a match retried after the connection dropped — credits gems only once. <span class="trade">Honest about the seam: the gems column is still a stored number, not yet summed from an append-only gem ledger — that migration is the intended next step. The append-only-and-derive principle is already live where it matters most, the vault, and in <a href="../../labs/gudang/">Gudang</a>, where the stock balance is never stored either.</span></div>
         </div>
 
         <figure class="shot">
             <img src="../../assets/images/vault-dashboard.png" data-optional
-                alt="Panel admin Company Vault: kartu ringkasan akun dan pendapatan, grafik tren, bagian vault dan pencairan, panel wallet server USDT-TRC20, tabel top spender dan order terbaru. Seluruh nominal dan alamat wallet ditutup.">
-            <figcaption><b>Panel admin Company Vault</b> — backend dompet yang menjalankan ledger di atas.
-                Terlihat siklus order dengan status <code>paid</code> dan <code>expired</code>, saldo gems yang
-                beredar di seluruh pengguna, pencatatan payout, dan panel wallet server USDT-TRC20 lengkap dengan
-                peringatan gas TRX yang menipis. Seluruh nominal, saldo dan alamat wallet <b>sengaja ditutup</b>:
-                ini sistem yang memegang uang sungguhan, dan alamat on-chain bersifat permanen sekali
-                dipublikasikan. Repositorinya privat; yang ditampilkan di sini hanya bentuk sistemnya.</figcaption>
+                alt="Company Vault admin panel: account and revenue summary cards, trend charts, vault and withdrawal sections, USDT-TRC20 server wallet panel, top-spender table and recent orders. All amounts and wallet addresses are masked.">
+            <figcaption data-i18n-html="rb.figcap"><b>Company Vault admin panel</b> — the wallet backend that runs the ledger above. You can see the order cycle with <code>paid</code> and <code>expired</code> statuses, the gems balance circulating across all users, payout records, and the USDT-TRC20 server wallet panel complete with a low-TRX-gas warning. Every amount, balance and wallet address is <b>deliberately masked</b>: this is a system that holds real money, and on-chain addresses are permanent once published. The repository is private; what's shown here is only the shape of the system.</figcaption>
         </figure>
 
         <div class="prob">
-            <h3>2. Memverifikasi hasil latihan yang mudah dicurangi</h3>
-            <p>Dua pemain bertanding pada set latihan. Sistem harus memutuskan siapa yang menang.</p>
-            <div class="why">
-                <b>Kenapa ini sulit</b>
-                Tidak ada wasit. Yang melapor adalah orang yang diuntungkan oleh laporannya sendiri — dan begitu
-                hasilnya bernilai uang, sebagian orang akan mencoba. Mengetik “100 push-up” itu gratis. Sensor
-                ponsel bisa dikelabui dengan mengguncang perangkat. Video bisa diulang, dipercepat, atau diambil
-                dari orang lain. Setiap mekanisme verifikasi punya biaya di sisi lain: makin ketat, makin
-                merepotkan orang jujur, dan aplikasi kebugaran yang menyebalkan tidak akan dipakai siapa pun.
-            </div>
-            <div class="why">
-                <b>Masalah yang menempel di belakangnya</b>
-                Pemain yang kabur di tengah pertandingan. Apakah taruhannya hangus, dikembalikan, atau dihitung
-                kalah? Ketiganya bisa dieksploitasi kalau salah pilih — dan apa pun jawabannya harus konsisten
-                dengan ledger di atas, karena setiap keputusan itu memindahkan saldo.
-            </div>
+            <h3 data-i18n="rb.p2.h">2. Verifying workout results that are easy to cheat</h3>
+            <p data-i18n="rb.p2.intro">Two players compete on a set of exercises. The system has to decide who won.</p>
+            <div class="why" data-i18n-html="rb.p2.why1"><b>Why this is hard</b> There's no referee. The one reporting is the one who benefits from their own report — and once the result is worth money, some people will try. Typing "100 push-ups" is free. Phone sensors can be fooled by shaking the device. A video can be looped, sped up, or taken from someone else. Every verification mechanism has a cost on the other side: the stricter it is, the more it burdens honest people, and a fitness app that's annoying to use won't be used by anyone.</div>
+            <div class="why" data-i18n-html="rb.p2.why2"><b>The problem attached behind it</b> A player who quits mid-match. Does the stake burn, get refunded, or count as a loss? All three can be exploited if chosen wrong — and whatever the answer, it has to stay consistent with the ledger above, because every one of those decisions moves a balance.</div>
+            <div class="solved" data-i18n-html="rb.p2.solved"><b>How this was handled</b> Verification lives entirely on the server and is graded in two tiers instead of one on/off gate. A submission that is <em>physically impossible</em> — a rep completed faster than a human body can move, more valid reps than the elapsed time can contain, a cadence past the sustained human ceiling — is <strong>hard-rejected</strong> outright. What is merely <em>suspicious</em> is not thrown away but <strong>soft-flagged</strong>: borderline-fast reps, a submission rate that looks like farming, and — the tell that catches a looped or replayed video — rep timings so regular that their <code>coefficient of variation</code> falls below what a real human ever jitters to. The result itself is never taken on the player's word: the server ignores the client-sent outcome and recomputes it against the authoritative ghost replay stored when the match was created, so there is no mutual-confirmation step to collude on. Flagged runs still resolve, but their replay is <code>shadow</code>-pooled — only ever matched against other flagged players — so a false positive costs a suspect nothing while a real cheat is quietly kept away from honest opponents. <span class="trade">The judgement is deliberately asymmetric: hard-rejection is reserved for what is physically impossible so an honest player is never wrongly locked out, and everything ambiguous degrades softly rather than blocking — because in a fitness app a verification layer that punishes the honest majority kills the product faster than any cheater does. This is the part still most in progress.</span></div>
         </div>
 
-        <h2>Batasan yang menentukan bentuknya</h2>
+        <h2 data-i18n="rb.limits.h">The constraints that shaped it</h2>
         <ul>
-            <li><b>Uang membuat semuanya permanen.</b> Penarikan tidak bisa dibatalkan, jadi kebenaran ledger harus
-                dijaga sebelum fitur, bukan sesudah.</li>
-            <li><b>Lawan yang punya insentif.</b> Berbeda dari aplikasi kebugaran biasa, di sini sebagian pengguna
-                punya alasan nyata untuk berbohong.</li>
-            <li><b>Verifikasi punya harga.</b> Setiap lapisan anti-curang menambah gesekan bagi mayoritas yang
-                jujur; ada titik di mana produknya mati karena terlalu ketat.</li>
-            <li><b>Kunci rilis dipisahkan.</b> Keystore penandatangan tidak berada di repositori aplikasi — dia
-                disimpan terenkripsi terpisah, dengan passphrase yang tidak pernah ikut tersimpan.</li>
+            <li data-i18n-html="rb.limits.1"><b>Money makes everything permanent.</b> A withdrawal can't be reversed, so the ledger's correctness has to be protected before features, not after.</li>
+            <li data-i18n-html="rb.limits.2"><b>Opponents with an incentive.</b> Unlike an ordinary fitness app, here some users have a real reason to lie.</li>
+            <li data-i18n-html="rb.limits.3"><b>Verification has a price.</b> Every anti-cheat layer adds friction for the honest majority; there's a point where the product dies from being too strict.</li>
+            <li data-i18n-html="rb.limits.4"><b>The release key is kept separate.</b> The signing keystore doesn't live in the app repository — it's stored encrypted and apart, with a passphrase that is never stored alongside it.</li>
         </ul>
 
-        <div class="honest">
-            <b>Batas halaman ini.</b> Ini menjelaskan masalah yang saya pilih untuk dihadapi dan alasan
-            masalah-masalah itu sulit — bukan panduan implementasi, dan tidak memuat angka pengguna maupun
-            pendapatan. RepBout juga masih dalam pengerjaan, jadi halaman ini menggambarkan bentuk masalahnya, bukan
-            produk yang sudah selesai. Kalau kamu ingin tahu <em>bagaimana</em> tiap masalah diselesaikan, hubungi
-            saya.
-        </div>
+        <div class="honest" data-i18n-html="rb.honest"><b>The limit of this page.</b> It explains the problems I chose to take on and why they're hard — not an implementation guide, and it contains no user or revenue numbers. RepBout is also still in progress, so this page describes the shape of the problems, not a finished product. If you want to know <em>how</em> each problem was solved, get in touch.</div>
 
         <div class="next">
-            <a class="btn" href="../bioage/">Studi kasus lain: BioAge</a>
-            <a class="btn" href="../../#portfolio">← Kembali ke portfolio</a>
+            <a class="btn" href="../bioage/" data-i18n="rb.next.other">Another case study: BioAge</a>
+            <a class="btn" href="../../#portfolio" data-i18n="rb.next.back">← Back to portfolio</a>
         </div>
 
         <footer>
-            <p>© 2026 Bias Satrio Putra. Seluruh hak dilindungi. Bukan open source — lihat
-                <a href="../../LICENSE">LICENSE</a>.</p>
+            <p data-i18n-html="rb.footer">© 2026 Bias Satrio Putra. All rights reserved. Not open source — see <a href="../../LICENSE">LICENSE</a>.</p>
         </footer>
     </main>
 
+    <script>
+    window.PAGE_I18N = {
+        meta_title: { en: `RepBout — case study`, id: `RepBout — studi kasus` },
+        meta_desc: {
+            en: `RepBout case study: a head-to-head Android workout-battle app with an in-app economy. Two technical problems — a gems ledger that must never create balance from thin air, and verifying workout results that are easy to cheat.`,
+            id: `Studi kasus RepBout: aplikasi Android adu latihan head-to-head dengan ekonomi dalam aplikasi. Dua masalah teknis — ledger gems yang tidak boleh menciptakan saldo dari udara kosong, dan memverifikasi hasil latihan yang mudah dicurangi.`
+        },
+        "rb.crumb": { en: `<a href="../../">CV</a> · Case study`, id: `<a href="../../">CV</a> · Studi kasus` },
+        "rb.nav.portfolio": { en: `← Portfolio`, id: `← Portfolio` },
+        "rb.hero.eyebrow": { en: `Case study`, id: `Studi kasus` },
+        "rb.hero.title": {
+            en: `<span class="grad">RepBout</span> — workout battles, with money inside`,
+            id: `<span class="grad">RepBout</span> — adu latihan, dengan uang di dalamnya`
+        },
+        "rb.hero.lede": {
+            en: `An Android app where two people challenge each other on a set of exercises. What makes it more than a fitness app is the economy inside it: a gems balance, paid orders, and withdrawals that flow out into the real world. Once money is involved, every assumption changes.`,
+            id: `Aplikasi Android tempat dua orang saling menantang pada set latihan. Yang membuatnya bukan sekadar aplikasi kebugaran: ada ekonomi di dalamnya — saldo gems, order yang dibayar, dan penarikan yang keluar ke dunia nyata. Begitu ada uang, semua asumsi berubah.`
+        },
+        "rb.facts.role.k": { en: `Role`, id: `Peran` },
+        "rb.facts.role.v": { en: `Built solo, app and backend`, id: `Dibangun sendiri, aplikasi dan backend` },
+        "rb.facts.stack.k": { en: `Stack`, id: `Stack` },
+        "rb.facts.stack.v": { en: `Flutter · Android · wallet backend`, id: `Flutter · Android · backend wallet` },
+        "rb.facts.status.k": { en: `Status`, id: `Status` },
+        "rb.facts.status.v": { en: `In progress · signed release`, id: `Dalam pengerjaan · rilis bertanda tangan` },
+        "rb.tags.verify": { en: `Result verification`, id: `Verifikasi hasil` },
+        "rb.problems.h": { en: `Two problems that shaped the product`, id: `Dua masalah yang membentuk produknya` },
+        "rb.problems.body": {
+            en: `An ordinary fitness app only needs to be roughly right — miscounting reps costs no one anything. RepBout doesn't have that luxury: a workout result decides who wins, and winning moves a balance that can be withdrawn.`,
+            id: `Aplikasi kebugaran biasa hanya perlu benar secara kira-kira — salah hitung repetisi tidak merugikan siapa pun. RepBout tidak punya kemewahan itu: hasil latihan menentukan siapa menang, dan kemenangan menggerakkan saldo yang bisa ditarik.`
+        },
+        "rb.p1.h": { en: `1. The gems ledger and the order cycle`, id: `1. Ledger gems dan siklus order` },
+        "rb.p1.intro": {
+            en: `Every user has a gems balance. It grows through paid orders, shrinks when spent on a match, and moves when someone wins. Orders have a cycle of their own: created, paid, or expired.`,
+            id: `Tiap pengguna punya saldo gems. Saldo bertambah lewat order yang dibayar, berkurang saat dipakai bertanding, dan berpindah saat seseorang menang. Order sendiri punya siklus: dibuat, dibayar, atau kedaluwarsa.`
+        },
+        "rb.p1.why1": {
+            en: `<b>Why this is hard</b> A balance must never be created from thin air. That sounds trivial until you count the paths that can break it: a payment confirmed twice, an order that expires at the same moment its payment lands, a match that finishes twice because a connection dropped and the request was retried, or two requests arriving at once and both reading the old balance before either one writes. Every single one of those paths, if it goes wrong, creates money.`,
+            id: `<b>Kenapa ini sulit</b> Saldo tidak boleh pernah tercipta dari udara kosong. Itu terdengar sepele sampai kamu menghitung jalur yang bisa melanggarnya: pembayaran yang dikonfirmasi dua kali, order yang kedaluwarsa bersamaan dengan pembayarannya masuk, pertandingan yang selesai dua kali karena koneksi terputus lalu dicoba ulang, atau dua permintaan yang tiba bersamaan dan sama-sama membaca saldo lama sebelum salah satunya menulis. Setiap satu dari jalur itu, kalau salah, menciptakan uang.`
+        },
+        "rb.p1.why2": {
+            en: `<b>What makes it different from an ordinary feature</b> A display bug can be fixed tomorrow. A ledger bug has already paid someone. And once the balance can be withdrawn, the mistake can't be undone with a press of undo — just like an inventory or accounting system, the only safe way is to make the balance <em>derived</em> from the record of transactions, not stored as a number that can be overwritten.`,
+            id: `<b>Yang membuatnya berbeda dari fitur biasa</b> Bug tampilan bisa diperbaiki besok. Bug ledger sudah terlanjur membayar orang. Dan begitu saldonya bisa ditarik keluar, kesalahannya tidak bisa dibatalkan dengan menekan tombol undo — sama seperti sistem persediaan atau akuntansi, satu-satunya cara aman adalah membuat saldo <em>diturunkan</em> dari catatan transaksi, bukan disimpan sebagai angka yang bisa ditimpa.`
+        },
+        "rb.p1.solved": {
+            en: `<b>How this was handled</b> Two safeguards, aimed at two different layers. The <strong>company vault</strong> — the fiat side that holds real money — derives its balance from an <strong>append-only ledger</strong>: revenue in, payouts out, never a figure that can be overwritten. The <strong>user gem balance</strong> is a server-authoritative field guarded by an <strong>idempotency key</strong> on every credit, so the same event arriving twice — a re-sent payment webhook, a match retried after the connection dropped — credits gems only once. <span class="trade">Honest about the seam: the gems column is still a stored number, not yet summed from an append-only gem ledger — that migration is the intended next step. The append-only-and-derive principle is already live where it matters most, the vault, and in <a href="../../labs/gudang/">Gudang</a>, where the stock balance is never stored either.</span>`,
+            id: `<b>Bagaimana ini ditangani</b> Dua pengaman, untuk dua lapisan berbeda. <strong>Company vault</strong> — sisi fiat yang memegang uang sungguhan — menurunkan saldonya dari <strong>ledger yang hanya bisa ditambah</strong>: pendapatan masuk, payout keluar, tidak pernah angka yang bisa ditimpa. <strong>Saldo gems pengguna</strong> adalah field yang otoritatif di server dan dijaga <strong>idempotency key</strong> pada setiap penambahan, sehingga peristiwa yang sama datang dua kali — webhook pembayaran terkirim ulang, pertandingan yang dicoba lagi setelah koneksi putus — hanya menambah gems sekali. <span class="trade">Jujur soal sambungannya: kolom gems masih berupa angka tersimpan, belum dijumlahkan dari ledger gems yang hanya-bisa-ditambah — migrasi itu langkah berikutnya yang direncanakan. Prinsip tambah-saja-lalu-turunkan sudah berjalan di tempat yang paling penting, yaitu vault, dan di <a href="../../labs/gudang/">Gudang</a>, tempat saldo stok juga tidak pernah disimpan.</span>`
+        },
+        "rb.figcap": {
+            en: `<b>Company Vault admin panel</b> — the wallet backend that runs the ledger above. You can see the order cycle with <code>paid</code> and <code>expired</code> statuses, the gems balance circulating across all users, payout records, and the USDT-TRC20 server wallet panel complete with a low-TRX-gas warning. Every amount, balance and wallet address is <b>deliberately masked</b>: this is a system that holds real money, and on-chain addresses are permanent once published. The repository is private; what's shown here is only the shape of the system.`,
+            id: `<b>Panel admin Company Vault</b> — backend dompet yang menjalankan ledger di atas. Terlihat siklus order dengan status <code>paid</code> dan <code>expired</code>, saldo gems yang beredar di seluruh pengguna, pencatatan payout, dan panel wallet server USDT-TRC20 lengkap dengan peringatan gas TRX yang menipis. Seluruh nominal, saldo dan alamat wallet <b>sengaja ditutup</b>: ini sistem yang memegang uang sungguhan, dan alamat on-chain bersifat permanen sekali dipublikasikan. Repositorinya privat; yang ditampilkan di sini hanya bentuk sistemnya.`
+        },
+        "rb.p2.h": { en: `2. Verifying workout results that are easy to cheat`, id: `2. Memverifikasi hasil latihan yang mudah dicurangi` },
+        "rb.p2.intro": {
+            en: `Two players compete on a set of exercises. The system has to decide who won.`,
+            id: `Dua pemain bertanding pada set latihan. Sistem harus memutuskan siapa yang menang.`
+        },
+        "rb.p2.why1": {
+            en: `<b>Why this is hard</b> There's no referee. The one reporting is the one who benefits from their own report — and once the result is worth money, some people will try. Typing "100 push-ups" is free. Phone sensors can be fooled by shaking the device. A video can be looped, sped up, or taken from someone else. Every verification mechanism has a cost on the other side: the stricter it is, the more it burdens honest people, and a fitness app that's annoying to use won't be used by anyone.`,
+            id: `<b>Kenapa ini sulit</b> Tidak ada wasit. Yang melapor adalah orang yang diuntungkan oleh laporannya sendiri — dan begitu hasilnya bernilai uang, sebagian orang akan mencoba. Mengetik “100 push-up” itu gratis. Sensor ponsel bisa dikelabui dengan mengguncang perangkat. Video bisa diulang, dipercepat, atau diambil dari orang lain. Setiap mekanisme verifikasi punya biaya di sisi lain: makin ketat, makin merepotkan orang jujur, dan aplikasi kebugaran yang menyebalkan tidak akan dipakai siapa pun.`
+        },
+        "rb.p2.why2": {
+            en: `<b>The problem attached behind it</b> A player who quits mid-match. Does the stake burn, get refunded, or count as a loss? All three can be exploited if chosen wrong — and whatever the answer, it has to stay consistent with the ledger above, because every one of those decisions moves a balance.`,
+            id: `<b>Masalah yang menempel di belakangnya</b> Pemain yang kabur di tengah pertandingan. Apakah taruhannya hangus, dikembalikan, atau dihitung kalah? Ketiganya bisa dieksploitasi kalau salah pilih — dan apa pun jawabannya harus konsisten dengan ledger di atas, karena setiap keputusan itu memindahkan saldo.`
+        },
+        "rb.p2.solved": {
+            en: `<b>How this was handled</b> Verification lives entirely on the server and is graded in two tiers instead of one on/off gate. A submission that is <em>physically impossible</em> — a rep completed faster than a human body can move, more valid reps than the elapsed time can contain, a cadence past the sustained human ceiling — is <strong>hard-rejected</strong> outright. What is merely <em>suspicious</em> is not thrown away but <strong>soft-flagged</strong>: borderline-fast reps, a submission rate that looks like farming, and — the tell that catches a looped or replayed video — rep timings so regular that their <code>coefficient of variation</code> falls below what a real human ever jitters to. The result itself is never taken on the player's word: the server ignores the client-sent outcome and recomputes it against the authoritative ghost replay stored when the match was created, so there is no mutual-confirmation step to collude on. Flagged runs still resolve, but their replay is <code>shadow</code>-pooled — only ever matched against other flagged players — so a false positive costs a suspect nothing while a real cheat is quietly kept away from honest opponents. <span class="trade">The judgement is deliberately asymmetric: hard-rejection is reserved for what is physically impossible so an honest player is never wrongly locked out, and everything ambiguous degrades softly rather than blocking — because in a fitness app a verification layer that punishes the honest majority kills the product faster than any cheater does. This is the part still most in progress.</span>`,
+            id: `<b>Bagaimana ini ditangani</b> Verifikasi sepenuhnya berada di sisi server dan dinilai dalam dua tingkat, bukan satu gerbang nyala/mati. Kiriman yang <em>secara fisik mustahil</em> — repetisi yang selesai lebih cepat dari kemampuan gerak tubuh manusia, jumlah repetisi valid yang melebihi waktu yang tersedia, atau irama di atas batas manusia yang berkelanjutan — langsung <strong>ditolak keras</strong>. Yang sekadar <em>mencurigakan</em> tidak dibuang melainkan <strong>ditandai lunak</strong>: repetisi yang nyaris terlalu cepat, laju kiriman yang menyerupai penggarapan (farming), dan — penanda yang menangkap video yang diulang atau diputar ulang — pengaturan waktu repetisi yang begitu teratur sampai <code>coefficient of variation</code>-nya jatuh di bawah jitter yang wajar bagi manusia sungguhan. Hasilnya sendiri tidak pernah dipercaya begitu saja dari kata pemain: server mengabaikan hasil yang dikirim klien dan menghitung ulang terhadap ghost replay otoritatif yang disimpan saat pertandingan dibuat, jadi tidak ada langkah konfirmasi-bersama yang bisa dikongkalikongkan. Percobaan yang ditandai tetap diselesaikan, tetapi replay-nya dimasukkan ke kolam <code>shadow</code> — hanya pernah dipertemukan dengan pemain lain yang juga ditandai — sehingga positif palsu tidak merugikan si tersangka sama sekali, sementara pencurang asli diam-diam dijauhkan dari lawan yang jujur. <span class="trade">Pertimbangannya sengaja asimetris: penolakan keras disediakan hanya untuk yang secara fisik mustahil agar pemain jujur tidak pernah salah dikunci, dan segala yang ambigu menurun secara lunak alih-alih memblokir — karena pada aplikasi kebugaran, lapisan verifikasi yang menghukum mayoritas yang jujur membunuh produk lebih cepat daripada pencurang mana pun. Bagian inilah yang paling masih dalam pengerjaan.</span>`
+        },
+        "rb.limits.h": { en: `The constraints that shaped it`, id: `Batasan yang menentukan bentuknya` },
+        "rb.limits.1": {
+            en: `<b>Money makes everything permanent.</b> A withdrawal can't be reversed, so the ledger's correctness has to be protected before features, not after.`,
+            id: `<b>Uang membuat semuanya permanen.</b> Penarikan tidak bisa dibatalkan, jadi kebenaran ledger harus dijaga sebelum fitur, bukan sesudah.`
+        },
+        "rb.limits.2": {
+            en: `<b>Opponents with an incentive.</b> Unlike an ordinary fitness app, here some users have a real reason to lie.`,
+            id: `<b>Lawan yang punya insentif.</b> Berbeda dari aplikasi kebugaran biasa, di sini sebagian pengguna punya alasan nyata untuk berbohong.`
+        },
+        "rb.limits.3": {
+            en: `<b>Verification has a price.</b> Every anti-cheat layer adds friction for the honest majority; there's a point where the product dies from being too strict.`,
+            id: `<b>Verifikasi punya harga.</b> Setiap lapisan anti-curang menambah gesekan bagi mayoritas yang jujur; ada titik di mana produknya mati karena terlalu ketat.`
+        },
+        "rb.limits.4": {
+            en: `<b>The release key is kept separate.</b> The signing keystore doesn't live in the app repository — it's stored encrypted and apart, with a passphrase that is never stored alongside it.`,
+            id: `<b>Kunci rilis dipisahkan.</b> Keystore penandatangan tidak berada di repositori aplikasi — dia disimpan terenkripsi terpisah, dengan passphrase yang tidak pernah ikut tersimpan.`
+        },
+        "rb.honest": {
+            en: `<b>The limit of this page.</b> It explains the problems I chose to take on and why they're hard — not an implementation guide, and it contains no user or revenue numbers. RepBout is also still in progress, so this page describes the shape of the problems, not a finished product. If you want to know <em>how</em> each problem was solved, get in touch.`,
+            id: `<b>Batas halaman ini.</b> Ini menjelaskan masalah yang saya pilih untuk dihadapi dan alasan masalah-masalah itu sulit — bukan panduan implementasi, dan tidak memuat angka pengguna maupun pendapatan. RepBout juga masih dalam pengerjaan, jadi halaman ini menggambarkan bentuk masalahnya, bukan produk yang sudah selesai. Kalau kamu ingin tahu <em>bagaimana</em> tiap masalah diselesaikan, hubungi saya.`
+        },
+        "rb.next.other": { en: `Another case study: BioAge`, id: `Studi kasus lain: BioAge` },
+        "rb.next.back": { en: `← Back to portfolio`, id: `← Kembali ke portfolio` },
+        "rb.footer": {
+            en: `© 2026 Bias Satrio Putra. All rights reserved. Not open source — see <a href="../../LICENSE">LICENSE</a>.`,
+            id: `© 2026 Bias Satrio Putra. Seluruh hak dilindungi. Bukan open source — lihat <a href="../../LICENSE">LICENSE</a>.`
+        }
+    };
+    </script>
     <script src="../case.js"></script>
 </body>
 

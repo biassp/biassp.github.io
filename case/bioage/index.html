@@ -5,14 +5,14 @@
   Not open source. Readable for evaluation only — copying, modification,
   re-branding or redistribution is not permitted. See /LICENSE.
 -->
-<html lang="id" data-theme="dark">
+<html lang="en" data-theme="dark">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BioAge — studi kasus</title>
+    <title>BioAge — case study</title>
     <meta name="description"
-        content="Studi kasus BioAge: pemindai usia biologis berbasis AI untuk web dan mobile. Dua masalah teknis yang membentuk produknya — model vision yang harus menghadapi foto dunia nyata, dan satu backend yang melayani dua klien berbeda.">
+        content="BioAge case study: an AI-powered biological age scanner for web and mobile. Two technical problems that shaped the product — a vision model that has to face real-world photos, and a single backend serving two clients that don't move together.">
     <meta name="author" content="Bias Satrio Putra">
     <meta name="copyright" content="Copyright (c) 2026 Bias Satrio Putra. All rights reserved.">
     <link rel="stylesheet" href="../case.css">
@@ -23,121 +23,166 @@
 <body>
     <header class="top">
         <div class="top-in">
-            <span class="crumb"><a href="../../">CV</a> · Studi kasus</span>
+            <span class="crumb" data-i18n-html="ba.crumb"><a href="../../">CV</a> · Case study</span>
             <div class="tools">
-                <button class="btn" type="button" id="tema" aria-pressed="false">Terang</button>
-                <a class="btn" href="../../#portfolio">← Portfolio</a>
+                <button class="btn" type="button" id="tema" aria-pressed="false">Light</button>
+                <button class="btn" type="button" id="langToggle">ID</button>
+                <a class="btn" href="../../#portfolio" data-i18n="ba.nav.portfolio">← Portfolio</a>
             </div>
         </div>
     </header>
 
     <main class="wrap">
         <div class="hero">
-            <span class="eyebrow">Studi kasus</span>
-            <h1><span class="grad">BioAge</span> — menebak usia biologis dari sebuah foto</h1>
-            <p class="lede">Pemindai usia biologis berbasis AI untuk web dan mobile. Pengguna memindai wajah dan
-                tubuh, model vision memperkirakan usia biologisnya, dan tier premium berbasis kredit membuka hasil
-                yang lebih rinci. Tersedia dalam beberapa bahasa.</p>
+            <span class="eyebrow" data-i18n="ba.hero.eyebrow">Case study</span>
+            <h1 data-i18n-html="ba.hero.title"><span class="grad">BioAge</span> — guessing biological age from a photo</h1>
+            <p class="lede" data-i18n="ba.hero.lede">An AI-powered biological age scanner for web and mobile. Users scan their face and body, a vision model estimates their biological age, and a credit-based premium tier unlocks a more detailed result. Available in several languages.</p>
 
             <div class="facts">
-                <div class="fact"><b>Peran</b><span>Dibangun sendiri, dari backend sampai rilis</span></div>
-                <div class="fact"><b>Stack</b><span>Node.js · Flutter · TypeScript</span></div>
-                <div class="fact"><b>Status</b><span>Live di bioage.login.ac.pk</span></div>
+                <div class="fact"><b data-i18n="ba.facts.role.k">Role</b><span data-i18n="ba.facts.role.v">Built solo, from backend to release</span></div>
+                <div class="fact"><b data-i18n="ba.facts.stack.k">Stack</b><span data-i18n="ba.facts.stack.v">Node.js · Flutter · TypeScript</span></div>
+                <div class="fact"><b data-i18n="ba.facts.status.k">Status</b><span data-i18n="ba.facts.status.v">Live at bioage.login.ac.pk</span></div>
             </div>
 
             <div class="tags">
                 <span>Node.js</span><span>Flutter</span><span>TypeScript</span><span>AI Vision</span>
-                <span>Sistem kredit</span><span>Multi-bahasa</span>
+                <span data-i18n="ba.tags.credit">Credit system</span><span data-i18n="ba.tags.multilang">Multi-language</span>
             </div>
         </div>
 
-        <h2>Dua masalah yang membentuk produknya</h2>
-        <p class="muted">Produk ini terlihat sederhana dari luar: unggah foto, dapat angka. Yang membuatnya sulit
-            justru dua hal yang tidak terlihat pengguna.</p>
+        <h2 data-i18n="ba.problems.h">Two problems that shaped the product</h2>
+        <p class="muted" data-i18n="ba.problems.body">From the outside the product looks simple: upload a photo, get a number. What makes it hard is exactly the two things the user never sees.</p>
 
         <div class="prob">
-            <h3>1. Model vision harus menghadapi foto dunia nyata</h3>
-            <p>Sebuah model yang bekerja rapi di dataset uji akan bertemu kenyataan yang jauh lebih berantakan:
-                kamar remang, cahaya dari belakang, wajah terpotong, kacamata, masker, foto miring, kamera depan
-                murah dengan noise tinggi, atau orang yang memotret layar berisi foto orang lain.</p>
-            <div class="why">
-                <b>Kenapa ini sulit</b>
-                Kegagalan pada produk seperti ini tidak boleh berupa error. Pengguna yang mengirim foto gelap
-                bukan sedang melakukan kesalahan — dia hanya berada di ruangan gelap. Sistemnya harus bisa
-                membedakan “foto ini tidak bisa saya nilai” dari “saya nilai tapi keyakinannya rendah”, dan
-                mengatakannya dengan cara yang tidak membuat orang merasa disalahkan. Ditambah satu hal yang jarang
-                dibahas: keluarannya adalah <em>angka tentang tubuh seseorang</em>. Orang bereaksi secara emosional
-                terhadapnya, jadi kalibrasi dan cara menyampaikan hasil sama pentingnya dengan akurasi modelnya.
-            </div>
-            <div class="why">
-                <b>Beban yang menempel</b>
-                Inferensi berbiaya nyata per permintaan. Itu berarti setiap foto yang diproses adalah uang keluar,
-                sementara tidak semua pengguna membayar — yang langsung menghubungkan masalah model dengan desain
-                tier kredit di bawah.
-            </div>
-            <div class="solved">
-                <b>Bagaimana ini ditangani</b>
-                Dua lapis, karena “foto jelek” sebenarnya dua kasus yang berbeda. Foto yang benar-benar tidak bisa
-                dinilai ditolak di server dengan alasan spesifik — wajah tidak terdeteksi, terlalu gelap — dan
-                <strong>kredit pengguna tidak dipotong</strong>, karena tidak ada hasil yang diberikan. Foto yang
-                masih bisa dinilai tapi marginal tetap diproses, dan hasilnya disajikan sebagai rentang dengan
-                keterangan keyakinan, bukan satu angka tunggal.
-                <span class="trade">Konsekuensinya disadari: rentang terasa kurang “wah” dibanding satu angka
-                bulat. Tapi angka tunggal yang terlihat presisi dari foto buruk adalah bentuk kesalahan yang paling
-                buruk — percaya diri dan keliru, tentang tubuh seseorang.</span>
-            </div>
+            <h3 data-i18n="ba.p1.h">1. The vision model has to face real-world photos</h3>
+            <p data-i18n="ba.p1.intro">A model that behaves neatly on a test dataset will meet a much messier reality: dim rooms, backlighting, cropped faces, glasses, masks, tilted shots, cheap noisy front cameras, or someone photographing a screen showing another person's photo.</p>
+            <div class="why" data-i18n-html="ba.p1.why1"><b>Why this is hard</b> Failure on a product like this can't be an error. A user who sends a dark photo isn't making a mistake — they're just in a dark room. The system has to tell "I can't assess this photo" apart from "I assessed it but confidence is low", and say so in a way that doesn't make anyone feel blamed. Plus one thing that's rarely discussed: the output is <em>a number about someone's body</em>. People react to it emotionally, so calibration and how the result is worded matter as much as the model's accuracy.</div>
+            <div class="why" data-i18n-html="ba.p1.why2"><b>The cost that stays attached</b> Inference has a real cost per request. That means every photo processed is money going out, while not every user pays — which ties the model problem straight to the credit-tier design below.</div>
+            <div class="solved" data-i18n-html="ba.p1.solved"><b>How this was handled</b> Rather than a gate that judges photo quality, the design leans on <strong>confidence</strong> and on never charging for nothing. Credits are <strong>reserved before</strong> the vision call and <strong>refunded</strong> whenever nothing usable comes back — the model errors out, or it returns output that can’t be parsed into a valid result. A genuinely poor photo that still parses isn’t hard-rejected with a “no face / too dark” verdict; it is answered with a <em>low-confidence</em> estimate, and the biological age is returned as a single number carried alongside that confidence (with a body-fat range on body scans) rather than a bare number with no context. <span class="trade">The honest seam: there is no server-side face-detection or brightness check — the model is asked to lower its confidence on a weak photo, not to refuse it. The guarantee is narrower than the ideal above: the user is never charged for a result that never arrives, but a weak photo still gets an answer, softened by its confidence rather than blocked outright.</span></div>
         </div>
 
         <div class="prob">
-            <h3>2. Satu backend, dua klien yang tidak bergerak bersama</h3>
-            <p>Web ditulis dengan TypeScript, aplikasi mobile dengan Flutter, keduanya berbicara ke satu API Node
-                yang sama.</p>
-            <div class="why">
-                <b>Kenapa ini sulit</b>
-                Web bisa di-deploy hari ini dan semua orang langsung memakai versi baru. Aplikasi mobile tidak:
-                versi lama tetap terpasang di ponsel orang selama berbulan-bulan, dan tidak ada cara memaksa mereka
-                memperbarui. Artinya API tidak pernah benar-benar boleh <em>berubah</em> — dia hanya boleh
-                <em>bertambah</em>. Setiap perubahan bentuk respons harus tetap aman bagi klien yang dirilis
-                setahun lalu, atau kamu memutus pengguna yang tidak melakukan apa-apa salah.
-            </div>
-            <div class="why">
-                <b>Yang membuatnya makin rumit</b>
-                Dua klien berarti dua definisi tipe yang bisa melenceng diam-diam: TypeScript di satu sisi, Dart di
-                sisi lain, dan tidak ada kompiler yang memeriksa keduanya sekaligus terhadap API di tengah. Bug
-                jenis ini tidak muncul saat build — dia muncul di ponsel pengguna.
-            </div>
+            <h3 data-i18n="ba.p2.h">2. One backend, two clients that don't move together</h3>
+            <p data-i18n="ba.p2.intro">The web is written in TypeScript, the mobile app in Flutter, and both talk to the same Node API.</p>
+            <div class="why" data-i18n-html="ba.p2.why1"><b>Why this is hard</b> The web can be deployed today and everyone is on the new version at once. Mobile isn't: the old version stays installed on people's phones for months, and there's no way to force them to update. Which means the API can never really <em>change</em> — it can only <em>grow</em>. Every change to the response shape has to stay safe for a client released a year ago, or you break users who did nothing wrong.</div>
+            <div class="why" data-i18n-html="ba.p2.why2"><b>What makes it worse</b> Two clients means two type definitions that can drift apart silently: TypeScript on one side, Dart on the other, and no compiler checking both at once against the API in the middle. This kind of bug doesn't show up at build time — it shows up on the user's phone.</div>
+            <div class="solved" data-i18n-html="ba.p2.solved"><b>How this was handled</b> The rule was made structural instead of relying on discipline: the schema is only ever allowed to <em>grow</em>. Every migration is a guarded <code>ALTER TABLE ... ADD COLUMN</code> that first checks whether the column already exists — never a rename, never a <code>DROP</code> — so a phone still running last year's build keeps seeing every field it was written against, and simply ignores the ones added since. The second half, two type definitions drifting apart, is answered by refusing to let there be two: the response shape lives in one <strong>shared contract</strong> that both the TypeScript web client and the Dart app treat as the single source of truth, with the backend clamping and repairing every payload to match it before it leaves the server. <span class="trade">The cost is accepted: the database only accretes, columns that outlived their purpose stay as dead weight rather than being cleaned up, because a tidy schema is worth far less than a user on an old app who never notices anything changed.</span></div>
         </div>
 
-        <h2>Batasan yang menentukan bentuknya</h2>
+        <h2 data-i18n="ba.limits.h">The constraints that shaped it</h2>
         <ul>
-            <li><b>Bayar per inferensi.</b> Model AI bukan biaya tetap. Setiap pemindaian menambah tagihan, jadi
-                tier kredit bukan sekadar cara monetisasi — dia rem biaya.</li>
-            <li><b>Mobile tidak bisa dipaksa update.</b> Kompatibilitas mundur bukan pilihan, tapi syarat.</li>
-            <li><b>Multi-bahasa sejak awal.</b> Bukan cuma menerjemahkan tombol: hasil pemindaian juga teks yang
-                harus terbaca wajar di tiap bahasa.</li>
-            <li><b>Foto wajah adalah data pribadi.</b> Apa yang disimpan, berapa lama, dan untuk apa — pertanyaan
-                yang harus dijawab sebelum baris pertama ditulis, bukan sesudahnya.</li>
+            <li data-i18n-html="ba.limits.1"><b>Pay per inference.</b> An AI model isn't a fixed cost. Every scan adds to the bill, so the credit tier isn't just a way to monetise — it's a cost brake.</li>
+            <li data-i18n-html="ba.limits.2"><b>Mobile can't be forced to update.</b> Backward compatibility isn't a choice, it's a requirement.</li>
+            <li data-i18n-html="ba.limits.3"><b>Multi-language from day one.</b> Not just translating buttons: the scan result is also text that has to read naturally in every language.</li>
+            <li data-i18n-html="ba.limits.4"><b>A face photo is personal data.</b> What is stored, for how long, and why — questions that have to be answered before the first line is written, not after.</li>
         </ul>
 
-        <div class="honest">
-            <b>Batas halaman ini.</b> Ini menjelaskan masalah yang saya pilih untuk dihadapi dan alasan
-            masalah-masalah itu sulit — bukan panduan implementasi, dan tidak memuat angka pengguna maupun
-            pendapatan. Kalau kamu sedang menilai saya untuk sebuah pekerjaan dan ingin tahu <em>bagaimana</em>
-            tiap masalah di atas diselesaikan, hubungi saya; saya lebih suka membicarakannya langsung daripada
-            menuliskannya di halaman publik.
-        </div>
+        <div class="honest" data-i18n-html="ba.honest"><b>The limit of this page.</b> It explains the problems I chose to take on and why they're hard — not an implementation guide, and it contains no user or revenue numbers. If you're evaluating me for a role and want to know <em>how</em> each problem above was solved, get in touch; I'd rather talk it through in person than write it out on a public page.</div>
 
         <div class="next">
-            <a class="btn" href="https://bioage.login.ac.pk" target="_blank" rel="noopener">Buka produknya →</a>
-            <a class="btn" href="../radar-duit/">Studi kasus berikutnya: Radar Duit</a>
+            <a class="btn" href="https://bioage.login.ac.pk" target="_blank" rel="noopener" data-i18n="ba.next.open">Open the product →</a>
+            <a class="btn" href="../radar-duit/" data-i18n="ba.next.next">Next case study: Radar Duit</a>
         </div>
 
         <footer>
-            <p>© 2026 Bias Satrio Putra. Seluruh hak dilindungi. Bukan open source — lihat
-                <a href="../../LICENSE">LICENSE</a>.</p>
+            <p data-i18n-html="ba.footer">© 2026 Bias Satrio Putra. All rights reserved. Not open source — see <a href="../../LICENSE">LICENSE</a>.</p>
         </footer>
     </main>
 
+    <script>
+    window.PAGE_I18N = {
+        meta_title: { en: `BioAge — case study`, id: `BioAge — studi kasus` },
+        meta_desc: {
+            en: `BioAge case study: an AI-powered biological age scanner for web and mobile. Two technical problems that shaped the product — a vision model that has to face real-world photos, and a single backend serving two clients that don't move together.`,
+            id: `Studi kasus BioAge: pemindai usia biologis berbasis AI untuk web dan mobile. Dua masalah teknis yang membentuk produknya — model vision yang harus menghadapi foto dunia nyata, dan satu backend yang melayani dua klien berbeda.`
+        },
+        "ba.crumb": { en: `<a href="../../">CV</a> · Case study`, id: `<a href="../../">CV</a> · Studi kasus` },
+        "ba.nav.portfolio": { en: `← Portfolio`, id: `← Portfolio` },
+        "ba.hero.eyebrow": { en: `Case study`, id: `Studi kasus` },
+        "ba.hero.title": {
+            en: `<span class="grad">BioAge</span> — guessing biological age from a photo`,
+            id: `<span class="grad">BioAge</span> — menebak usia biologis dari sebuah foto`
+        },
+        "ba.hero.lede": {
+            en: `An AI-powered biological age scanner for web and mobile. Users scan their face and body, a vision model estimates their biological age, and a credit-based premium tier unlocks a more detailed result. Available in several languages.`,
+            id: `Pemindai usia biologis berbasis AI untuk web dan mobile. Pengguna memindai wajah dan tubuh, model vision memperkirakan usia biologisnya, dan tier premium berbasis kredit membuka hasil yang lebih rinci. Tersedia dalam beberapa bahasa.`
+        },
+        "ba.facts.role.k": { en: `Role`, id: `Peran` },
+        "ba.facts.role.v": { en: `Built solo, from backend to release`, id: `Dibangun sendiri, dari backend sampai rilis` },
+        "ba.facts.stack.k": { en: `Stack`, id: `Stack` },
+        "ba.facts.stack.v": { en: `Node.js · Flutter · TypeScript`, id: `Node.js · Flutter · TypeScript` },
+        "ba.facts.status.k": { en: `Status`, id: `Status` },
+        "ba.facts.status.v": { en: `Live at bioage.login.ac.pk`, id: `Live di bioage.login.ac.pk` },
+        "ba.tags.credit": { en: `Credit system`, id: `Sistem kredit` },
+        "ba.tags.multilang": { en: `Multi-language`, id: `Multi-bahasa` },
+        "ba.problems.h": { en: `Two problems that shaped the product`, id: `Dua masalah yang membentuk produknya` },
+        "ba.problems.body": {
+            en: `From the outside the product looks simple: upload a photo, get a number. What makes it hard is exactly the two things the user never sees.`,
+            id: `Produk ini terlihat sederhana dari luar: unggah foto, dapat angka. Yang membuatnya sulit justru dua hal yang tidak terlihat pengguna.`
+        },
+        "ba.p1.h": { en: `1. The vision model has to face real-world photos`, id: `1. Model vision harus menghadapi foto dunia nyata` },
+        "ba.p1.intro": {
+            en: `A model that behaves neatly on a test dataset will meet a much messier reality: dim rooms, backlighting, cropped faces, glasses, masks, tilted shots, cheap noisy front cameras, or someone photographing a screen showing another person's photo.`,
+            id: `Sebuah model yang bekerja rapi di dataset uji akan bertemu kenyataan yang jauh lebih berantakan: kamar remang, cahaya dari belakang, wajah terpotong, kacamata, masker, foto miring, kamera depan murah dengan noise tinggi, atau orang yang memotret layar berisi foto orang lain.`
+        },
+        "ba.p1.why1": {
+            en: `<b>Why this is hard</b> Failure on a product like this can't be an error. A user who sends a dark photo isn't making a mistake — they're just in a dark room. The system has to tell "I can't assess this photo" apart from "I assessed it but confidence is low", and say so in a way that doesn't make anyone feel blamed. Plus one thing that's rarely discussed: the output is <em>a number about someone's body</em>. People react to it emotionally, so calibration and how the result is worded matter as much as the model's accuracy.`,
+            id: `<b>Kenapa ini sulit</b> Kegagalan pada produk seperti ini tidak boleh berupa error. Pengguna yang mengirim foto gelap bukan sedang melakukan kesalahan — dia hanya berada di ruangan gelap. Sistemnya harus bisa membedakan “foto ini tidak bisa saya nilai” dari “saya nilai tapi keyakinannya rendah”, dan mengatakannya dengan cara yang tidak membuat orang merasa disalahkan. Ditambah satu hal yang jarang dibahas: keluarannya adalah <em>angka tentang tubuh seseorang</em>. Orang bereaksi secara emosional terhadapnya, jadi kalibrasi dan cara menyampaikan hasil sama pentingnya dengan akurasi modelnya.`
+        },
+        "ba.p1.why2": {
+            en: `<b>The cost that stays attached</b> Inference has a real cost per request. That means every photo processed is money going out, while not every user pays — which ties the model problem straight to the credit-tier design below.`,
+            id: `<b>Beban yang menempel</b> Inferensi berbiaya nyata per permintaan. Itu berarti setiap foto yang diproses adalah uang keluar, sementara tidak semua pengguna membayar — yang langsung menghubungkan masalah model dengan desain tier kredit di bawah.`
+        },
+        "ba.p1.solved": {
+            en: `<b>How this was handled</b> Rather than a gate that judges photo quality, the design leans on <strong>confidence</strong> and on never charging for nothing. Credits are <strong>reserved before</strong> the vision call and <strong>refunded</strong> whenever nothing usable comes back — the model errors out, or it returns output that can’t be parsed into a valid result. A genuinely poor photo that still parses isn’t hard-rejected with a “no face / too dark” verdict; it is answered with a <em>low-confidence</em> estimate, and the biological age is returned as a single number carried alongside that confidence (with a body-fat range on body scans) rather than a bare number with no context. <span class="trade">The honest seam: there is no server-side face-detection or brightness check — the model is asked to lower its confidence on a weak photo, not to refuse it. The guarantee is narrower than the ideal above: the user is never charged for a result that never arrives, but a weak photo still gets an answer, softened by its confidence rather than blocked outright.</span>`,
+            id: `<b>Bagaimana ini ditangani</b> Alih-alih gerbang yang menilai kualitas foto, desainnya bersandar pada <strong>skor keyakinan</strong> dan pada prinsip tidak pernah menagih untuk hasil kosong. Kredit <strong>dicadangkan sebelum</strong> panggilan ke model vision dan <strong>dikembalikan</strong> setiap kali tidak ada hasil yang berguna — modelnya error, atau mengembalikan keluaran yang tidak bisa diurai menjadi hasil yang sah. Foto yang benar-benar buruk tapi masih bisa diurai tidak ditolak keras dengan vonis “tidak ada wajah / terlalu gelap”; ia dijawab dengan estimasi <em>berkeyakinan rendah</em>, dan usia biologis dikembalikan sebagai satu angka yang menyertakan keyakinan itu (dengan rentang lemak tubuh pada pemindaian tubuh), bukan angka telanjang tanpa konteks. <span class="trade">Sambungan jujurnya: tidak ada pemeriksaan deteksi-wajah atau kecerahan di server — modelnya diminta menurunkan keyakinannya pada foto lemah, bukan menolaknya. Jaminannya lebih sempit dari ideal di atas: pengguna tak pernah ditagih untuk hasil yang tak pernah datang, tapi foto lemah tetap mendapat jawaban, diperhalus oleh keyakinannya alih-alih diblokir langsung.</span>`
+        },
+        "ba.p2.h": { en: `2. One backend, two clients that don't move together`, id: `2. Satu backend, dua klien yang tidak bergerak bersama` },
+        "ba.p2.intro": {
+            en: `The web is written in TypeScript, the mobile app in Flutter, and both talk to the same Node API.`,
+            id: `Web ditulis dengan TypeScript, aplikasi mobile dengan Flutter, keduanya berbicara ke satu API Node yang sama.`
+        },
+        "ba.p2.why1": {
+            en: `<b>Why this is hard</b> The web can be deployed today and everyone is on the new version at once. Mobile isn't: the old version stays installed on people's phones for months, and there's no way to force them to update. Which means the API can never really <em>change</em> — it can only <em>grow</em>. Every change to the response shape has to stay safe for a client released a year ago, or you break users who did nothing wrong.`,
+            id: `<b>Kenapa ini sulit</b> Web bisa di-deploy hari ini dan semua orang langsung memakai versi baru. Aplikasi mobile tidak: versi lama tetap terpasang di ponsel orang selama berbulan-bulan, dan tidak ada cara memaksa mereka memperbarui. Artinya API tidak pernah benar-benar boleh <em>berubah</em> — dia hanya boleh <em>bertambah</em>. Setiap perubahan bentuk respons harus tetap aman bagi klien yang dirilis setahun lalu, atau kamu memutus pengguna yang tidak melakukan apa-apa salah.`
+        },
+        "ba.p2.why2": {
+            en: `<b>What makes it worse</b> Two clients means two type definitions that can drift apart silently: TypeScript on one side, Dart on the other, and no compiler checking both at once against the API in the middle. This kind of bug doesn't show up at build time — it shows up on the user's phone.`,
+            id: `<b>Yang membuatnya makin rumit</b> Dua klien berarti dua definisi tipe yang bisa melenceng diam-diam: TypeScript di satu sisi, Dart di sisi lain, dan tidak ada kompiler yang memeriksa keduanya sekaligus terhadap API di tengah. Bug jenis ini tidak muncul saat build — dia muncul di ponsel pengguna.`
+        },
+        "ba.p2.solved": {
+            en: `<b>How this was handled</b> The rule was made structural instead of relying on discipline: the schema is only ever allowed to <em>grow</em>. Every migration is a guarded <code>ALTER TABLE ... ADD COLUMN</code> that first checks whether the column already exists — never a rename, never a <code>DROP</code> — so a phone still running last year's build keeps seeing every field it was written against, and simply ignores the ones added since. The second half, two type definitions drifting apart, is answered by refusing to let there be two: the response shape lives in one <strong>shared contract</strong> that both the TypeScript web client and the Dart app treat as the single source of truth, with the backend clamping and repairing every payload to match it before it leaves the server. <span class="trade">The cost is accepted: the database only accretes, columns that outlived their purpose stay as dead weight rather than being cleaned up, because a tidy schema is worth far less than a user on an old app who never notices anything changed.</span>`,
+            id: `<b>Bagaimana ini ditangani</b> Aturannya dibuat struktural, bukan bergantung pada kedisiplinan: skema hanya boleh <em>bertambah</em>. Setiap migrasi adalah <code>ALTER TABLE ... ADD COLUMN</code> berpenjaga yang lebih dulu memeriksa apakah kolomnya sudah ada — tidak pernah rename, tidak pernah <code>DROP</code> — sehingga ponsel yang masih menjalankan versi tahun lalu tetap melihat setiap field yang jadi acuannya, dan cukup mengabaikan yang ditambahkan setelahnya. Bagian keduanya, dua definisi tipe yang melenceng diam-diam, dijawab dengan menolak adanya dua: bentuk respons hidup dalam satu <strong>kontrak bersama</strong> yang diperlakukan sebagai sumber kebenaran tunggal oleh klien web TypeScript maupun aplikasi Dart, dan backend menjepit serta memperbaiki setiap payload agar sesuai kontrak itu sebelum meninggalkan server. <span class="trade">Konsekuensinya disadari: basis data hanya menumpuk, kolom yang sudah tak terpakai tetap jadi beban mati alih-alih dibersihkan, karena skema yang rapi jauh lebih tidak berharga dibanding seorang pengguna di aplikasi lama yang tidak pernah sadar ada yang berubah.</span>`
+        },
+        "ba.limits.h": { en: `The constraints that shaped it`, id: `Batasan yang menentukan bentuknya` },
+        "ba.limits.1": {
+            en: `<b>Pay per inference.</b> An AI model isn't a fixed cost. Every scan adds to the bill, so the credit tier isn't just a way to monetise — it's a cost brake.`,
+            id: `<b>Bayar per inferensi.</b> Model AI bukan biaya tetap. Setiap pemindaian menambah tagihan, jadi tier kredit bukan sekadar cara monetisasi — dia rem biaya.`
+        },
+        "ba.limits.2": {
+            en: `<b>Mobile can't be forced to update.</b> Backward compatibility isn't a choice, it's a requirement.`,
+            id: `<b>Mobile tidak bisa dipaksa update.</b> Kompatibilitas mundur bukan pilihan, tapi syarat.`
+        },
+        "ba.limits.3": {
+            en: `<b>Multi-language from day one.</b> Not just translating buttons: the scan result is also text that has to read naturally in every language.`,
+            id: `<b>Multi-bahasa sejak awal.</b> Bukan cuma menerjemahkan tombol: hasil pemindaian juga teks yang harus terbaca wajar di tiap bahasa.`
+        },
+        "ba.limits.4": {
+            en: `<b>A face photo is personal data.</b> What is stored, for how long, and why — questions that have to be answered before the first line is written, not after.`,
+            id: `<b>Foto wajah adalah data pribadi.</b> Apa yang disimpan, berapa lama, dan untuk apa — pertanyaan yang harus dijawab sebelum baris pertama ditulis, bukan sesudahnya.`
+        },
+        "ba.honest": {
+            en: `<b>The limit of this page.</b> It explains the problems I chose to take on and why they're hard — not an implementation guide, and it contains no user or revenue numbers. If you're evaluating me for a role and want to know <em>how</em> each problem above was solved, get in touch; I'd rather talk it through in person than write it out on a public page.`,
+            id: `<b>Batas halaman ini.</b> Ini menjelaskan masalah yang saya pilih untuk dihadapi dan alasan masalah-masalah itu sulit — bukan panduan implementasi, dan tidak memuat angka pengguna maupun pendapatan. Kalau kamu sedang menilai saya untuk sebuah pekerjaan dan ingin tahu <em>bagaimana</em> tiap masalah di atas diselesaikan, hubungi saya; saya lebih suka membicarakannya langsung daripada menuliskannya di halaman publik.`
+        },
+        "ba.next.open": { en: `Open the product →`, id: `Buka produknya →` },
+        "ba.next.next": { en: `Next case study: Radar Duit`, id: `Studi kasus berikutnya: Radar Duit` },
+        "ba.footer": {
+            en: `© 2026 Bias Satrio Putra. All rights reserved. Not open source — see <a href="../../LICENSE">LICENSE</a>.`,
+            id: `© 2026 Bias Satrio Putra. Seluruh hak dilindungi. Bukan open source — lihat <a href="../../LICENSE">LICENSE</a>.`
+        }
+    };
+    </script>
     <script src="../case.js"></script>
 </body>
 

@@ -38,6 +38,7 @@ const LABS = [
   { dir: 'payroll', call: 'PAYROLL_TESTS.run()' },
   { dir: 'buku', call: 'BUKU_TESTS.run()' },
   { dir: 'harvest', call: 'HARVEST.runTests()' },
+  { dir: 'rombak', call: 'ROMBAK_TESTS.run()' },
 ];
 
 const MIME = {
@@ -100,6 +101,15 @@ async function main() {
     try {
       await page.goto(url, { waitUntil: 'load' });
       out = await page.evaluate(lab.call);
+
+      /* The egress claim, checked rather than eyeballed. Every lab wraps
+         fetch/XHR/WebSocket/EventSource/sendBeacon and shows the count in its
+         header; until now nothing proved it stayed at zero under CI. A lab with
+         no guard object reports -1, which is not a failure — only a positive
+         count is. */
+      const egress = await page.evaluate(
+        (g) => (window[g] ? window[g].total() : -1), lab.dir.toUpperCase() + '_GUARD');
+      if (egress > 0) noise.push('egress: ' + egress + ' network call(s) from ' + lab.dir);
     } catch (err) {
       console.log(RED + '✗ ' + lab.dir + OFF + '  page failed to load: ' + err.message);
       pagesBroken++;

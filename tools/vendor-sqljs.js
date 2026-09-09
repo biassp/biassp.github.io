@@ -42,7 +42,14 @@ if (!target) {
 }
 
 const pkg = JSON.parse(fs.readFileSync(path.join(SRC, 'package.json'), 'utf8'));
-const outDir = path.join(ROOT, target, 'vendor');
+/* path.join would quietly produce nonsense for an absolute argument, so the
+   target is resolved against the repository root and then checked to be inside
+   it — this script writes files, and a typo should stop it rather than steer it. */
+const outDir = path.join(path.resolve(ROOT, target), 'vendor');
+if (!outDir.startsWith(ROOT + path.sep)) {
+  console.error('refusing: ' + target + ' resolves outside the repository');
+  process.exit(1);
+}
 fs.mkdirSync(outDir, { recursive: true });
 
 const banner = (what) => `/*!

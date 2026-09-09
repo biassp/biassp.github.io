@@ -1,0 +1,1106 @@
+/*!
+ * Rombak — part of the biassp.github.io portfolio
+ * Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+ * Not open source. Readable for evaluation only. See /LICENSE.
+ * https://biassp.github.io/
+ */
+/* Rombak — app.css
+ * Design tokens shared with the CV and with the sibling labs (buku, gudang,
+ * rekam, siakad, harvest) so this reads as part of the same site. Dark by
+ * default, html[data-theme="light"] overrides. No web fonts of any kind: a font
+ * request is a network request, and the counter in this page's header is the
+ * whole point of the vendoring argument.
+ *
+ * THE LIGHT-THEME RULE, learned the hard way and shipped broken twice
+ * (PROGRESS.md:176-178): EVERY token that carries TEXT is redefined in the light
+ * block, with the ratio it was measured at written beside it. The figures below
+ * were computed, not estimated — the checker is the WCAG 2.x relative-luminance
+ * formula, validated first against three published reference pairs (#767676 on
+ * white 4.54:1, #777777 on white 4.48:1, #0000ff on white 8.59:1) so that the
+ * numbers in these comments mean what they say.
+ *
+ * Each figure is the WORST of the four surfaces the token can land on, not the
+ * flattering one. In the dark theme those are --bg #0b1020, --bg-soft #10162b,
+ * --card #141b33 and --card-2 #182142 (a hovered table row, the surface the
+ * first pass on a sibling lab forgot). In the light theme they are --card
+ * #ffffff, --card-2 #f4f6fd, --bg #f5f7fc and --bg-soft #eef1f9 — and #eef1f9
+ * is where the near-misses live: amber #a16207 passes on white at 4.92:1 and
+ * FAILS there at 4.36:1.
+ *
+ * This lab adds a whole semantic family on top of the standard accents — four
+ * query-plan operations, three migration states, two constraint outcomes — so
+ * there are nine more tokens than usual to forget. None of them is forgotten.
+ */
+
+:root {
+    --bg: #0b1020;
+    --bg-soft: #10162b;
+    --card: #141b33;
+    --card-2: #182142;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --text: #eaeefb;         /* 13.57:1 */
+    --muted: #9aa6c4;        /* 6.46:1 */
+    --faint: #7f8aad;        /* 4.60:1 — it clears AA by 0.10, so nothing smaller than 11px uses it */
+
+    /* --accent is a BORDER-AND-FOCUS hue and is not allowed to carry text:
+       measured as text it is 3.81:1 on --card and 3.52:1 on a hovered --card-2,
+       both under AA. Every rule below that colours text reaches for
+       --accent-teks or --text instead. */
+    --accent: #6366f1;       /* 3.52:1 worst — NOT for text */
+    --accent-2: #22d3ee;     /* 8.70:1 */
+    --accent-3: #c084fc;     /* 5.95:1 */
+    /* Solid-fill buttons carry WHITE text, so the fill gets its own token:
+       white on --accent #6366f1 is 4.47:1, which misses AA in both themes.
+       White on #4f46e5 is 6.29:1. */
+    --accent-solid: #4f46e5; /* 2.50:1 as text — a FILL, never text; white on it is 6.29:1 */
+    --accent-solid-hover: #4338ca;
+    --link: #22d3ee;         /* 8.70:1 */
+    --focus: #22d3ee;        /* 8.70:1 */
+    /* buku's answer, adopted verbatim: a text-safe indigo, so a table name or a
+       version number can be indigo without being 3.5:1. */
+    --accent-teks: #a5b4fc;  /* 7.89:1 */
+
+    /* The mark chip's background, and it carries WHITE TEXT — so every colour
+       the gradient passes through has to hold white at AA. The three-stop
+       indigo→purple→cyan ramp two sibling labs shipped ended at #22d3ee, where
+       white measures 1.81:1 and the three letters were unreadable on the
+       right-hand third of their own chip. Measured on this two-stop ramp: white
+       on #4f46e5 6.29:1, on the #653ad6 midpoint 6.71:1, on #7e22ce 6.98:1. */
+    --grad: linear-gradient(120deg, #4f46e5 0%, #7e22ce 100%);
+    --shadow: 0 18px 50px -24px rgba(0, 0, 0, 0.85);
+    --shadow-sm: 0 8px 24px -16px rgba(0, 0, 0, 0.8);
+    --radius: 16px;
+
+    --ok: #34d399;           /* 8.18:1 */
+    --warn: #eab308;         /* 8.20:1 */
+    --bad: #fb7185;          /* 5.84:1 — #f43f5e is 4.28:1 on --card-2, a fail */
+    --info: #38bdf8;         /* 7.34:1 */
+
+    /* ---- the query-plan family ----
+       EXPLAIN QUERY PLAN output is rendered verbatim, and the first word of each
+       line is the whole finding. Colour is reinforcement: the word SCAN is still
+       the word SCAN in monochrome, and the panel prints the row estimate beside
+       it, so nobody has to read hue to read the plan. */
+    --plan-search: #38bdf8;    /* 7.34:1 — SEARCH … USING INDEX */
+    --plan-scan: #eab308;      /* 8.20:1 — SCAN, which is not automatically bad and is not coloured red */
+    --plan-covering: #2dd4bf;  /* 8.45:1 — USING COVERING INDEX, distinct from --ok on purpose */
+    --plan-temp: #c084fc;      /* 5.95:1 — USE TEMP B-TREE, the sort SQLite had to invent */
+
+    /* ---- the migration-ladder family ---- */
+    --mig-pending: #9aa6c4;    /* 6.46:1 — a rung not yet applied */
+    --mig-applied: #34d399;    /* 8.18:1 */
+    --mig-refused: #fb7185;    /* 5.84:1 — a rung that refused, which on four of the nine is the CORRECT outcome */
+
+    /* ---- the constraint family ----
+       Deliberately NOT named pass/fail. On the Constraints tab a refusal is the
+       expected result and an accepted write is the failure, so hue cannot carry
+       the verdict: --cons-refused is the colour of SQLite's verbatim error text
+       (an error message, rendered as one) and the ✓/✗ mark beside it carries
+       whether that was what the page predicted. */
+    --cons-refused: #fb7185;   /* 5.84:1 */
+    --cons-accepted: #34d399;  /* 8.18:1 */
+
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* Every token above that carries text is redefined here. The dark values measure
+   1.8–2.7:1 on white — #22d3ee is 1.81:1, #34d399 1.92:1, #eab308 1.92:1,
+   #38bdf8 2.14:1, #2dd4bf 1.86:1, #c084fc 2.64:1, #fb7185 2.69:1, #a5b4fc
+   1.99:1 — so leaving any one of them in place is the regression, not a
+   near-miss. */
+html[data-theme="light"] {
+    --bg: #f5f7fc;
+    --bg-soft: #eef1f9;
+    --card: #ffffff;
+    --card-2: #f4f6fd;
+    --border: rgba(15, 23, 42, 0.09);
+    --border-strong: rgba(15, 23, 42, 0.18);
+    --text: #131a2e;         /* 15.30:1 */
+    --muted: #55618a;        /* 5.37:1 */
+    --faint: #5c6688;        /* 5.01:1 — #7f8aad is 4.45:1 on --bg-soft, a fail */
+
+    --accent: #4338ca;       /* 6.99:1 — text-safe here, unlike its dark value */
+    /* The dark theme's #22d3ee is 1.81:1 on white. This is the exact token that
+       got through on three sibling labs, and it is the reason this comment
+       block exists. #155e75 keeps the same cyan family at 6.43:1. */
+    --accent-2: #155e75;     /* 6.43:1 */
+    --accent-3: #7e22ce;     /* 6.18:1 */
+    --accent-solid: #4338ca; /* a FILL; white on it is 7.90:1 */
+    --accent-solid-hover: #3730a3;
+    --link: #0e7490;         /* 4.74:1 */
+    --focus: #045981;        /* 6.76:1 */
+    --accent-teks: #4338ca;  /* 6.99:1 — collapses onto --accent, which is already text-safe in this theme */
+    --shadow: 0 18px 50px -30px rgba(30, 41, 90, 0.35);
+    --shadow-sm: 0 10px 26px -20px rgba(30, 41, 90, 0.4);
+
+    --ok: #047857;           /* 4.85:1 */
+    --warn: #92580a;         /* 5.13:1 — #a16207 is 4.36:1 on --bg-soft, a fail */
+    --bad: #be123c;          /* 5.56:1 */
+    --info: #0369a1;         /* 5.25:1 */
+
+    --plan-search: #0369a1;    /* 5.25:1 */
+    --plan-scan: #92580a;      /* 5.13:1 */
+    --plan-covering: #0f766e;  /* 4.84:1 */
+    --plan-temp: #7e22ce;      /* 6.18:1 */
+
+    --mig-pending: #55618a;    /* 5.37:1 */
+    --mig-applied: #047857;    /* 4.85:1 */
+    --mig-refused: #be123c;    /* 5.56:1 */
+
+    --cons-refused: #be123c;   /* 5.56:1 */
+    --cons-accepted: #047857;  /* 4.85:1 */
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    font-size: 15px;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(720px 420px at 12% -6%, rgba(99, 102, 241, 0.18), transparent 60%),
+        radial-gradient(640px 420px at 100% 0%, rgba(34, 211, 238, 0.12), transparent 55%);
+}
+
+h1, h2, h3, h4 {
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+}
+
+a { color: var(--link); }
+
+code, pre, .mono {
+    font-family: var(--mono);
+    font-size: 0.86em;
+}
+
+/* Prose on this page is full of unbreakable identifiers — `pt-online-schema-change`,
+   `sqlite-wasm-base64.js`, `ALGORITHM=INPLACE`, `PRAGMA foreign_key_check`. A
+   phone viewport is 390px and one such token in an inline <code> is enough to
+   push the whole document sideways, which is how a sibling lab shipped 846px of
+   horizontal overflow. Breaking an identifier across two lines is ugly;
+   horizontal scroll on a phone is worse. */
+code { overflow-wrap: anywhere; }
+
+/* Block SQL and plan output scroll in their own box instead. These are the one
+   place where breaking mid-token would change what the reader thinks the
+   statement says. */
+pre {
+    overflow-x: auto;
+    white-space: pre;
+}
+
+:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.skip {
+    position: absolute;
+    left: -999px;
+    top: 8px;
+    background: var(--card);
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    z-index: 99;
+}
+
+.skip:focus { left: 8px; }
+
+/* The placeholder colour is set explicitly in BOTH themes, because the UA
+   default is roughly 2.9:1 on both field surfaces and no validator flags it.
+   opacity is pinned to 1: an opacity below 1 composites the colour back toward
+   the field and undoes whatever ratio was chosen. --muted measures 6.4:1 on the
+   dark field surface and 5.4:1 on the light one. */
+input::placeholder,
+textarea::placeholder {
+    color: var(--muted);
+    opacity: 1;
+}
+
+/* ------------------------------------------------------------------ shell */
+
+main {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 18px 60px;
+}
+
+.top {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    /* The sub-line is a full sentence and the brand block is a flex item, whose
+       implied min-width:auto would otherwise refuse to shrink below the
+       sentence's min-content width. */
+    min-width: 0;
+}
+
+.brand > div { min-width: 0; }
+
+.mark {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: .04em;
+    padding: 9px 10px;
+    border-radius: 12px;
+    background: var(--grad);
+    color: #fff;
+    flex: none;
+}
+
+.brand h1 { font-size: 21px; }
+
+.sub {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.top-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 7px 13px;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .18s ease, border-color .18s ease;
+}
+
+.btn:hover {
+    background: var(--card-2);
+    border-color: var(--accent);
+}
+
+.btn.primary {
+    background: var(--accent-solid);
+    border-color: var(--accent-solid);
+    color: #fff;
+}
+
+.btn.primary:hover {
+    background: var(--accent-solid-hover);
+    border-color: var(--accent-solid-hover);
+}
+
+.btn.ghost { background: transparent; }
+
+.btn.small {
+    padding: 4px 9px;
+    font-size: 12px;
+}
+
+.btn.danger {
+    color: var(--bad);
+    border-color: currentColor;
+}
+
+.btn[aria-pressed="true"] {
+    background: var(--accent-solid);
+    border-color: var(--accent-solid);
+    color: #fff;
+}
+
+.btn:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------- badges */
+
+.netbadge, .testbadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    background: var(--card);
+    border-radius: 999px;
+    padding: 5px 12px;
+}
+
+.netbadge .dot, .testbadge .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, .18);
+    flex: none;
+}
+
+.netbadge.bad .dot, .testbadge.bad .dot {
+    background: var(--bad);
+    box-shadow: 0 0 0 3px rgba(251, 113, 133, .2);
+}
+
+.testbadge.busy .dot {
+    background: var(--warn);
+    box-shadow: 0 0 0 3px rgba(234, 179, 8, .2);
+}
+
+.testbadge {
+    background: none;
+    border-color: var(--border);
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    font-family: var(--mono);
+}
+
+/* ------------------------------------------------------------------ tabs */
+
+.tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+    scrollbar-width: thin;
+}
+
+.tab {
+    background: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 13.5px;
+    padding: 9px 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    border-radius: 8px 8px 0 0;
+}
+
+.tab:hover {
+    color: var(--text);
+    background: var(--card);
+}
+
+/* The strip scrolls, and overflow-x:auto clips vertically too, so a ring drawn
+   2px OUTSIDE a tab is eaten by the strip. Measured at dsf 3 on the shipped
+   page: the focused first tab painted 0 ring pixels along its top, 0 along its
+   bottom and 0 down its left edge — one vertical stroke on the right was the
+   whole indicator. getComputedStyle still answers "2px solid", which is why a
+   checker that reads the style rather than the pixels calls this a pass. The
+   ring goes inside the tab, where nothing can clip it. */
+.tab:focus-visible {
+    outline-offset: -3px;
+}
+
+/* --accent is 3.52:1 as text and is used here as a 2px RULE, which is not text
+   and is not the only signal: the label also goes to --text and to 600. */
+.tab[aria-selected="true"] {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+}
+
+.panel { min-height: 240px; }
+
+/* ----------------------------------------------------------------- cards */
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+}
+
+.card > h3 {
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.card > .note, .note {
+    color: var(--muted);
+    font-size: 12.5px;
+    margin-bottom: 12px;
+}
+
+.note b, .hint b { color: var(--text); }
+
+.hint {
+    color: var(--muted);
+    font-size: 12.5px;
+}
+
+.small { font-size: 12px; }
+
+.row-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 12px;
+}
+
+.controls > * { min-width: 0; }
+
+.stack { display: flex; flex-direction: column; gap: 3px; }
+
+.callout {
+    font-size: 12.5px;
+    color: var(--text);
+    background: var(--card-2);
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 9px 12px;
+    margin-bottom: 12px;
+}
+
+.callout.warn { border-left-color: var(--warn); }
+.callout.bad { border-left-color: var(--bad); }
+.callout.ok { border-left-color: var(--ok); }
+
+.empty {
+    color: var(--muted);
+    font-size: 13.5px;
+    padding: 26px 16px;
+    text-align: center;
+    border: 1px dashed var(--border-strong);
+    border-radius: 12px;
+}
+
+.banner {
+    background: var(--card-2);
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid var(--warn);
+    border-radius: 10px;
+    padding: 9px 13px;
+    font-size: 12.5px;
+    margin-bottom: 14px;
+}
+
+.banner b { color: var(--warn); }
+
+/* -------------------------------------------------------------- form fields */
+
+input[type=text], input[type=number], input[type=search], select, textarea {
+    background: var(--bg-soft);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: 9px;
+    padding: 6px 10px;
+    font: inherit;
+    font-size: 13px;
+    max-width: 100%;
+}
+
+select { cursor: pointer; }
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    /* Flex items default to min-width:auto, so a <select> with long option text
+       refuses to shrink and pushes the whole document sideways on a phone. */
+    min-width: 0;
+    max-width: 100%;
+}
+
+.field > span {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--faint);
+}
+
+/* ------------------------------------------------------------------ stats */
+
+.summary {
+    display: grid;
+    /* min(100%, …) as the floor, because a grid ITEM has an implied
+       min-width:auto: an unbreakable figure wider than the track forces every
+       track to that width and the document overflows the viewport. With the
+       min() the floor collapses to 100% and it becomes one column instead. */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+    gap: 10px;
+    margin: 0 0 16px;
+}
+
+.stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 11px 13px;
+    min-width: 0;
+}
+
+.stat .k {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--faint);
+}
+
+.stat .v {
+    font-size: 17px;
+    font-weight: 650;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
+.stat .n {
+    font-size: 11.5px;
+    color: var(--muted);
+    /* A stat's caption is prose, but the prose names things —
+       `max(schema_migration.version)` is 186px of unbreakable token in a 150px
+       track at 390px, and it pushed the whole document 10px sideways. Breaking a
+       caption mid-identifier costs nothing; block SQL is the case where it would
+       change what the reader thinks the statement says, and that scrolls in its
+       own box instead. */
+    overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------- tables */
+
+.tbl-wrap { overflow-x: auto; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    min-width: 520px;
+}
+
+th, td {
+    text-align: left;
+    padding: 7px 9px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--faint);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    background: var(--card);
+    z-index: 1;
+}
+
+td.num, th.num {
+    text-align: right;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Most tables on this page are figures, and a figure must never wrap mid-number,
+   which is what the blanket `white-space: nowrap` above is for. A few carry
+   sentences instead — the planted defects, the ALTER matrix, the verbatim error
+   messages — and a sentence held on one line pushes the interesting column off
+   the right-hand edge of the card, where the reader has to find a horizontal
+   scrollbar to discover it exists. Those tables opt in to wrapping. */
+.tbl-wrap.prose td { white-space: normal; overflow-wrap: anywhere; }
+.tbl-wrap.prose th { white-space: normal; }
+/* A figure is still a figure inside a prose table: "0 ms" broken across two
+   lines reads as two numbers. */
+.tbl-wrap.prose td.num, .tbl-wrap.prose th.num { white-space: nowrap; }
+
+tbody tr:hover { background: var(--card-2); }
+
+tr.sel { background: var(--card-2); }
+
+.linkbtn {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--link);
+    font: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+
+.linkbtn:hover { text-decoration: underline; }
+
+/* ----------------------------------------------------------------- pills */
+
+.pill {
+    display: inline-block;
+    font-size: 10.5px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    color: var(--muted);
+    font-family: var(--mono);
+}
+
+.pill.ok { color: var(--ok); border-color: currentColor; }
+.pill.warn { color: var(--warn); border-color: currentColor; }
+.pill.bad { color: var(--bad); border-color: currentColor; }
+.pill.info { color: var(--info); border-color: currentColor; }
+
+.pillbig {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-strong);
+}
+
+.pillbig.pass { color: var(--ok); border-color: currentColor; }
+.pillbig.fail { color: var(--bad); border-color: currentColor; }
+
+/* ------------------------------------------------------------------ tests */
+
+.test-summary {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.test-summary > * { min-width: 0; overflow-wrap: anywhere; }
+
+.tgroup { margin-bottom: 12px; }
+
+.tgroup > h4 {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 4px;
+}
+
+.tcase {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 12.5px;
+    padding: 2px 0;
+    border-bottom: 1px dotted var(--border);
+    /* An assertion name here carries unbreakable tokens — a DDL fragment, a
+       verbatim SQLite error, `PRAGMA foreign_key_check` — and a flex item
+       defaults to min-width:auto, so one of them takes the whole document
+       sideways on the Tests tab alone. */
+    min-width: 0;
+}
+
+.tcase > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.tcase .mk {
+    font-family: var(--mono);
+    font-weight: 700;
+    flex: none;
+    overflow-wrap: normal;
+}
+
+.tcase.ok .mk { color: var(--ok); }
+.tcase.no .mk { color: var(--bad); }
+
+.tcase .msg {
+    color: var(--bad);
+    font-family: var(--mono);
+    font-size: 11px;
+}
+
+/* The live card prints a figure next to a check that PASSED as well as one that
+   failed, and a passing figure must not be rendered in the failure colour. */
+.tcase.ok .msg { color: var(--faint); }
+
+/* ------------------------------------------------------------------- misc */
+
+.grid2 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 14px;
+}
+
+.grid-side {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+    gap: 14px;
+    align-items: start;
+}
+
+.foot {
+    margin-top: 34px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12.5px;
+}
+
+.foot p + p { margin-top: 8px; }
+.foot code { color: var(--text); }
+
+/* ------------------------------------------------------- rombak: honesty copy */
+
+/* The vendoring callout is above the fold and is not a warning box that can be
+   dismissed or collapsed. It contradicts a claim printed on the suite index, and
+   a correction the reader has to open is not a correction. */
+.vendorcall {
+    background: var(--card);
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid var(--bad);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    font-size: 13px;
+}
+
+.vendorcall h2 {
+    font-size: 16px;
+    color: var(--bad);
+    margin-bottom: 8px;
+}
+
+.vendorcall p + p { margin-top: 9px; }
+.vendorcall .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+.notproven {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-top: 18px;
+    font-size: 13px;
+}
+
+.notproven > h2 {
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.notproven > .note { margin-bottom: 12px; }
+.notproven p + p { margin-top: 10px; }
+/* Each paragraph opens with its own claim in bold, and that lead is the index
+   into the list — so it gets the text colour rather than being one shade of
+   muted among the rest. */
+.notproven p > b:first-child { color: var(--text); }
+
+/* --------------------------------------------------- rombak: query plans */
+
+/* EXPLAIN QUERY PLAN output, verbatim, one line per node. It is monospace and
+   it scrolls in its own box: a plan line is a sentence SQLite wrote and
+   rewrapping it changes which node looks nested under which. */
+.planbox {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 11px;
+    overflow-x: auto;
+    white-space: pre;
+    color: var(--text);
+}
+
+.op-search { color: var(--plan-search); }
+.op-scan { color: var(--plan-scan); }
+.op-covering { color: var(--plan-covering); }
+.op-temp { color: var(--plan-temp); }
+
+/* Same four hues as a pill, for a plan summarised in a table cell. */
+.pill.search { color: var(--plan-search); border-color: currentColor; }
+.pill.scan { color: var(--plan-scan); border-color: currentColor; }
+.pill.covering { color: var(--plan-covering); border-color: currentColor; }
+.pill.temp { color: var(--plan-temp); border-color: currentColor; }
+
+/* SQL the page displays. Every character of it arrives through textContent from
+   JavaScript, never as markup — which is why the seven panels are empty in
+   index.html: a raw `<` inside a <pre> is an html-validate no-raw-characters
+   violation and a parse5 invalid-first-character-of-tag-name error. */
+.sqlbox {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 11px;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+}
+
+/* --------------------------------------------------- rombak: the ladder */
+
+.rung {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--mig-pending);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+}
+
+.rung.applied { border-left-color: var(--mig-applied); }
+.rung.refused { border-left-color: var(--mig-refused); }
+
+.rung-v {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--mig-pending);
+}
+
+.rung.applied .rung-v { color: var(--mig-applied); }
+.rung.refused .rung-v { color: var(--mig-refused); }
+
+.rung h3 { font-size: 14.5px; }
+
+/* The census diff. Row counts and 32-bit checksums, before and after, and the
+   tick only where the observed change matches what the step declared in
+   advance. */
+.diffrow {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    font-size: 12px;
+    font-family: var(--mono);
+    padding: 2px 0;
+    border-bottom: 1px dotted var(--border);
+    min-width: 0;
+}
+
+.diffrow > * { min-width: 0; overflow-wrap: anywhere; }
+.diffrow .t { flex: 1 1 auto; }
+.diffrow .mk { flex: none; }
+.diffrow.changed .mk { color: var(--warn); }
+.diffrow.declared .mk { color: var(--ok); }
+.diffrow.undeclared .mk { color: var(--bad); }
+
+/* -------------------------------------------- rombak: the four rebuild panels */
+
+.rebuild-grid {
+    display: grid;
+    /* Two across on a desktop, not four. Each of the four panels carries a
+       seven-statement table whose second column is SQLite's verbatim answer, and
+       at four columns that answer is the half that ends up behind a horizontal
+       scrollbar — which is exactly the half the panel exists to show. */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 540px), 1fr));
+    gap: 12px;
+}
+
+.rebuild-grid > * { min-width: 0; }
+
+/* ----------------------------------------------- rombak: constraint grid */
+
+.cons {
+    border-bottom: 1px solid var(--border);
+    padding: 9px 0;
+}
+
+.cons:last-child { border-bottom: 0; }
+
+.cons-head {
+    display: flex;
+    gap: 9px;
+    align-items: baseline;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.cons-head > * { min-width: 0; }
+.cons-head .name { font-size: 13px; }
+
+/* SQLite's own message, verbatim, never paraphrased — the exact string is the
+   evidence. */
+.cons-err {
+    color: var(--cons-refused);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    overflow-wrap: anywhere;
+}
+
+.cons-acc {
+    color: var(--cons-accepted);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    overflow-wrap: anywhere;
+}
+
+/* -------------------------------------------------- rombak: the console */
+
+.console-in {
+    width: 100%;
+    min-height: 132px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    resize: vertical;
+    white-space: pre;
+    overflow-wrap: normal;
+}
+
+.console-out {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 11px;
+    margin-top: 10px;
+    overflow-x: auto;
+}
+
+.console-out .err { color: var(--bad); }
+.console-out .ok { color: var(--ok); }
+
+/* ------------------------------------------------------------------- print */
+
+@media print {
+    .top, .tabs, .no-print { display: none !important; }
+
+    /* Redefine the PALETTE, not just body. Printing from the default dark theme
+       otherwise puts --ok #34d399 and --warn #eab308 straight onto white paper
+       at 1.9:1, which makes the verdicts the faintest thing on the sheet. All
+       three selectors are listed so it does not matter which theme the reader
+       printed from, or whether they ever chose one. */
+    :root,
+    html[data-theme="dark"],
+    html[data-theme="light"] {
+        --bg: #fff;
+        --bg-soft: #fff;
+        --card: #fff;
+        --card-2: #fff;
+        --border: #b9bfcf;
+        --border-strong: #8b93a6;
+        --text: #000;
+        --muted: #333;
+        --faint: #444;
+        --link: #0b4f73;
+        --accent: #2f2a8f;
+        --accent-teks: #2f2a8f;
+        --accent-2: #0b4f73;
+        --accent-3: #5b21b6;
+        --accent-solid: #2f2a8f;
+        --ok: #065f46;
+        --warn: #7a4a00;
+        --bad: #8b1030;
+        --info: #0b4f73;
+        --plan-search: #0b4f73;
+        --plan-scan: #7a4a00;
+        --plan-covering: #0f5f57;
+        --plan-temp: #5b21b6;
+        --mig-pending: #444;
+        --mig-applied: #065f46;
+        --mig-refused: #8b1030;
+        --cons-refused: #8b1030;
+        --cons-accepted: #065f46;
+        --grad: none;
+        --shadow: none;
+        --shadow-sm: none;
+    }
+
+    body { background: #fff; color: #000; font-size: 11px; }
+    body::before { display: none; }
+    main { padding: 0; max-width: none; }
+    .card, .vendorcall, .notproven { border: 0; box-shadow: none; padding: 0; margin-bottom: 12px; }
+    .banner, .callout { border: 1px solid #8b93a6; }
+
+    /* A4 is 794 CSS px. Tables carry a min-width for the screen, and inside
+       overflow-x:auto there is no scrollbar on paper — the overflowing columns
+       are simply cut off the sheet. Let them reflow instead, and lift the
+       white-space:nowrap that is set on every cell for the screen: an
+       unbreakable cell still contributes its full width to the table's
+       min-content width, so resetting min-width alone is not enough. */
+    .tbl-wrap { overflow: visible !important; }
+    table { min-width: 0 !important; width: 100% !important; font-size: 9.5px; table-layout: auto; }
+    th, td { padding: 3px 4px !important; white-space: normal !important; overflow-wrap: anywhere; }
+    td.num, th.num, .mono { white-space: nowrap !important; }
+
+    /* SQL and plan output must NOT be broken mid-token on paper, and there is no
+       scrollbar to reach the rest, so they wrap at whitespace and indent the
+       continuation. A plan line rewrapped is still readable; a plan line broken
+       inside a table name is not. */
+    .sqlbox, .planbox, .console-out {
+        overflow: visible !important;
+        white-space: pre-wrap !important;
+        border: 1px solid #b9bfcf;
+    }
+
+    .card, .rung, .cons, .tgroup { break-inside: avoid; }
+    .card > h3, .notproven > h2, .vendorcall h2 { break-inside: avoid; break-after: avoid; }
+}
+
+/* -------------------------------------------------------------- responsive */
+
+@media (max-width: 900px) {
+    .grid2, .grid-side { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 560px) {
+    body { font-size: 14px; }
+    .top { padding: 14px 12px; }
+    main { padding: 0 12px 48px; }
+    .brand h1 { font-size: 18px; }
+    .sub { font-size: 12.5px; }
+    .card, .vendorcall, .notproven { padding: 13px; }
+    .summary { grid-template-columns: repeat(auto-fit, minmax(min(100%, 148px), 1fr)); }
+    .stat .v { font-size: 16px; }
+    .field > span { font-size: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+        animation: none !important;
+        scroll-behavior: auto !important;
+    }
+}

@@ -125,15 +125,19 @@
             </div>
             <div class="solved">
                 <b>Bagaimana ini ditangani</b>
-                Penguraian dilakukan <strong>di ponsel</strong>. Yang dikirim ke server hanya hasil
-                terstrukturnya — nominal, merchant, waktu, arah transaksi. Teks mentah notifikasi tidak pernah
-                meninggalkan perangkat, jadi tidak ada salinan isi SMS bank kamu di server siapa pun, termasuk
-                milik saya.
-                <span class="trade">Ini pilihan yang lebih mahal, bukan lebih murah. Karena parser-nya ada di
-                dalam aplikasi, memperbaiki format bank yang berubah berarti merilis versi baru dan menunggu
-                pengguna memperbaruinya — bertabrakan langsung dengan masalah nomor 2 di atas. Menaruh parser di
-                server akan membuat perbaikan instan; harganya adalah seluruh isi notifikasi bank pengguna
-                mengalir ke sana, dan harga itu tidak sepadan.</span>
+                Notifikasi disaring dulu <strong>di ponsel</strong>: sebuah pra-filter ringan membuang yang jelas
+                bukan transaksi, dan pola yang sudah dikenal langsung diuraikan di perangkat. Sisanya — format
+                yang belum dikenali — dikirim ke server dan diuraikan oleh AI, lalu hasilnya di-cache per
+                pengguna. Konsekuensinya jujur: sebagian teks notifikasi memang mencapai server. Jadi keputusan
+                desainnya bukan <em>“tidak ada yang keluar dari ponsel”</em>, melainkan membatasi seketat mungkin
+                <strong>apa</strong> yang keluar dan <strong>untuk siapa</strong> — dan menaruh jalur cepat
+                perbaikan format di sisi server yang bisa diperbaiki tanpa menunggu pengguna memperbarui aplikasi.
+                <span class="trade">Ini pilihan hibrida, bukan yang termurah maupun yang paling privat secara
+                mutlak. Andai seluruh penguraian dipaksa di dalam aplikasi, tidak ada teks yang keluar sama
+                sekali — tapi tiap kali sebuah bank mengubah format, perbaikannya menuntut rilis versi baru dan
+                menunggu pengguna memperbaruinya, bertabrakan langsung dengan masalah nomor 2 di atas. Menaruh
+                penguraian AI di server membuat sebagian besar perbaikan itu instan; harganya adalah sebagian teks
+                notifikasi mengalir ke sana, dan yang dijaga adalah menekan bagian itu sekecil mungkin.</span>
             </div>
         </div>
 

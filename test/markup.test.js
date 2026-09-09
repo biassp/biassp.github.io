@@ -64,15 +64,15 @@ for (let i = 0; i < FILES.length; i++) {
     parseErrors += errs.length;
     console.log(RED + '✗ ' + REL[i] + OFF);
     for (const e of errs.slice(0, 10)) {
-      console.log('    baris ' + e.startLine + ':' + e.startCol + '  ' + e.code);
+      console.log('    line ' + e.startLine + ':' + e.startCol + '  ' + e.code);
     }
   }
 }
 if (parseErrors === 0) {
-  console.log(GREEN + '✓' + OFF + ' parse5        ' + FILES.length + ' berkas, 0 galat parse HTML5');
+  console.log(GREEN + '✓' + OFF + ' parse5        ' + FILES.length + ' files, 0 HTML5 parse errors');
 } else {
   failures++;
-  console.log(RED + '✗ parse5        ' + parseErrors + ' galat parse' + OFF);
+  console.log(RED + '✗ parse5        ' + parseErrors + ' parse errors' + OFF);
 }
 
 /* -------------------------------------------------------------- 2. Nu, vnu.jar */
@@ -80,11 +80,11 @@ if (parseErrors === 0) {
 const VNU = path.join(ROOT, 'node_modules', 'vnu-jar', 'build', 'dist', 'vnu.jar');
 if (!fs.existsSync(VNU)) {
   failures++;
-  console.log(RED + '✗ vnu           vnu.jar tidak ditemukan — jalankan npm install' + OFF);
+  console.log(RED + '✗ vnu           vnu.jar not found — run npm install' + OFF);
 } else {
   try {
     execFileSync('java', ['-jar', VNU, '--errors-only', '--format', 'gnu', ...FILES], { stdio: 'pipe' });
-    console.log(GREEN + '✓' + OFF + ' vnu (W3C)     ' + FILES.length + ' berkas, 0 galat konformans');
+    console.log(GREEN + '✓' + OFF + ' vnu (W3C)     ' + FILES.length + ' files, 0 conformance errors');
   } catch (err) {
     failures++;
     /* JAVA_TOOL_OPTIONS prints a line to stderr on every JVM start on some
@@ -102,14 +102,14 @@ if (!fs.existsSync(VNU)) {
 const HV = path.join(ROOT, 'node_modules', '.bin', 'html-validate');
 try {
   execFileSync(HV, FILES, { stdio: 'pipe' });
-  console.log(GREEN + '✓' + OFF + ' html-validate ' + FILES.length + ' berkas, 0 pelanggaran ' + DIM + '(preset recommended)' + OFF);
+  console.log(GREEN + '✓' + OFF + ' html-validate ' + FILES.length + ' files, 0 violations ' + DIM + '(preset recommended)' + OFF);
 } catch (err) {
   failures++;
   console.log(RED + '✗ html-validate' + OFF + '\n' + String(err.stdout || err.stderr || '').trim());
 }
 
 if (failures > 0) {
-  console.log('\n' + RED + failures + ' dari 3 validator gagal.' + OFF);
+  console.log('\n' + RED + failures + ' of 3 validators failed.' + OFF);
   process.exit(1);
 }
-console.log('\nSeluruh markup lolos ketiga validator.');
+console.log('\nAll markup passed all three validators.');

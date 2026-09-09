@@ -6,19 +6,19 @@
 #
 # What actually runs, and why each one is here:
 #
-#   sintaks   node --check over every .js file plus the inline <script> blocks
+#   syntax    node --check over every .js file plus the inline <script> blocks
 #             of index.html, concatenated in document order. A single missing
 #             bracket in the CV's inline script blanks the whole page.
 #   markup    parse5 + the W3C Nu validator + html-validate over all 12 HTML
 #             files. Three validators, because they disagree, and the
 #             disagreements are where the real findings live.
-#   tautan    Every relative href and src resolves to a file that exists, and
+#   links     Every relative href and src resolves to a file that exists, and
 #             every #fragment has an element with that id. A renamed folder
 #             breaks a portfolio link silently.
 #   repos     14 jsdom tests over the live GitHub feed in index.html, including
 #             the fallback path: when the API returns 403 the hardcoded cards
 #             must come back. That path is the one nobody would notice failing.
-#   labs      The 3.659 assertions that ship inside the six engine labs, run in
+#   labs      The 3,659 assertions that ship inside the six engine labs, run in
 #             real Chromium against the real pages. This also proves each page
 #             boots: right script order, no CSP violation, no console error.
 #
@@ -44,7 +44,7 @@ permissions:
 
 jobs:
   test:
-    name: Uji
+    name: Test
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -62,24 +62,24 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Pasang dependensi uji
+      - name: Install test dependencies
         run: npm ci
 
       # Only Chromium, and only the browser — the labs need nothing else.
-      - name: Pasang Chromium
+      - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Sintaks JavaScript
+      - name: JavaScript syntax
         run: npm run test:syntax
 
-      - name: Validasi markup
+      - name: Markup validation
         run: npm run test:markup
 
-      - name: Tautan internal
+      - name: Internal links
         run: npm run test:links
 
-      - name: Feed repositori (jsdom)
+      - name: Repository feed (jsdom)
         run: npm run test:repos
 
-      - name: Asersi lab (Chromium)
+      - name: Lab assertions (Chromium)
         run: npm run test:labs

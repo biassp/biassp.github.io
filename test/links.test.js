@@ -82,7 +82,7 @@ for (const file of FILES) {
       /* A bare #id points inside this same document. */
       if (target === '') {
         if (frag && !ids.has(frag)) {
-          problems.push(name + '="' + raw + '" → tidak ada elemen dengan id itu');
+          problems.push(name + '="' + raw + '" → no element carries that id');
         }
         continue;
       }
@@ -97,7 +97,7 @@ for (const file of FILES) {
         /* data-optional marks a figure that is meant to vanish when its image
            is not in the repository yet; case.js hides it at runtime. */
         if (attr(el, 'data-optional') !== null) continue;
-        problems.push(name + '="' + raw + '" → ' + path.relative(ROOT, resolved) + ' tidak ada');
+        problems.push(name + '="' + raw + '" → ' + path.relative(ROOT, resolved) + ' does not exist');
       }
     }
   }
@@ -111,8 +111,8 @@ for (const file of FILES) {
 
 console.log(
   (broken === 0 ? GREEN + '✓' : RED + '✗') + OFF +
-  ' ' + checked + ' tautan internal diperiksa di ' + FILES.length + ' berkas, ' +
-  broken + ' rusak ' + DIM + '(tautan eksternal sengaja tidak dihubungi)' + OFF
+  ' ' + checked + ' internal links checked across ' + FILES.length + ' files, ' +
+  broken + ' broken ' + DIM + '(external links are deliberately not fetched)' + OFF
 );
 
 if (broken > 0) process.exit(1);

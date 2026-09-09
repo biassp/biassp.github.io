@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<!--
+  Case study: Cek Aman — biassp.github.io
+  Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+  Not open source. Readable for evaluation only — copying, modification,
+  re-branding or redistribution is not permitted. See /LICENSE.
+-->
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cek Aman — case study</title>
+    <meta name="description"
+        content="Case study of Cek Aman, an Indonesian anti-scam app: judging scam risk cheaply with OCR plus DeepSeek instead of a paid model, reasoning over messy screenshot text, and combining many unreliable third-party signals — link, phone, bank account, OJK lender, email, QR — into an honest risk read.">
+    <meta name="author" content="Bias Satrio Putra">
+    <meta name="copyright" content="Copyright (c) 2026 Bias Satrio Putra. All rights reserved.">
+    <meta property="og:title" content="Cek Aman — case study">
+    <meta property="og:description"
+        content="Case study of Cek Aman, an Indonesian anti-scam app: judging scam risk cheaply with OCR plus DeepSeek instead of a paid model, reasoning over messy screenshot text, and combining many unreliable third-party signals — link, phone, bank account, OJK lender, email, QR — into an honest risk read.">
+    <link rel="stylesheet" href="../case.css">
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='7'%20fill='%236366f1'/%3E%3Cpath%20d='M16%205l8%203v6c0%205-3.5%209-8%2011-4.5-2-8-6-8-11V8z'%20fill='none'%20stroke='%23fff'%20stroke-width='2'%20stroke-linejoin='round'/%3E%3Cpath%20d='M12%2015.5l3%203%205-6'%20fill='none'%20stroke='%23fff'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'/%3E%3C/svg%3E">
+</head>
+
+<body>
+    <header class="top">
+        <div class="top-in">
+            <span class="crumb" data-i18n-html="ca.nav.crumb"><a href="../../">CV</a> · Case studies</span>
+            <div class="tools">
+                <button class="btn" type="button" id="tema" aria-pressed="false">Light</button>
+                <button class="btn" type="button" id="langToggle" aria-label="Bahasa / Language">ID</button>
+                <a class="btn" href="../../#portfolio" data-i18n="ca.nav.portfolio">← Portfolio</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="wrap">
+        <div class="hero">
+            <span class="eyebrow" data-i18n="ca.hero.eyebrow">Case study</span>
+            <h1 data-i18n-html="ca.hero.title"><span class="grad">Cek Aman</span> — reading a scam before the money moves</h1>
+            <p class="lede" data-i18n="ca.hero.lede">An Indonesian anti-scam app. Instead of a single yes-or-no verdict, it pulls together many weak, unreliable signals about a link, phone number, bank account, seller, OJK-registered lender, email, or QR code, and turns them into a cautious risk read with plain-language advice. It also reads screenshots of suspicious chats and reasons over the messy text it manages to extract. Available as an Android app and on the web.</p>
+
+            <div class="facts">
+                <div class="fact"><b data-i18n="ca.fact.role.k">Role</b><span data-i18n="ca.fact.role.v">Built solo, from backend to release</span></div>
+                <div class="fact"><b data-i18n="ca.fact.stack.k">Stack</b><span data-i18n="ca.fact.stack.v">Flutter · Node.js · DeepSeek</span></div>
+                <div class="fact"><b data-i18n="ca.fact.status.k">Status</b><span data-i18n="ca.fact.status.v">Web live at cek-aman.com</span></div>
+            </div>
+
+            <div class="tags">
+                <span data-i18n="ca.tag.1">Flutter</span><span data-i18n="ca.tag.2">Node.js</span><span data-i18n="ca.tag.3">DeepSeek</span><span data-i18n="ca.tag.4">OCR</span><span data-i18n="ca.tag.5">Risk scoring</span><span data-i18n="ca.tag.6">OJK</span><span data-i18n="ca.tag.7">Safe Browsing</span><span data-i18n="ca.tag.8">Privacy</span>
+            </div>
+        </div>
+
+        <h2 data-i18n="ca.sec.why.h2">Why it is built this way</h2>
+        <p class="muted" data-i18n="ca.sec.why.p">The hard part of an anti-scam tool is not painting a green or red badge — it is that every input is ambiguous and every source of truth is partial, third-party, and sometimes wrong. A tool that sounds confident when it should not is worse than no tool at all: it teaches people to trust the wrong thing at the exact moment they are about to lose money. So the whole design is about staying useful while being honest about uncertainty, and never crossing the line into accusing a specific person.</p>
+
+        <div class="prob">
+            <h3 data-i18n="ca.p1.h3">1. Judging scam risk without a paid model</h3>
+            <p data-i18n="ca.p1.lead">The AI features read a screenshot of a suspicious chat and reason about what it says. Done the obvious way, that means an expensive vision-plus-LLM call on every single check.</p>
+            <div class="why" data-i18n-html="ca.p1.why1"><b>Why this is hard</b> An anti-scam app is used most by people who will not pay for it, and each check delivers small, one-off value while the model bill is very real. A premium-model cost per check makes a free tier impossible. And the judgement here is not classification you can hardcode — it is reading intent in fuzzy Indonesian text: phishing, requests for an OTP or PIN, prize bait, illegal lenders, paid-task scams, "transfer first" deals.</div>
+            <div class="solved" data-i18n-html="ca.p1.solved"><b>How this was handled</b> The image-to-text step runs on a server-side <code>tesseract</code> binary, not a paid vision API, so it costs nothing per call. The reasoning step goes to <strong>DeepSeek</strong> (<code>deepseek-chat</code>) — a low-cost, OpenAI-compatible model, reusing a key already paid for by another product — not a frontier model. The model is pinned to return strict JSON (a score, a risk level, a short list of signals, a summary, advice, and a <code>readable</code> flag) at low temperature, so its answer drops into the same result shape as the non-AI checks. <span class="trade">DeepSeek is cheaper and weaker than a frontier model. The mitigation is a tight system prompt, hard caps on input length and number of signals, and an explicit <code>readable=false</code> path: when the extracted text is too garbled to judge, the app says it could not read it instead of inventing a verdict.</span></div>
+        </div>
+
+        <div class="prob">
+            <h3 data-i18n="ca.p2.h3">2. Reading scam screenshots, then reasoning over the mess</h3>
+            <p data-i18n="ca.p2.lead">People do not paste text — they screenshot a WhatsApp chat, an SMS, a transfer receipt. The app has to turn pixels into words, then reason about whatever fell out.</p>
+            <div class="why" data-i18n-html="ca.p2.why1"><b>Why this is hard</b> OCR output is noisy: wrong characters, broken line breaks, Indonesian and English mixed together, emoji, redactions. A scam judgement built on a bad transcription inherits every OCR error, and the failure is silent — garbled text can still produce a confident-looking score. On top of that, the OCR binary might not even be installed on the machine.</div>
+            <div class="solved" data-i18n-html="ca.p2.solved"><b>How this was handled</b> The pipeline treats OCR as fallible on purpose. A missing <code>tesseract</code> binary degrades to a clean <code>503</code> rather than a crash, so the rest of the app keeps working. Recognition runs in <code>ind+eng</code> because these screenshots are almost never a single language. Low-quality extractions are handed to the model with an instruction to return <code>readable=false</code> and a neutral score instead of a guess. <span class="trade">Reasoning over OCR text will always be weaker than reasoning over the original message. The honest posture is to surface that uncertainty as a "text too unclear to assess" state rather than hide it behind a number.</span></div>
+        </div>
+
+        <div class="prob">
+            <h3 data-i18n="ca.p3.h3">3. Many different signals, every source unreliable</h3>
+            <p data-i18n="ca.p3.lead">A single "is this safe?" answer is assembled from very different checks: a URL against Google Safe Browsing and a trusted-domain allowlist, a phone number, a bank account number, a seller or marketplace handle, an OJK-registered lender name, an email address, and a QR or QRIS code decoded straight from its raw EMVCo payload — plus community reports.</p>
+            <div class="why" data-i18n-html="ca.p3.why1"><b>Why this is hard</b> None of these sources is authoritative or always available. Safe Browsing can be unconfigured or time out. The OJK lender list is a snapshot that goes stale. Matching a name against that list is a trap: fuzzy matching would happily match an impersonator — a fake <em>dana-instan-cepat</em> onto a real registered lender — which is exactly the mistake that gets someone scammed. Community reports are sparse and easy to game. So every signal is weak on its own, and combining them naively manufactures false confidence in both directions.</div>
+            <div class="solved" data-i18n-html="ca.p3.solved"><b>How this was handled</b> Scoring is deterministic, rule-based and stateless: it starts from "relatively safe" and subtracts a penalty for each real signal, so the result is explainable and a missing source simply contributes nothing instead of breaking the check. Every third-party source degrades gracefully — with no Safe Browsing key the check falls back to heuristics and reports and still returns. The OJK match is deliberately strict: an exact alias or a known brand suffix, never fuzzy, so an unknown name stays <strong>"unknown — be careful"</strong> and is never promoted to a false "registered". And across the whole product the output is a risk read plus official reporting links — never a claim that a specific person is a scammer. <span class="trade">The strict, additive approach under-claims: it will say "not enough data" rather than guess. For a tool people reach for when they are about to lose money, under-claiming is the safe error.</span></div>
+        </div>
+
+        <h2 data-i18n="ca.sec.cons.h2">Constraints that shaped it</h2>
+        <ul>
+            <li data-i18n-html="ca.cons.1"><b>Free by default, cheap to run.</b> The people who need it most will not pay, so every per-check cost — OCR, model, third-party APIs — had to be near zero or degrade to free.</li>
+            <li data-i18n-html="ca.cons.2"><b>Every source belongs to someone else, and is partial.</b> Safe Browsing, OJK lists, product databases, community reports — all third-party, all sometimes missing, so none of them can be a hard dependency.</li>
+            <li data-i18n-html="ca.cons.3"><b>Confidence is a liability.</b> An anti-scam tool that sounds sure when it is not teaches people to trust the wrong signal, so under-claiming is the safe failure mode.</li>
+            <li data-i18n-html="ca.cons.4"><b>It must never accuse.</b> The output is risk and education, not a legal verdict on a person — a line drawn before any feature, not after.</li>
+        </ul>
+
+        <div class="honest" data-i18n-html="ca.honest"><b>Limits of this page.</b> This describes the problems I chose to take on and why they were hard — it is not an implementation guide, and it carries no user or revenue numbers. If you are evaluating me for a role and want to know <em>how</em> each problem above was actually solved, get in touch.</div>
+
+        <div class="next">
+            <a class="btn" href="https://cek-aman.com" target="_blank" rel="noopener" data-i18n="ca.next.open">Open the product →</a>
+            <a class="btn" href="../radar-duit/" data-i18n="ca.next.other">Another case study: Radar Duit</a>
+        </div>
+
+        <footer>
+            <p data-i18n-html="ca.footer">© 2026 Bias Satrio Putra. All rights reserved. Not open source — see
+                <a href="../../LICENSE">LICENSE</a>.</p>
+        </footer>
+    </main>
+
+    <script>
+        window.PAGE_I18N = {
+            "meta_title": { en: "Cek Aman — case study", id: "Cek Aman — studi kasus" },
+            "meta_desc": { en: "Case study of Cek Aman, an Indonesian anti-scam app: judging scam risk cheaply with OCR plus DeepSeek instead of a paid model, reasoning over messy screenshot text, and combining many unreliable third-party signals — link, phone, bank account, OJK lender, email, QR — into an honest risk read.", id: "Studi kasus Cek Aman, aplikasi anti-penipuan Indonesia: menilai risiko penipuan secara murah dengan OCR plus DeepSeek alih-alih model berbayar, menalar teks screenshot yang berantakan, dan menggabungkan banyak sinyal pihak ketiga yang tak bisa diandalkan — link, nomor, rekening, pinjol OJK, email, QR — menjadi pembacaan risiko yang jujur." },
+            "meta_ogtitle": { en: "Cek Aman — case study", id: "Cek Aman — studi kasus" },
+            "meta_ogdesc": { en: "Case study of Cek Aman, an Indonesian anti-scam app: judging scam risk cheaply with OCR plus DeepSeek instead of a paid model, reasoning over messy screenshot text, and combining many unreliable third-party signals — link, phone, bank account, OJK lender, email, QR — into an honest risk read.", id: "Studi kasus Cek Aman, aplikasi anti-penipuan Indonesia: menilai risiko penipuan secara murah dengan OCR plus DeepSeek alih-alih model berbayar, menalar teks screenshot yang berantakan, dan menggabungkan banyak sinyal pihak ketiga yang tak bisa diandalkan — link, nomor, rekening, pinjol OJK, email, QR — menjadi pembacaan risiko yang jujur." },
+
+            "ca.nav.crumb": { en: '<a href="../../">CV</a> · Case studies', id: '<a href="../../">CV</a> · Studi kasus' },
+            "ca.nav.portfolio": { en: "← Portfolio", id: "← Portfolio" },
+
+            "ca.hero.eyebrow": { en: "Case study", id: "Studi kasus" },
+            "ca.hero.title": { en: '<span class="grad">Cek Aman</span> — reading a scam before the money moves', id: '<span class="grad">Cek Aman</span> — membaca penipuan sebelum uangnya pindah' },
+            "ca.hero.lede": { en: "An Indonesian anti-scam app. Instead of a single yes-or-no verdict, it pulls together many weak, unreliable signals about a link, phone number, bank account, seller, OJK-registered lender, email, or QR code, and turns them into a cautious risk read with plain-language advice. It also reads screenshots of suspicious chats and reasons over the messy text it manages to extract. Available as an Android app and on the web.", id: "Aplikasi anti-penipuan untuk pengguna Indonesia. Alih-alih memberi vonis ya-atau-tidak, aplikasi ini menggabungkan banyak sinyal lemah dan tak sepenuhnya bisa dipercaya tentang sebuah link, nomor telepon, rekening, toko, pinjol berizin OJK, email, atau kode QR, lalu mengubahnya jadi pembacaan risiko yang hati-hati beserta saran berbahasa sederhana. Ia juga membaca screenshot chat mencurigakan dan menalar teks berantakan yang berhasil diekstraksi. Tersedia sebagai aplikasi Android dan versi web." },
+
+            "ca.fact.role.k": { en: "Role", id: "Peran" },
+            "ca.fact.role.v": { en: "Built solo, from backend to release", id: "Dibangun sendiri, dari backend sampai rilis" },
+            "ca.fact.stack.k": { en: "Stack", id: "Stack" },
+            "ca.fact.stack.v": { en: "Flutter · Node.js · DeepSeek", id: "Flutter · Node.js · DeepSeek" },
+            "ca.fact.status.k": { en: "Status", id: "Status" },
+            "ca.fact.status.v": { en: "Web live at cek-aman.com", id: "Web live di cek-aman.com" },
+
+            "ca.tag.1": { en: "Flutter", id: "Flutter" },
+            "ca.tag.2": { en: "Node.js", id: "Node.js" },
+            "ca.tag.3": { en: "DeepSeek", id: "DeepSeek" },
+            "ca.tag.4": { en: "OCR", id: "OCR" },
+            "ca.tag.5": { en: "Risk scoring", id: "Penilaian risiko" },
+            "ca.tag.6": { en: "OJK", id: "OJK" },
+            "ca.tag.7": { en: "Safe Browsing", id: "Safe Browsing" },
+            "ca.tag.8": { en: "Privacy", id: "Privasi" },
+
+            "ca.sec.why.h2": { en: "Why it is built this way", id: "Kenapa dibangun seperti ini" },
+            "ca.sec.why.p": { en: "The hard part of an anti-scam tool is not painting a green or red badge — it is that every input is ambiguous and every source of truth is partial, third-party, and sometimes wrong. A tool that sounds confident when it should not is worse than no tool at all: it teaches people to trust the wrong thing at the exact moment they are about to lose money. So the whole design is about staying useful while being honest about uncertainty, and never crossing the line into accusing a specific person.", id: "Bagian tersulit dari alat anti-penipuan bukan menyalakan lencana hijau atau merah — melainkan bahwa setiap input bersifat ambigu dan setiap sumber kebenaran itu parsial, milik pihak ketiga, dan kadang salah. Alat yang terdengar yakin padahal tidak seharusnya justru lebih buruk daripada tidak ada alat sama sekali: ia mengajari orang mempercayai hal yang salah tepat saat mereka hampir kehilangan uang. Jadi seluruh desainnya soal tetap berguna sambil jujur tentang ketidakpastian, dan tak pernah melewati batas menuduh orang tertentu." },
+
+            "ca.p1.h3": { en: "1. Judging scam risk without a paid model", id: "1. Menilai risiko penipuan tanpa model berbayar" },
+            "ca.p1.lead": { en: "The AI features read a screenshot of a suspicious chat and reason about what it says. Done the obvious way, that means an expensive vision-plus-LLM call on every single check.", id: "Fitur AI-nya membaca screenshot chat mencurigakan dan menalar isinya. Kalau dikerjakan dengan cara paling gampang, itu berarti satu panggilan vision-plus-LLM yang mahal di setiap pengecekan." },
+            "ca.p1.why1": { en: '<b>Why this is hard</b> An anti-scam app is used most by people who will not pay for it, and each check delivers small, one-off value while the model bill is very real. A premium-model cost per check makes a free tier impossible. And the judgement here is not classification you can hardcode — it is reading intent in fuzzy Indonesian text: phishing, requests for an OTP or PIN, prize bait, illegal lenders, paid-task scams, "transfer first" deals.', id: '<b>Kenapa ini sulit</b> Aplikasi anti-penipuan paling banyak dipakai justru oleh orang yang tak akan membayarnya, dan tiap pengecekan bernilai kecil serta sekali pakai sementara tagihan modelnya sangat nyata. Biaya model premium per pengecekan membuat tier gratis mustahil. Lagipula penilaian di sini bukan klasifikasi yang bisa di-hardcode — ini soal membaca niat dalam teks bahasa Indonesia yang berantakan: phishing, permintaan OTP atau PIN, iming-iming hadiah, pinjol ilegal, penipuan tugas berbayar, transaksi "transfer dulu".' },
+            "ca.p1.solved": { en: '<b>How this was handled</b> The image-to-text step runs on a server-side <code>tesseract</code> binary, not a paid vision API, so it costs nothing per call. The reasoning step goes to <strong>DeepSeek</strong> (<code>deepseek-chat</code>) — a low-cost, OpenAI-compatible model, reusing a key already paid for by another product — not a frontier model. The model is pinned to return strict JSON (a score, a risk level, a short list of signals, a summary, advice, and a <code>readable</code> flag) at low temperature, so its answer drops into the same result shape as the non-AI checks. <span class="trade">DeepSeek is cheaper and weaker than a frontier model. The mitigation is a tight system prompt, hard caps on input length and number of signals, and an explicit <code>readable=false</code> path: when the extracted text is too garbled to judge, the app says it could not read it instead of inventing a verdict.</span>', id: '<b>Bagaimana ini ditangani</b> Langkah gambar-ke-teks berjalan di binary <code>tesseract</code> sisi server, bukan API vision berbayar, jadi tak ada biaya per panggilan. Langkah penalaran memakai <strong>DeepSeek</strong> (<code>deepseek-chat</code>) — model murah yang kompatibel dengan OpenAI, memakai ulang kunci yang sudah dibayar produk lain — bukan model kelas atas. Model dipaksa mengembalikan JSON ketat (skor, tingkat risiko, daftar singkat sinyal, ringkasan, saran, dan flag <code>readable</code>) pada temperature rendah, sehingga jawabannya masuk ke bentuk hasil yang sama dengan cek non-AI. <span class="trade">DeepSeek lebih murah dan lebih lemah ketimbang model kelas atas. Penawarnya: system prompt yang ketat, batas keras pada panjang input dan jumlah sinyal, serta jalur <code>readable=false</code> yang eksplisit: ketika teks hasil ekstraksi terlalu kacau untuk dinilai, aplikasi mengatakan tak bisa membacanya alih-alih mengarang vonis.</span>' },
+
+            "ca.p2.h3": { en: "2. Reading scam screenshots, then reasoning over the mess", id: "2. Membaca screenshot penipuan, lalu menalar dari kekacauannya" },
+            "ca.p2.lead": { en: "People do not paste text — they screenshot a WhatsApp chat, an SMS, a transfer receipt. The app has to turn pixels into words, then reason about whatever fell out.", id: "Orang tidak menempelkan teks — mereka men-screenshot chat WhatsApp, SMS, bukti transfer. Aplikasi harus mengubah piksel jadi kata, lalu menalar apa pun yang keluar dari situ." },
+            "ca.p2.why1": { en: "<b>Why this is hard</b> OCR output is noisy: wrong characters, broken line breaks, Indonesian and English mixed together, emoji, redactions. A scam judgement built on a bad transcription inherits every OCR error, and the failure is silent — garbled text can still produce a confident-looking score. On top of that, the OCR binary might not even be installed on the machine.", id: "<b>Kenapa ini sulit</b> Keluaran OCR itu berisik: karakter salah, jeda baris rusak, bahasa Indonesia dan Inggris bercampur, emoji, bagian yang disensor. Penilaian penipuan yang dibangun di atas transkripsi buruk mewarisi setiap kesalahan OCR, dan kegagalannya senyap — teks kacau tetap bisa menghasilkan skor yang tampak meyakinkan. Ditambah lagi, binary OCR-nya bahkan mungkin tidak terpasang di mesin." },
+            "ca.p2.solved": { en: '<b>How this was handled</b> The pipeline treats OCR as fallible on purpose. A missing <code>tesseract</code> binary degrades to a clean <code>503</code> rather than a crash, so the rest of the app keeps working. Recognition runs in <code>ind+eng</code> because these screenshots are almost never a single language. Low-quality extractions are handed to the model with an instruction to return <code>readable=false</code> and a neutral score instead of a guess. <span class="trade">Reasoning over OCR text will always be weaker than reasoning over the original message. The honest posture is to surface that uncertainty as a "text too unclear to assess" state rather than hide it behind a number.</span>', id: '<b>Bagaimana ini ditangani</b> Alur ini sengaja memperlakukan OCR sebagai sesuatu yang bisa gagal. Binary <code>tesseract</code> yang hilang turun ke <code>503</code> yang rapi alih-alih membuat crash, sehingga sisa aplikasi tetap jalan. Pengenalan berjalan dalam <code>ind+eng</code> karena screenshot begini hampir tak pernah satu bahasa saja. Hasil ekstraksi berkualitas rendah diserahkan ke model dengan instruksi mengembalikan <code>readable=false</code> dan skor netral alih-alih menebak. <span class="trade">Menalar dari teks OCR akan selalu lebih lemah daripada menalar dari pesan aslinya. Sikap yang jujur adalah menampakkan ketidakpastian itu sebagai keadaan "teks terlalu tidak jelas untuk dinilai", bukan menyembunyikannya di balik angka.</span>' },
+
+            "ca.p3.h3": { en: "3. Many different signals, every source unreliable", id: "3. Banyak sinyal berbeda, tiap sumber tak bisa diandalkan" },
+            "ca.p3.lead": { en: 'A single "is this safe?" answer is assembled from very different checks: a URL against Google Safe Browsing and a trusted-domain allowlist, a phone number, a bank account number, a seller or marketplace handle, an OJK-registered lender name, an email address, and a QR or QRIS code decoded straight from its raw EMVCo payload — plus community reports.', id: 'Satu jawaban "apakah ini aman?" dirakit dari cek-cek yang sangat berbeda: sebuah URL terhadap Google Safe Browsing dan daftar domain tepercaya, nomor telepon, nomor rekening, nama toko atau handle marketplace, nama pinjol berizin OJK, alamat email, serta kode QR atau QRIS yang didekode langsung dari payload EMVCo mentahnya — ditambah laporan komunitas.' },
+            "ca.p3.why1": { en: "<b>Why this is hard</b> None of these sources is authoritative or always available. Safe Browsing can be unconfigured or time out. The OJK lender list is a snapshot that goes stale. Matching a name against that list is a trap: fuzzy matching would happily match an impersonator — a fake <em>dana-instan-cepat</em> onto a real registered lender — which is exactly the mistake that gets someone scammed. Community reports are sparse and easy to game. So every signal is weak on its own, and combining them naively manufactures false confidence in both directions.", id: "<b>Kenapa ini sulit</b> Tak satu pun sumber ini otoritatif atau selalu tersedia. Safe Browsing bisa tak terkonfigurasi atau timeout. Daftar pinjol OJK hanyalah snapshot yang cepat basi. Mencocokkan nama terhadap daftar itu adalah jebakan: pencocokan fuzzy akan dengan senang hati menyamakan peniru — sebuah <em>dana-instan-cepat</em> palsu dengan pemberi pinjaman berizin yang asli — persis kesalahan yang membuat orang tertipu. Laporan komunitas jarang dan mudah dimanipulasi. Jadi tiap sinyal lemah sendirian, dan menggabungkannya secara serampangan justru memproduksi keyakinan palsu ke dua arah." },
+            "ca.p3.solved": { en: '<b>How this was handled</b> Scoring is deterministic, rule-based and stateless: it starts from "relatively safe" and subtracts a penalty for each real signal, so the result is explainable and a missing source simply contributes nothing instead of breaking the check. Every third-party source degrades gracefully — with no Safe Browsing key the check falls back to heuristics and reports and still returns. The OJK match is deliberately strict: an exact alias or a known brand suffix, never fuzzy, so an unknown name stays <strong>"unknown — be careful"</strong> and is never promoted to a false "registered". And across the whole product the output is a risk read plus official reporting links — never a claim that a specific person is a scammer. <span class="trade">The strict, additive approach under-claims: it will say "not enough data" rather than guess. For a tool people reach for when they are about to lose money, under-claiming is the safe error.</span>', id: '<b>Bagaimana ini ditangani</b> Penilaiannya deterministik, berbasis aturan, dan stateless: dimulai dari "relatif aman" lalu mengurangi penalti untuk tiap sinyal nyata, sehingga hasilnya bisa dijelaskan dan sumber yang hilang cukup tidak menyumbang apa pun alih-alih merusak pengecekan. Tiap sumber pihak ketiga menurun dengan anggun — tanpa kunci Safe Browsing, pengecekan jatuh ke heuristik dan laporan lalu tetap memberi hasil. Pencocokan OJK sengaja dibuat ketat: alias persis atau suffix merek yang dikenal, tak pernah fuzzy, sehingga nama tak dikenal tetap <strong>"tidak dikenal — hati-hati"</strong> dan tak pernah dinaikkan menjadi "berizin" yang palsu. Dan di seluruh produk, keluarannya adalah pembacaan risiko plus tautan pelaporan resmi — tak pernah klaim bahwa orang tertentu adalah penipu. <span class="trade">Pendekatan ketat dan aditif ini cenderung kurang mengklaim: ia akan bilang "data tak cukup" ketimbang menebak. Untuk alat yang diraih orang saat hampir kehilangan uang, kurang mengklaim adalah kesalahan yang aman.</span>' },
+
+            "ca.sec.cons.h2": { en: "Constraints that shaped it", id: "Batasan yang menentukan bentuknya" },
+            "ca.cons.1": { en: "<b>Free by default, cheap to run.</b> The people who need it most will not pay, so every per-check cost — OCR, model, third-party APIs — had to be near zero or degrade to free.", id: "<b>Gratis secara default, murah dijalankan.</b> Orang yang paling membutuhkannya tak akan membayar, jadi tiap biaya per pengecekan — OCR, model, API pihak ketiga — harus mendekati nol atau turun menjadi gratis." },
+            "ca.cons.2": { en: "<b>Every source belongs to someone else, and is partial.</b> Safe Browsing, OJK lists, product databases, community reports — all third-party, all sometimes missing, so none of them can be a hard dependency.", id: "<b>Tiap sumber milik pihak lain, dan parsial.</b> Safe Browsing, daftar OJK, basis data produk, laporan komunitas — semuanya pihak ketiga, semuanya kadang hilang, jadi tak satu pun boleh jadi dependensi keras." },
+            "ca.cons.3": { en: "<b>Confidence is a liability.</b> An anti-scam tool that sounds sure when it is not teaches people to trust the wrong signal, so under-claiming is the safe failure mode.", id: "<b>Keyakinan itu beban.</b> Alat anti-penipuan yang terdengar yakin padahal tidak mengajari orang mempercayai sinyal yang salah, jadi kurang mengklaim adalah mode gagal yang aman." },
+            "ca.cons.4": { en: "<b>It must never accuse.</b> The output is risk and education, not a legal verdict on a person — a line drawn before any feature, not after.", id: "<b>Ia tak boleh menuduh.</b> Keluarannya adalah risiko dan edukasi, bukan vonis hukum atas seseorang — garis yang ditarik sebelum fitur apa pun, bukan sesudahnya." },
+
+            "ca.honest": { en: "<b>Limits of this page.</b> This describes the problems I chose to take on and why they were hard — it is not an implementation guide, and it carries no user or revenue numbers. If you are evaluating me for a role and want to know <em>how</em> each problem above was actually solved, get in touch.", id: "<b>Batas halaman ini.</b> Ini menjelaskan masalah yang saya pilih untuk dihadapi dan alasan sulitnya — bukan panduan implementasi, dan tidak memuat angka pengguna maupun pendapatan. Kalau kamu sedang menilai saya untuk sebuah pekerjaan dan ingin tahu <em>bagaimana</em> tiap masalah di atas benar-benar diselesaikan, hubungi saya." },
+
+            "ca.next.open": { en: "Open the product →", id: "Buka produknya →" },
+            "ca.next.other": { en: "Another case study: Radar Duit", id: "Studi kasus lain: Radar Duit" },
+
+            "ca.footer": { en: '© 2026 Bias Satrio Putra. All rights reserved. Not open source — see\n                <a href="../../LICENSE">LICENSE</a>.', id: '© 2026 Bias Satrio Putra. Seluruh hak dilindungi. Bukan open source — lihat\n                <a href="../../LICENSE">LICENSE</a>.' }
+        };
+    </script>
+    <script src="../case.js"></script>
+</body>
+
+</html>

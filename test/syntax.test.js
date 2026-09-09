@@ -9,8 +9,9 @@
  * invisible to every file-based tool — so the inline blocks are concatenated in
  * document order and checked as one program, which is how the browser sees them.
  *
- * Vendored bundles under /assets/ are excluded: they are third-party artefacts,
- * not code written here, and a syntax verdict on them says nothing useful.
+ * Vendored bundles — under /assets/, and in any vendor/ directory — are excluded:
+ * they are third-party artefacts, not code written here, and a syntax verdict on
+ * them says nothing useful.
  */
 'use strict';
 
@@ -26,7 +27,7 @@ const RED = '[31m';
 const DIM = '[2m';
 const OFF = '[0m';
 
-const SKIP_DIRS = new Set(['node_modules', '.git', '.pwtmp', 'assets']);
+const SKIP_DIRS = new Set(['node_modules', '.git', '.pwtmp', 'assets', 'vendor']);
 
 function walk(dir, ext, out) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

@@ -28,3 +28,20 @@
         render();
     });
 })();
+
+/* A figure marked data-optional disappears cleanly when its image is not in the
+   repo yet, rather than rendering a broken-image icon on a live CV. Drop the
+   file in and it appears on the next load with no code change. */
+(function () {
+    var imgs = document.querySelectorAll('img[data-optional]');
+    for (var i = 0; i < imgs.length; i++) {
+        (function (img) {
+            function hide() {
+                var fig = img.closest ? img.closest('figure') : null;
+                if (fig) fig.hidden = true;
+            }
+            img.addEventListener('error', hide);
+            if (img.complete && img.naturalWidth === 0) hide();
+        })(imgs[i]);
+    }
+})();

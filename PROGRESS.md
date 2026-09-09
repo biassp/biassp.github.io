@@ -52,6 +52,40 @@ Last updated: 2026-09-08.
   - Dev-only: `npm install jsdom && node test/repos.test.js`. node_modules is gitignored;
     the site itself still ships as a single dependency-free index.html.
 
+## CI (added 2026-09-09)
+- `.github/workflows/ci.yml` runs on every push to every branch, on PRs, and on demand.
+  Before this, NOTHING in this repo ran automatically: 3.659 lab assertions + 14 jsdom
+  tests existed and were only ever run by hand, in a chat session. The validation stack
+  (node --check, parse5, vnu, html-validate, Playwright) was also all manual.
+- Five steps, each its own npm script so they run identically on a laptop and in CI:
+  * `test:syntax`  node --check over all .js + the inline <script> blocks of index.html,
+    concatenated in document order. The inline blocks are the ones no file-based tool sees,
+    and one missing bracket there blanks the whole CV.
+  * `test:markup`  parse5 + W3C Nu (vnu.jar) + html-validate over all 12 HTML files.
+    Three validators because they disagree; the disagreements are where findings live.
+  * `test:links`   every relative href/src resolves on disk, every #fragment has its element.
+    A renamed folder breaks a portfolio link silently — nothing else here would catch it.
+  * `test:repos`   the existing 14 jsdom tests, unchanged.
+  * `test:labs`    the 3.659 in-page assertions, run in real Chromium against the real pages
+    over a local static server. NOT a rebuilt script order under node: serving the page proves
+    the page boots (script order, CSP, no console error), which a node harness cannot see.
+    file:// cannot work here — every lab ships `script-src 'self'` and file:// has an opaque origin.
+- EVERY new runner was proved able to go RED before being trusted: a deliberate parse error,
+  a dead link, a dead #fragment, and a planted failing assertion were each injected, seen to
+  fail with exit 1, then reverted. This is the same "proof that can only pass" trap that got
+  through three times in the labs — see the checklist below.
+- Fixed while wiring this up: 17 real html-validate findings — `type="button"` added to the
+  CV theme toggle and to the 16 tab buttons in harvest + rekam (no <form> anywhere, so
+  behaviour is unchanged; the implicit type was still wrong).
+- `.htmlvalidate.js` turns off exactly two rules, each with its reason written in the file:
+  `no-inline-style` (house style; the CV is one file by design) and `prefer-native-element`
+  (HARvest's drop zone is a drag target first). Everything else in `recommended` is enforced.
+- `package.json` + `package-lock.json` are dev-only. The site still ships zero dependencies.
+- CHROMIUM_PATH env var overrides Playwright's browser lookup — needed in the sandbox where
+  the installed Chromium build does not match what this Playwright version expects.
+- NOTE: pushing `.github/workflows/*` needs a token with the `workflow` scope. If the push is
+  rejected for that reason, the file has to be added from the web UI or a local machine.
+
 ## Standing rules (decided 2026-09-08 — apply without asking again)
 - COPYRIGHT: the repo ships an all-rights-reserved LICENSE and every lab source file carries a
   copyright header. This is NOT open source and must not be relicensed. Keep the headers when

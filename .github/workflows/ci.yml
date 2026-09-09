@@ -1,0 +1,85 @@
+# Continuous integration for biassp.github.io
+#
+# The site itself has no build step and no dependencies — it is HTML, CSS and
+# plain JavaScript served straight from the branch. Everything installed here
+# exists only to check that what gets served is correct.
+#
+# What actually runs, and why each one is here:
+#
+#   sintaks   node --check over every .js file plus the inline <script> blocks
+#             of index.html, concatenated in document order. A single missing
+#             bracket in the CV's inline script blanks the whole page.
+#   markup    parse5 + the W3C Nu validator + html-validate over all 12 HTML
+#             files. Three validators, because they disagree, and the
+#             disagreements are where the real findings live.
+#   tautan    Every relative href and src resolves to a file that exists, and
+#             every #fragment has an element with that id. A renamed folder
+#             breaks a portfolio link silently.
+#   repos     14 jsdom tests over the live GitHub feed in index.html, including
+#             the fallback path: when the API returns 403 the hardcoded cards
+#             must come back. That path is the one nobody would notice failing.
+#   labs      The 3.659 assertions that ship inside the six engine labs, run in
+#             real Chromium against the real pages. This also proves each page
+#             boots: right script order, no CSP violation, no console error.
+#
+# Nothing here deploys. GitHub Pages publishes master on its own; this job only
+# says whether master deserves it.
+
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+# A second push while the first is still running makes the first result
+# worthless, so it is cancelled rather than left to finish.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Uji
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # vnu.jar is a Java program; the runner's default JDK is not guaranteed.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Pasang dependensi uji
+        run: npm ci
+
+      # Only Chromium, and only the browser — the labs need nothing else.
+      - name: Pasang Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Sintaks JavaScript
+        run: npm run test:syntax
+
+      - name: Validasi markup
+        run: npm run test:markup
+
+      - name: Tautan internal
+        run: npm run test:links
+
+      - name: Feed repositori (jsdom)
+        run: npm run test:repos
+
+      - name: Asersi lab (Chromium)
+        run: npm run test:labs

@@ -1,0 +1,23 @@
+{
+  "name": "biassp-github-io",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CV dan portofolio statis. Situsnya sendiri tidak punya satu pun dependensi — semua yang ada di sini hanya untuk pengujian.",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "Bias Satrio Putra",
+  "scripts": {
+    "test": "npm run test:syntax && npm run test:markup && npm run test:links && npm run test:repos && npm run test:labs",
+    "test:syntax": "node test/syntax.test.js",
+    "test:markup": "node test/markup.test.js",
+    "test:links": "node test/links.test.js",
+    "test:repos": "node test/repos.test.js",
+    "test:labs": "node test/labs.test.js"
+  },
+  "devDependencies": {
+    "html-validate": "11.15.0",
+    "jsdom": "30.0.1",
+    "parse5": "8.0.1",
+    "playwright": "1.63.0",
+    "vnu-jar": "26.9.7"
+  }
+}

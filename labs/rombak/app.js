@@ -2662,8 +2662,63 @@
 
   /* ============================================================= TESTS === */
 
+  /* Both the worker path and the main-thread fallback land here, so it lives at
+     module scope rather than inside either of them. */
+  function settle(r, t0) {
+    r.ms = r.ms || (Date.now() - t0);
+    state.tests = r;
+    state.testsBusy = false;
+    paintTests();
+    if (state.view === 'tests') rerender();
+    say(r.failed ? ('Tests: ' + r.failed + ' failed.')
+      : ('Tests: ' + r.passed + ' of ' + r.total + ' passed, ' + r.properties + ' properties.'));
+  }
+
   function runTests() {
     if (state.testsBusy) return;
+    state.testsBusy = true;
+    paintTests();
+    if (state.view === 'tests') rerender();
+    var t0 = Date.now();
+
+    /* The suite is about twenty seconds of uninterrupted work, so on the main
+       thread it is twenty seconds of frozen page. It runs in a worker instead —
+       see tests.worker.js. The main-thread path below is kept as the fallback,
+       because a worker can fail to start for reasons that have nothing to do
+       with this code, and a lab whose badge never resolves is worse than one
+       that stutters. */
+    if (root.Worker) {
+      var w = null;
+      try { w = new root.Worker('tests.worker.js'); } catch (err) { w = null; }
+      if (w) {
+        var handled = false;
+        w.onmessage = function (ev) {
+          if (handled) return;
+          handled = true;
+          var d = ev && ev.data;
+          if (d && d.ok) { settle(d.result, t0); w.terminate(); return; }
+          w.terminate();
+          runTestsOnMainThread(t0, d && d.error);
+        };
+        w.onerror = function (ev) {
+          if (handled) return;
+          handled = true;
+          try { w.terminate(); } catch (e2) { }
+          runTestsOnMainThread(t0, ev && ev.message);
+        };
+        w.postMessage({ cmd: 'run' });
+        return;
+      }
+    }
+    runTestsOnMainThread(t0);
+  }
+
+  /* The original path, unchanged in what it proves. This is also exactly what
+     the CI runner drives: it calls ROMBAK_TESTS.run() in the page and never
+     touches the worker, so moving the badge off-thread changed nothing about
+     what is verified on every push. */
+  function runTestsOnMainThread(t0, workerError) {
+    if (workerError) say('The worker could not run the suite; running it here instead.');
     state.testsBusy = true;
     paintTests();
     if (state.view === 'tests') rerender();
@@ -2671,15 +2726,8 @@
      * the main thread disappears for twenty seconds. run() is synchronous inside
      * a promise: nothing about it yields. */
     setTimeout(function () {
-      var t0 = Date.now();
       T.run().then(function (r) {
-        r.ms = r.ms || (Date.now() - t0);
-        state.tests = r;
-        state.testsBusy = false;
-        paintTests();
-        if (state.view === 'tests') rerender();
-        say(r.failed ? ('Tests: ' + r.failed + ' failed.')
-          : ('Tests: ' + r.passed + ' of ' + r.total + ' passed, ' + r.properties + ' properties.'));
+        settle(r, t0);
       }).catch(function (e) {
         state.tests = {
           results: [{ group: 'runner', name: 'the suite threw', ok: false, message: String(e && e.message || e) }],

@@ -12,7 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Labs — demos you can open and test yourself</title>
     <meta name="description"
-        content="Seven working demo apps that run entirely in a tab: five information systems (clinic, school, warehouse, payroll, accounting) and two engineering demos. The code is readable, assertions run on the page, and no data is sent anywhere.">
+        content="Eight working demo apps that run entirely in a tab: five information systems (clinic, school, warehouse, payroll, accounting) and three engineering demos. The code is readable, assertions run on the page, and no data is sent anywhere.">
     <meta name="author" content="Bias Satrio Putra">
     <meta name="copyright" content="Copyright (c) 2026 Bias Satrio Putra. All rights reserved.">
     <link rel="icon"
@@ -372,8 +372,9 @@
     <main class="wrap">
         <div class="hero">
             <h1 data-i18n-html="hero.title">Demos you can <span class="grad">open and test yourself</span></h1>
-            <p class="lede" data-i18n="hero.lede">Seven applications that run entirely inside a single browser tab. No server, no
-                dependencies, no build step — just plain HTML, CSS and JavaScript. The code is readable, and every
+            <p class="lede" data-i18n="hero.lede">Eight applications that run entirely inside a single browser tab. No server
+                and no build step, and seven of the eight have no dependencies either — just plain HTML, CSS and
+                JavaScript. The eighth vendors SQLite, and says so on its own front page. The code is readable, and every
                 page runs its own assertions the moment it opens, so the claims are yours to verify, not merely to
                 trust. The same assertions are re-run automatically in CI on every change to the repository, in
                 real Chromium, against the very page you are looking at.</p>
@@ -387,16 +388,16 @@
 
             <div class="stats">
                 <div class="stat">
-                    <div class="num">7</div>
+                    <div class="num">8</div>
                     <div class="lbl" data-i18n="stat.apps.lbl">applications</div>
                 </div>
                 <div class="stat">
-                    <div class="num" data-i18n="stat.assert.num">3,659</div>
+                    <div class="num" data-i18n="stat.assert.num">4,671</div>
                     <div class="lbl" data-i18n="stat.assert.lbl">assertions run on the page</div>
                 </div>
                 <div class="stat">
-                    <div class="num">0</div>
-                    <div class="lbl" data-i18n="stat.deps.lbl">dependencies</div>
+                    <div class="num">7/8</div>
+                    <div class="lbl" data-i18n="stat.deps.lbl">labs with zero dependencies</div>
                 </div>
                 <div class="stat">
                     <div class="num">0</div>
@@ -492,11 +493,28 @@
         <section>
             <div class="sec-head">
                 <h2 data-i18n="eng.h2">Engineering demos</h2>
-                <p data-i18n="eng.p">Two that aren't information systems. Both target things that are hard to prove in a
-                    line on a CV: a grasp of HTTP, and what the web platform can do on a phone.</p>
+                <p data-i18n="eng.p">Three that aren't information systems. They target things that are hard to prove in a
+                    line on a CV: a grasp of HTTP, what the web platform can do on a phone, and what happens when a
+                    schema has to change while the rows are already in it.</p>
             </div>
 
             <div class="grid">
+                <a class="lab" href="./rombak/">
+                    <div class="lab-head">
+                        <h3>Rombak</h3><span class="uji" data-i18n="rombak.assert">262 properties</span>
+                    </div>
+                    <p data-i18n-html="rombak.desc">A real SQLite database in the tab — the engine itself, compiled to
+                        WebAssembly — walked forward through nine schema versions against rows that are already in it.
+                        Foreign keys, <code>CHECK</code> constraints, partial indexes, <code>STRICT</code> tables, and
+                        <code>EXPLAIN QUERY PLAN</code> from the real planner.</p>
+                    <div class="hard" data-i18n-html="rombak.hard"><b>The hardest part</b>A table rebuild that commits
+                        successfully, passes every integrity check, reports no error anywhere — and has silently deleted
+                        rows. The difference between the migration that refuses and the one that destroys is one word in
+                        a child table's DDL.</div>
+                    <div class="tags"><span>SQLite</span><span data-i18n="rombak.tag.migrations">Migrations</span><span data-i18n="rombak.tag.plans">Query plans</span><span data-i18n="rombak.tag.integrity">Referential integrity</span></div>
+                    <span class="go" data-i18n="rombak.go">Open Rombak →</span>
+                </a>
+
                 <a class="lab" href="./harvest/">
                     <div class="lab-head">
                         <h3>HARvest</h3><span class="uji" data-i18n="harvest.assert">176 assertions</span>
@@ -552,8 +570,8 @@
                     "id": "Labs — demo yang bisa kamu buka dan uji sendiri"
                 },
                 "meta_desc": {
-                    "en": "Seven working demo apps that run entirely in a tab: five information systems (clinic, school, warehouse, payroll, accounting) and two engineering demos. The code is readable, assertions run on the page, and no data is sent anywhere.",
-                    "id": "Tujuh aplikasi demo yang berjalan penuh di dalam tab: lima sistem informasi (klinik, sekolah, gudang, penggajian, akuntansi) dan dua demo rekayasa. Kode terbaca, asersi berjalan di halaman, tidak ada data yang dikirim ke mana pun."
+                    "en": "Eight working demo apps that run entirely in a tab: five information systems (clinic, school, warehouse, payroll, accounting) and three engineering demos. The code is readable, assertions run on the page, and no data is sent anywhere.",
+                    "id": "Delapan aplikasi demo yang berjalan penuh di dalam tab: lima sistem informasi (klinik, sekolah, gudang, penggajian, akuntansi) dan tiga demo rekayasa. Kode terbaca, asersi berjalan di halaman, tidak ada data yang dikirim ke mana pun."
                 },
                 "nav.back": {
                     "en": "← Back to CV",
@@ -584,16 +602,16 @@
                     "id": "aplikasi"
                 },
                 "stat.assert.num": {
-                    "en": "3,659",
-                    "id": "3.659"
+                    "en": "4,671",
+                    "id": "4.671"
                 },
                 "stat.assert.lbl": {
                     "en": "assertions run on the page",
                     "id": "asersi berjalan di halaman"
                 },
                 "stat.deps.lbl": {
-                    "en": "dependencies",
-                    "id": "dependensi"
+                    "en": "labs with zero dependencies",
+                    "id": "lab tanpa dependensi"
                 },
                 "stat.net.lbl": {
                     "en": "network calls",
@@ -712,8 +730,36 @@
                     "id": "Demo rekayasa"
                 },
                 "eng.p": {
-                    "en": "Two that aren't information systems. Both target things that are hard to prove in a line on a CV: a grasp of HTTP, and what the web platform can do on a phone.",
-                    "id": "Dua yang bukan sistem informasi. Keduanya menyasar hal yang sulit dibuktikan lewat kalimat di CV: pemahaman HTTP, dan kemampuan platform web di ponsel."
+                    "en": "Three that aren't information systems. They target things that are hard to prove in a line on a CV: a grasp of HTTP, what the web platform can do on a phone, and what happens when a schema has to change while the rows are already in it.",
+                    "id": "Tiga yang bukan sistem informasi. Ketiganya menyasar hal yang sulit dibuktikan lewat kalimat di CV: pemahaman HTTP, kemampuan platform web di ponsel, dan apa yang terjadi ketika skema harus berubah sementara barisnya sudah ada di dalamnya."
+                },
+                "rombak.assert": {
+                    "en": "262 properties",
+                    "id": "262 properti"
+                },
+                "rombak.desc": {
+                    "en": "A real SQLite database in the tab — the engine itself, compiled to WebAssembly — walked forward through nine schema versions against rows that are already in it. Foreign keys, <code>CHECK</code> constraints, partial indexes, <code>STRICT</code> tables, and <code>EXPLAIN QUERY PLAN</code> from the real planner.",
+                    "id": "Database SQLite sungguhan di dalam tab — mesinnya sendiri, dikompilasi ke WebAssembly — dijalankan maju melewati sembilan versi skema terhadap baris yang sudah ada di dalamnya. Foreign key, batasan <code>CHECK</code>, partial index, tabel <code>STRICT</code>, dan <code>EXPLAIN QUERY PLAN</code> dari query planner aslinya."
+                },
+                "rombak.hard": {
+                    "en": "<b>The hardest part</b>A table rebuild that commits successfully, passes every integrity check, reports no error anywhere — and has silently deleted rows. The difference between the migration that refuses and the one that destroys is one word in a child table's DDL.",
+                    "id": "<b>Bagian tersulitnya</b>Table rebuild yang commit dengan sukses, lolos setiap pemeriksaan integritas, tidak melaporkan galat sama sekali — dan sudah menghapus baris tanpa suara. Bedanya antara migrasi yang menolak dan migrasi yang menghancurkan adalah satu kata di DDL tabel anaknya."
+                },
+                "rombak.tag.migrations": {
+                    "en": "Migrations",
+                    "id": "Migrasi"
+                },
+                "rombak.tag.plans": {
+                    "en": "Query plans",
+                    "id": "Query plan"
+                },
+                "rombak.tag.integrity": {
+                    "en": "Referential integrity",
+                    "id": "Integritas referensial"
+                },
+                "rombak.go": {
+                    "en": "Open Rombak →",
+                    "id": "Buka Rombak →"
                 },
                 "harvest.assert": {
                     "en": "176 assertions",

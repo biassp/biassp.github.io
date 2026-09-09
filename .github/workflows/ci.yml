@@ -9,18 +9,24 @@
 #   syntax    node --check over every .js file plus the inline <script> blocks
 #             of index.html, concatenated in document order. A single missing
 #             bracket in the CV's inline script blanks the whole page.
-#   markup    parse5 + the W3C Nu validator + html-validate over all 12 HTML
-#             files. Three validators, because they disagree, and the
+#   markup    parse5 + the W3C Nu validator + html-validate over every HTML
+#             file. Three validators, because they disagree, and the
 #             disagreements are where the real findings live.
 #   links     Every relative href and src resolves to a file that exists, and
 #             every #fragment has an element with that id. A renamed folder
 #             breaks a portfolio link silently.
+#   i18n      Every data-i18n key on the two bilingual pages resolves in both
+#             languages. A missing key breaks nothing in English and blanks the
+#             element the moment a visitor presses the language button — so the
+#             person editing the page is the last to find out.
 #   repos     14 jsdom tests over the live GitHub feed in index.html, including
 #             the fallback path: when the API returns 403 the hardcoded cards
 #             must come back. That path is the one nobody would notice failing.
-#   labs      The 3,659 assertions that ship inside the six engine labs, run in
-#             real Chromium against the real pages. This also proves each page
-#             boots: right script order, no CSP violation, no console error.
+#   labs      The 4,671 assertions that ship inside the seven engine labs, run
+#             in real Chromium against the real pages. This also proves each
+#             page boots: right script order, no CSP violation, no console
+#             error — and that every page really did make zero network calls,
+#             which until now was a badge nobody checked.
 #
 # Nothing here deploys. GitHub Pages publishes master on its own; this job only
 # says whether master deserves it.
@@ -77,6 +83,9 @@ jobs:
 
       - name: Internal links
         run: npm run test:links
+
+      - name: Translation keys
+        run: npm run test:i18n
 
       - name: Repository feed (jsdom)
         run: npm run test:repos

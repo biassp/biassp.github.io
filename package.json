@@ -6,10 +6,11 @@
   "license": "SEE LICENSE IN LICENSE",
   "author": "Bias Satrio Putra",
   "scripts": {
-    "test": "npm run test:syntax && npm run test:markup && npm run test:links && npm run test:repos && npm run test:labs",
+    "test": "npm run test:syntax && npm run test:markup && npm run test:links && npm run test:i18n && npm run test:repos && npm run test:labs",
     "test:syntax": "node test/syntax.test.js",
     "test:markup": "node test/markup.test.js",
     "test:links": "node test/links.test.js",
+    "test:i18n": "node test/i18n.test.js",
     "test:repos": "node test/repos.test.js",
     "test:labs": "node test/labs.test.js"
   },

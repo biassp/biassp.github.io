@@ -259,6 +259,34 @@ footer p { margin: 0 0 8px; }
     margin: 30px 0 0;
 }
 
+figure.shot {
+    margin: 24px 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    box-shadow: var(--shadow-sm);
+}
+
+figure.shot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+}
+
+figure.shot figcaption {
+    color: var(--muted);
+    font-size: .85rem;
+    margin-top: 11px;
+    line-height: 1.55;
+}
+
+figure.shot figcaption b { color: var(--text); }
+
+figure[hidden] { display: none !important; }
+
 @media (max-width: 620px) {
     .facts { grid-template-columns: 1fr; }
 }

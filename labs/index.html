@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<!--
+  Labs — biassp.github.io
+  Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+  Not open source. Readable for evaluation only — copying, modification,
+  re-branding or redistribution is not permitted. See /LICENSE.
+-->
+<html lang="id" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Labs — demo yang bisa kamu buka dan uji sendiri</title>
+    <meta name="description"
+        content="Tujuh aplikasi demo yang berjalan penuh di dalam tab: lima sistem informasi (klinik, sekolah, gudang, penggajian, akuntansi) dan dua demo rekayasa. Kode terbaca, asersi berjalan di halaman, tidak ada data yang dikirim ke mana pun.">
+    <meta name="author" content="Bias Satrio Putra">
+    <meta name="copyright" content="Copyright (c) 2026 Bias Satrio Putra. All rights reserved.">
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2032%2032%22%3E%3Crect%20width=%2232%22%20height=%2232%22%20rx=%227%22%20fill=%22%236366f1%22/%3E%3Cpath%20d=%22M9%208h3v9.5a4%204%200%200%200%208%200V8h3v9.5a7%207%200%200%201-14%200z%22%20fill=%22%23fff%22/%3E%3C/svg%3E">
+
+    <style>
+        :root {
+            --bg: #0b1020;
+            --bg-soft: #10162b;
+            --card: #141b33;
+            --card-2: #182142;
+            --border: rgba(255, 255, 255, .08);
+            --border-strong: rgba(255, 255, 255, .16);
+            --text: #eaeefb;
+            --muted: #9aa6c4;
+            --faint: #7f8aad;
+            --accent: #6366f1;
+            --accent-2: #22d3ee;
+            --accent-3: #a855f7;
+            --link: #22d3ee;
+            --focus: #22d3ee;
+            --ok: #34d399;
+            --radius: 16px;
+            --shadow: 0 18px 40px rgba(0, 0, 0, .34);
+            --shadow-sm: 0 6px 18px rgba(0, 0, 0, .22);
+            --grad: linear-gradient(120deg, #6366f1, #a855f7 50%, #22d3ee);
+        }
+
+        html[data-theme="light"] {
+            --bg: #f6f7fb;
+            --bg-soft: #eef1f9;
+            --card: #ffffff;
+            --card-2: #eef1f9;
+            --border: rgba(15, 23, 42, .10);
+            --border-strong: rgba(15, 23, 42, .20);
+            --text: #131a2f;
+            --muted: #4a5578;
+            --faint: #5c6584;
+            /* every accent token is overridden here on purpose: the dark-surface
+               cyan fails contrast on a near-white card, a bug three sibling labs
+               shipped before it was caught. */
+            --accent: #4f46e5;
+            --accent-2: #0e7490;
+            --accent-3: #7c3aed;
+            --link: #0e7490;
+            --focus: #4f46e5;
+            --ok: #047857;
+            --shadow: 0 18px 40px rgba(15, 23, 42, .10);
+            --shadow-sm: 0 6px 18px rgba(15, 23, 42, .07);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a { color: var(--link); }
+
+        :focus-visible {
+            outline: 2px solid var(--focus);
+            outline-offset: 2px;
+            border-radius: 6px;
+        }
+
+        .wrap {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header.top {
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-soft);
+        }
+
+        .top-in {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 16px 0;
+            flex-wrap: wrap;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .mark {
+            width: 40px;
+            height: 40px;
+            border-radius: 11px;
+            background: var(--grad);
+            display: grid;
+            place-items: center;
+            color: #fff;
+            font-weight: 700;
+            font-size: .95rem;
+            flex: none;
+        }
+
+        .brand b { font-size: 1.05rem; }
+
+        .brand .who {
+            display: block;
+            color: var(--muted);
+            font-size: .82rem;
+            font-weight: 400;
+        }
+
+        .tools { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .btn {
+            font: inherit;
+            font-size: .84rem;
+            font-weight: 600;
+            padding: 8px 14px;
+            border-radius: 100px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: .2s;
+        }
+
+        .btn:hover { border-color: var(--border-strong); }
+
+        .hero { padding: 44px 0 6px; }
+
+        h1 {
+            font-size: clamp(1.7rem, 4.4vw, 2.5rem);
+            line-height: 1.15;
+            margin: 0 0 14px;
+            letter-spacing: -.02em;
+        }
+
+        .grad {
+            background: var(--grad);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .lede {
+            color: var(--muted);
+            font-size: 1.02rem;
+            max-width: 68ch;
+            margin: 0 0 18px;
+        }
+
+        .note {
+            border-left: 3px solid var(--accent);
+            background: var(--card);
+            border-radius: 0 12px 12px 0;
+            padding: 14px 18px;
+            margin: 22px 0 6px;
+            font-size: .92rem;
+            color: var(--muted);
+        }
+
+        .note b { color: var(--text); }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin: 26px 0 4px;
+        }
+
+        .stat {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 18px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stat .num {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: var(--grad);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat .lbl {
+            color: var(--muted);
+            font-size: .8rem;
+        }
+
+        section { padding: 30px 0 0; }
+
+        .sec-head { margin: 26px 0 4px; }
+
+        .sec-head h2 {
+            font-size: 1.22rem;
+            margin: 0 0 4px;
+        }
+
+        .sec-head p {
+            color: var(--muted);
+            font-size: .92rem;
+            margin: 0;
+            max-width: 70ch;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+            margin-top: 18px;
+        }
+
+        .lab {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
+            transition: .25s;
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .lab:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-strong);
+            box-shadow: var(--shadow);
+        }
+
+        .lab-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .lab-head h3 {
+            margin: 0;
+            font-size: 1.12rem;
+        }
+
+        .uji {
+            font-size: .72rem;
+            font-weight: 600;
+            color: var(--ok);
+            white-space: nowrap;
+        }
+
+        .lab p {
+            margin: 0;
+            color: var(--muted);
+            font-size: .91rem;
+            flex: 1;
+        }
+
+        .hard {
+            font-size: .87rem;
+            color: var(--text);
+            background: var(--card-2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+
+        .hard b {
+            display: block;
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--faint);
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .tags span {
+            font-size: .72rem;
+            padding: 4px 9px;
+            border-radius: 7px;
+            background: var(--card-2);
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+
+        .go {
+            font-size: .86rem;
+            font-weight: 600;
+            color: var(--link);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        footer {
+            margin-top: 52px;
+            border-top: 1px solid var(--border);
+            padding: 24px 0 40px;
+            color: var(--faint);
+            font-size: .85rem;
+        }
+
+        footer p { margin: 0 0 8px; max-width: 74ch; }
+
+        @media (max-width: 900px) {
+            .grid { grid-template-columns: 1fr; }
+            .stats { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * { transition: none !important; }
+            .lab:hover { transform: none; }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="top">
+        <div class="wrap top-in">
+            <div class="brand">
+                <span class="mark" aria-hidden="true">LB</span>
+                <div>
+                    <b>Labs</b>
+                    <span class="who">Bias Satrio Putra</span>
+                </div>
+            </div>
+            <div class="tools">
+                <button class="btn" type="button" id="tema" aria-pressed="false">Terang</button>
+                <a class="btn" href="../">← Kembali ke CV</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="wrap">
+        <div class="hero">
+            <h1>Demo yang bisa kamu <span class="grad">buka dan uji sendiri</span></h1>
+            <p class="lede">Tujuh aplikasi yang berjalan penuh di dalam satu tab browser. Tanpa server, tanpa
+                dependensi, tanpa langkah build — HTML, CSS dan JavaScript biasa. Kodenya bisa dibaca, dan setiap
+                halaman menjalankan asersinya sendiri saat dibuka, jadi klaimnya bisa kamu periksa, bukan cuma
+                dipercaya.</p>
+
+            <div class="note">
+                <b>Semua data di sini fabrikasi.</b> Tidak ada pasien, siswa, karyawan, pemasok atau perusahaan
+                nyata — semuanya dibangkitkan dari bilangan seed di dalam kode. Tidak ada NIK, NPWP, NISN atau
+                nomor BPJS yang berlaku. Tidak ada satu pun halaman yang mengirim data ke mana pun; masing-masing
+                menampilkan penghitung panggilan jaringan yang tetap di angka nol.
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <div class="num">7</div>
+                    <div class="lbl">aplikasi</div>
+                </div>
+                <div class="stat">
+                    <div class="num">3.659</div>
+                    <div class="lbl">asersi berjalan di halaman</div>
+                </div>
+                <div class="stat">
+                    <div class="num">0</div>
+                    <div class="lbl">dependensi</div>
+                </div>
+                <div class="stat">
+                    <div class="num">0</div>
+                    <div class="lbl">panggilan jaringan</div>
+                </div>
+            </div>
+        </div>
+
+        <section>
+            <div class="sec-head">
+                <h2>Sistem informasi</h2>
+                <p>Lima sektor yang paling sering dipesan di pasar Indonesia. Yang dibuktikan di sini bukan
+                    kemampuan membuat CRUD, tapi apakah aturan domainnya benar — penomoran rekam medis, bentrok
+                    jadwal, harga pokok persediaan, PPh 21, dan persamaan akuntansi.</p>
+            </div>
+
+            <div class="grid">
+                <a class="lab" href="./rekam/">
+                    <div class="lab-head">
+                        <h3>Rekam</h3><span class="uji">379 asersi</span>
+                    </div>
+                    <p>Sistem informasi klinik — antrian, rekam medis SOAP, kode ICD-10, resep dengan cek interaksi
+                        obat, kasir. Peran pendaftaran, perawat, dokter dan apoteker melihat layar berbeda.</p>
+                    <div class="hard"><b>Bagian tersulitnya</b>Jejak audit append-only dengan rantai hash: koreksi
+                        dibuat sebagai adendum yang menggantikan tanpa memusnahkan aslinya, dan ada tombol yang
+                        memverifikasi rantainya sampai ketemu titik yang disunting.</div>
+                    <div class="tags"><span>ICD-10</span><span>SOAP</span><span>Hash chain</span><span>IndexedDB</span></div>
+                    <span class="go">Buka Rekam →</span>
+                </a>
+
+                <a class="lab" href="./siakad/">
+                    <div class="lab-head">
+                        <h3>SIAKAD</h3><span class="uji">309 asersi</span>
+                    </div>
+                    <p>Sistem informasi akademik SMP — NISN dan NIS dibedakan, semuanya ter-scope ke tahun ajaran,
+                        penilaian berbobot dengan KKM dan predikat, presensi, rapor, PPDB berkuota, SPP.</p>
+                    <div class="hard"><b>Bagian tersulitnya</b>Penyusunan jadwal sebagai constraint satisfaction
+                        problem: backtracking dengan forward checking di Web Worker. Kendala keras tidak pernah
+                        dilanggar — dan kalau jadwalnya mustahil, dia membuktikannya, bukan mengeluarkan jadwal
+                        bentrok.</div>
+                    <div class="tags"><span>CSP solver</span><span>Web Worker</span><span>Kurikulum 2013</span><span>Rapor</span></div>
+                    <span class="go">Buka SIAKAD →</span>
+                </a>
+
+                <a class="lab" href="./gudang/">
+                    <div class="lab-head">
+                        <h3>Gudang</h3><span class="uji">568 asersi</span>
+                    </div>
+                    <p>Persediaan, gudang dan kasir — kartu stok, multi-gudang dengan transfer in-transit, satuan
+                        berjenjang, stock opname, PO sampai penerimaan sebagian, POS dengan PPN 11%.</p>
+                    <div class="hard"><b>Bagian tersulitnya</b>Saldo stok tidak pernah disimpan, selalu diturunkan
+                        dari buku besar. HPP FIFO berlapis dan rata-rata tertimbang berdampingan, dan transaksi
+                        bertanggal mundur memicu hitung ulang seluruh HPP setelahnya.</div>
+                    <div class="tags"><span>FIFO + rata-rata</span><span>Backdating</span><span>Multi-gudang</span><span>PPN 11%</span></div>
+                    <span class="go">Buka Gudang →</span>
+                </a>
+
+                <a class="lab" href="./payroll/">
+                    <div class="lab-head">
+                        <h3>Payroll</h3><span class="uji">953 asersi</span>
+                    </div>
+                    <p>Kepegawaian dan penggajian — BPJS Kesehatan dan Ketenagakerjaan dengan plafonnya, lembur
+                        per Kepmenaker 102/2004, THR proporsional, cuti, slip gaji, 1721-A1.</p>
+                    <div class="hard"><b>Bagian tersulitnya</b>PPh 21 rezim TER: tarif efektif bulanan
+                        Januari–November, lalu perhitungan ulang tahunan di Desember. Jumlah dua belas potongan
+                        wajib sama persis dengan hitungan setahun — termasuk untuk yang masuk atau keluar di
+                        tengah tahun.</div>
+                    <div class="tags"><span>PPh 21 TER</span><span>BPJS</span><span>Lembur</span><span>THR</span></div>
+                    <span class="go">Buka Payroll →</span>
+                </a>
+
+                <a class="lab" href="./buku/">
+                    <div class="lab-head">
+                        <h3>Buku</h3><span class="uji">1.274 asersi</span>
+                    </div>
+                    <p>Akuntansi berpasangan untuk UMKM — bagan akun, jurnal umum, buku besar, neraca saldo,
+                        penyesuaian, jurnal penutup, kunci periode, posisi PPN, PPh final 0,5%. Mengikuti SAK EMKM.</p>
+                    <div class="hard"><b>Bagian tersulitnya</b>Laporan arus kas metode tidak langsung yang benar-benar
+                        rekonsiliasi ke pergerakan kas di buku besar — bukan angka penyeimbang. Aset = Liabilitas +
+                        Ekuitas dijaga di setiap tanggal, bukan cuma saat tutup buku.</div>
+                    <div class="tags"><span>Double-entry</span><span>Arus kas</span><span>SAK EMKM</span><span>PPh final</span></div>
+                    <span class="go">Buka Buku →</span>
+                </a>
+            </div>
+        </section>
+
+        <section>
+            <div class="sec-head">
+                <h2>Demo rekayasa</h2>
+                <p>Dua yang bukan sistem informasi. Keduanya menyasar hal yang sulit dibuktikan lewat kalimat di
+                    CV: pemahaman HTTP, dan kemampuan platform web di ponsel.</p>
+            </div>
+
+            <div class="grid">
+                <a class="lab" href="./harvest/">
+                    <div class="lab-head">
+                        <h3>HARvest</h3><span class="uji">176 asersi</span>
+                    </div>
+                    <p>Jatuhkan berkas <code>.har</code> dari DevTools kamu sendiri, dan dia merekayasa balik API di
+                        baliknya — pola endpoint, persentil latensi, audit HTTP dan keamanan, draf OpenAPI 3.1.</p>
+                    <div class="hard"><b>Bagian tersulitnya</b>Memulihkan kontrak API dari lalu lintas tanpa label:
+                        membedakan segmen literal dari parameter lewat bentuk token dan kardinalitas saudaranya,
+                        lalu menggabungkan skema secara urutan-independen.</div>
+                    <div class="tags"><span>OpenAPI 3.1</span><span>HTTP semantics</span><span>Keamanan</span><span>Web Worker</span></div>
+                    <span class="go">Buka HARvest →</span>
+                </a>
+
+                <a class="lab" href="./saku/">
+                    <div class="lab-head">
+                        <h3>Saku</h3><span class="uji">PWA</span>
+                    </div>
+                    <p>PWA offline-first yang bisa dipasang ke layar utama. Service worker-nya sendiri yang menjawab
+                        POST <code>multipart/form-data</code> dari share sheet Android — dengan aplikasi tertutup
+                        dan radio mati.</p>
+                    <div class="hard"><b>Bagian tersulitnya</b>Menulis data yang datang ketika penulisnya adalah
+                        sistem operasi dan aplikasinya tidak berjalan: parsing FormData di dalam fetch handler,
+                        satu transaksi IndexedDB, lalu balas 303 supaya tombol kembali tidak menggandakannya.</div>
+                    <div class="tags"><span>Service Worker</span><span>Web Share Target</span><span>IndexedDB</span><span>Offline</span></div>
+                    <span class="go">Buka Saku →</span>
+                </a>
+            </div>
+        </section>
+
+        <footer>
+            <p><b>Cara membaca demo ini.</b> Tiap halaman punya tab <i>Uji</i> yang menjalankan asersinya di depan
+                kamu, dan penghitung panggilan jaringan di bagian atas. Angka yang ditampilkan dihitung dari data
+                di dalam tab, bukan dari nilai yang disimpan — itu justru yang diuji.</p>
+            <p>Ini demo, bukan produk siap pakai, dan bukan nasihat medis, pajak maupun akuntansi. Batasan tiap
+                aplikasi ditulis apa adanya di berkas <code>README.md</code> di dalam foldernya masing-masing.</p>
+            <p>© 2026 Bias Satrio Putra. Seluruh hak dilindungi. Bukan open source — boleh dibaca untuk penilaian,
+                tidak untuk disalin, dimodifikasi, di-rebrand atau diterbitkan ulang. Lihat <a href="../LICENSE">LICENSE</a>.</p>
+        </footer>
+    </main>
+
+    <script>
+        /*!
+         * Labs index — biassp.github.io
+         * Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+         */
+        (function () {
+            var root = document.documentElement;
+            var btn = document.getElementById('tema');
+            if (!btn) return;
+
+            // localStorage throws outright when a browser blocks site data; an
+            // unguarded read here would kill the rest of this script.
+            var saved = null;
+            try { saved = localStorage.getItem('theme'); } catch (err) { }
+            if (saved === 'light' || saved === 'dark') root.setAttribute('data-theme', saved);
+
+            function render() {
+                var light = root.getAttribute('data-theme') === 'light';
+                btn.textContent = light ? 'Gelap' : 'Terang';
+                btn.setAttribute('aria-pressed', light ? 'true' : 'false');
+            }
+            render();
+
+            btn.addEventListener('click', function () {
+                var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+                root.setAttribute('data-theme', next);
+                try { localStorage.setItem('theme', next); } catch (err) { }
+                render();
+            });
+        })();
+    </script>
+</body>
+
+</html>

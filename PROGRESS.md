@@ -94,8 +94,20 @@ Order agreed: rekam (medical) -> siakad (school) -> inventory/POS -> keuangan ->
                 asserted to the rupiah. No LIFO — Indonesian tax law does not permit it.
                 568 in-page assertions. Its build workflow was killed mid-run by a session
                 limit and resumed; the two completed reviews replayed from cache.
-  [ ] keuangan / akuntansi UMKM (double-entry — must be genuinely correct or not shipped)
-  [ ] HR / payroll (PPh 21, BPJS Ketenagakerjaan)
+  [x] payroll — HR + payroll. PPh 21 TER with a December true-up: the sum of twelve monthly
+                deductions equals the annual figure for all 62 employee-years, mid-year joiners
+                and leavers included. 953 assertions.
+  [x] buku    — double-entry accounting. All 7 invariants hold; the indirect cash flow statement
+                reconciles to raw journal cash movement to the rupiah (verified independently,
+                not read off the badge). 1274 assertions.
+  [x] /labs/ index page + ONE suite portfolio card, as agreed. Suite total: 3.483 assertions
+                across the five sistem informasi; 3.659 including HARvest.
+
+RECURRING BUG, seen THREE times (gudang, buku, payroll) despite being an explicit ban in the
+brief: a "proof" panel that verifies itself instead of the data — recomputing a figure from the
+same cached total it claims to check, so the difference can only ever be zero. Whenever a lab
+claims an invariant on screen, confirm the check reads the RAW journal/ledger/payslip records.
+Two of the three were caught only because a reviewer was told to look for exactly this.
 
 SHIPPED SO FAR (both live on master, both independently re-verified by the main session, not
 just self-reported by the build agent):

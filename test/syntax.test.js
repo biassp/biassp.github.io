@@ -68,7 +68,7 @@ for (const file of walk(ROOT, '.js', []).sort()) {
     console.log(RED + '✗ ' + rel + OFF + '\n' + String(err.stderr || err.stdout).trim());
   }
 }
-console.log(GREEN + '✓' + OFF + ' ' + checked + ' berkas .js lolos node --check');
+console.log(GREEN + '✓' + OFF + ' ' + checked + ' .js files passed node --check');
 
 /* --------------------------------------------------- inline <script> blocks */
 
@@ -81,7 +81,7 @@ for (const file of walk(ROOT, '.html', []).sort()) {
   fs.writeFileSync(tmp, blocks.join('\n;\n'));
   try {
     execFileSync(process.execPath, ['--check', tmp], { stdio: 'pipe' });
-    console.log(GREEN + '✓' + OFF + ' ' + rel + ' ' + DIM + '(' + blocks.length + ' blok inline, digabung)' + OFF);
+    console.log(GREEN + '✓' + OFF + ' ' + rel + ' ' + DIM + '(' + blocks.length + (blocks.length === 1 ? ' inline block' : ' inline blocks, concatenated') + ')' + OFF);
   } catch (err) {
     failures++;
     console.log(RED + '✗ ' + rel + ' (inline)' + OFF + '\n' + String(err.stderr || err.stdout).trim());
@@ -91,7 +91,7 @@ for (const file of walk(ROOT, '.html', []).sort()) {
 }
 
 if (failures > 0) {
-  console.log('\n' + RED + failures + ' berkas gagal.' + OFF);
+  console.log('\n' + RED + failures + ' files failed.' + OFF);
   process.exit(1);
 }
-console.log('\nSemua JavaScript lolos pemeriksaan sintaks.');
+console.log('\nAll JavaScript passed the syntax check.');

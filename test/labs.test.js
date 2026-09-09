@@ -101,7 +101,7 @@ async function main() {
       await page.goto(url, { waitUntil: 'load' });
       out = await page.evaluate(lab.call);
     } catch (err) {
-      console.log(RED + '✗ ' + lab.dir + OFF + '  halaman gagal dimuat: ' + err.message);
+      console.log(RED + '✗ ' + lab.dir + OFF + '  page failed to load: ' + err.message);
       pagesBroken++;
       await page.close();
       continue;
@@ -114,13 +114,13 @@ async function main() {
     const ok = out.failed === 0 && noise.length === 0;
     console.log(
       (ok ? GREEN + '✓' : RED + '✗') + OFF + ' ' + lab.dir.padEnd(8) +
-      String(out.passed).padStart(5) + ' lolos, ' + out.failed + ' gagal ' +
-      DIM + '(' + out.total + ' asersi)' + OFF
+      String(out.passed).padStart(5) + ' passed, ' + out.failed + ' failed ' +
+      DIM + '(' + out.total + ' assertions)' + OFF
     );
     for (const f of failed.slice(0, 20)) {
       console.log('    ' + RED + f.group + ' → ' + f.name + OFF + '\n      ' + f.message);
     }
-    if (failed.length > 20) console.log('    ' + DIM + '… ' + (failed.length - 20) + ' kegagalan lain' + OFF);
+    if (failed.length > 20) console.log('    ' + DIM + '… ' + (failed.length - 20) + ' more failures' + OFF);
     for (const n of noise) console.log('    ' + RED + n + OFF);
     if (noise.length) pagesBroken++;
 
@@ -130,7 +130,7 @@ async function main() {
   await browser.close();
   server.close();
 
-  console.log('\n' + totalPassed + ' asersi lolos, ' + totalFailed + ' gagal, di ' + LABS.length + ' lab.');
+  console.log('\n' + totalPassed + ' assertions passed, ' + totalFailed + ' failed, across ' + LABS.length + ' labs.');
   if (totalFailed > 0 || pagesBroken > 0) process.exit(1);
 }
 

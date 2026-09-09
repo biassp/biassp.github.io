@@ -940,20 +940,21 @@
                 <span>Bias Satrio Putra</span>
             </a>
             <nav class="nav-links">
-                <a href="#about">About</a>
-                <a href="#experience">Experience</a>
-                <a href="#portfolio">Portfolio</a>
-                <a href="#repos">Repos</a>
-                <a href="#skills">Skills</a>
-                <a href="#education">Education</a>
+                <a href="#about" data-i18n="nav.about">About</a>
+                <a href="#experience" data-i18n="nav.experience">Experience</a>
+                <a href="#portfolio" data-i18n="nav.portfolio">Portfolio</a>
+                <a href="#repos" data-i18n="nav.repos">Repos</a>
+                <a href="#skills" data-i18n="nav.skills">Skills</a>
+                <a href="#education" data-i18n="nav.education">Education</a>
             </nav>
             <div class="nav-actions">
                 <button type="button" class="icon-btn" id="themeToggle" aria-label="Toggle theme" title="Toggle theme">
                     <svg id="iconMoon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
                 </button>
+                <button type="button" class="icon-btn" id="langToggle" aria-label="Switch language" title="Switch language" style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.82rem">ID</button>
                 <a class="btn btn-primary" href="#" onclick="window.print();return false;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                    <span>Download CV</span>
+                    <span data-i18n="btn.downloadcv">Download CV</span>
                 </a>
             </div>
         </div>
@@ -963,21 +964,18 @@
         <!-- HERO -->
         <section class="hero">
             <div class="hero-text reveal">
-                <span class="hero-eyebrow"><span class="pulse"></span>Available for opportunities</span>
-                <h1>Hi, I'm <span class="grad">Bias Satrio Putra</span></h1>
-                <div class="role">IT Professional · Full-Stack Developer &amp; Product Builder</div>
-                <p class="lede">I design, build, and ship end-to-end web &amp; mobile products — from backend
-                    APIs and databases to polished front-ends and live deployment. Indonesian, based in
-                    Colombo, Sri Lanka, with 7+ years across IT support, development, and teaching — and
-                    products shipped in four markets.</p>
+                <span class="hero-eyebrow" data-i18n-html="hero.eyebrow"><span class="pulse"></span>Available for opportunities</span>
+                <h1 data-i18n-html="hero.title">Hi, I'm <span class="grad">Bias Satrio Putra</span></h1>
+                <div class="role" data-i18n="hero.role">IT Professional · Full-Stack Developer &amp; Product Builder</div>
+                <p class="lede" data-i18n="hero.lede">I design, build, and ship end-to-end web &amp; mobile products — from backend APIs and databases to polished front-ends and live deployment. Indonesian, based in Colombo, Sri Lanka, with 7+ years across IT support, development, and teaching — and products shipped in four markets.</p>
                 <div class="hero-cta">
                     <a class="btn btn-primary" href="#portfolio">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-                        View Portfolio
+                        <span data-i18n="hero.cta.portfolio">View Portfolio</span>
                     </a>
                     <a class="btn btn-ghost" href="mailto:biascanester@gmail.com">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>
-                        Get in Touch
+                        <span data-i18n="hero.cta.contact">Get in Touch</span>
                     </a>
                     <a class="btn btn-ghost" href="https://www.linkedin.com/in/bias-satrio-putra-b166a211b/" target="_blank" rel="noopener">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.44-2.13 2.94v5.67H9.35V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.55V9h3.57v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
@@ -988,39 +986,33 @@
             <div class="hero-photo reveal">
                 <div class="ring"></div>
                 <img src="assets/images/profile-2026.png" alt="Bias Satrio Putra">
-                <div class="badge"><span class="pulse" style="background:#34d399;box-shadow:none"></span>Colombo, LK</div>
+                <div class="badge"><span class="pulse" style="background:#34d399;box-shadow:none"></span><span data-i18n="hero.badge">Colombo, LK</span></div>
             </div>
         </section>
 
         <!-- STATS -->
         <section class="stats reveal">
-            <div class="stat"><div class="num">7+</div><div class="lbl">Years in IT</div></div>
-            <div class="stat"><div class="num">9+</div><div class="lbl">Live products shipped</div></div>
-            <div class="stat"><div class="num">Web + Mobile</div><div class="lbl">Full-stack scope</div></div>
-            <div class="stat"><div class="num">Web · SysOps</div><div class="lbl">Dev &amp; infrastructure</div></div>
+            <div class="stat"><div class="num">7+</div><div class="lbl" data-i18n="stat.years.lbl">Years in IT</div></div>
+            <div class="stat"><div class="num">9+</div><div class="lbl" data-i18n="stat.products.lbl">Live products shipped</div></div>
+            <div class="stat"><div class="num" data-i18n="stat.scope.num">Web + Mobile</div><div class="lbl" data-i18n="stat.scope.lbl">Full-stack scope</div></div>
+            <div class="stat"><div class="num" data-i18n="stat.infra.num">Web · SysOps</div><div class="lbl" data-i18n="stat.infra.lbl">Dev &amp; infrastructure</div></div>
         </section>
 
         <!-- ABOUT + SKILLS SNAPSHOT -->
         <section class="block" id="about">
             <div class="sec-head reveal">
                 <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-                <div><h2>About Me</h2><div class="sub">Who I am and what I work with</div></div>
+                <div><h2 data-i18n="about.head.title">About Me</h2><div class="sub" data-i18n="about.head.sub">Who I am and what I work with</div></div>
             </div>
             <div class="grid-2">
                 <div class="card reveal">
-                    <h3>Profile</h3>
-                    <p>I'm passionate about technology and education, and I genuinely enjoy learning new things —
-                        especially in the IT field. Over the years I've grown from IT support and teaching into
-                        hands-on full-stack development, building and launching real products that people use.</p>
-                    <p>My experience spans IT support and web-development instruction in Indonesia, application
-                        support at Bisnis Integrasi Global, and web development &amp; database administration at
-                        Infinix Philippines in Makati. Today, as a Senior Web Developer at Octo Global, I focus on
-                        shipping web and mobile products end-to-end — from API and database design to front-end
-                        and production deployment.</p>
+                    <h3 data-i18n="about.profile.title">Profile</h3>
+                    <p data-i18n="about.profile.p1">I'm passionate about technology and education, and I genuinely enjoy learning new things — especially in the IT field. Over the years I've grown from IT support and teaching into hands-on full-stack development, building and launching real products that people use.</p>
+                    <p data-i18n="about.profile.p2">My experience spans IT support and web-development instruction in Indonesia, application support at Bisnis Integrasi Global, and web development &amp; database administration at Infinix Philippines in Makati. Today, as a Senior Web Developer at Octo Global, I focus on shipping web and mobile products end-to-end — from API and database design to front-end and production deployment.</p>
                 </div>
                 <div class="card reveal">
-                    <h3>Toolbox</h3>
-                    <p style="margin-bottom:16px">The languages, tools and platforms I reach for most often.</p>
+                    <h3 data-i18n="about.toolbox.title">Toolbox</h3>
+                    <p style="margin-bottom:16px" data-i18n="about.toolbox.p">The languages, tools and platforms I reach for most often.</p>
                     <div class="tags">
                         <span class="tag">PHP</span>
                         <span class="tag">JavaScript</span>
@@ -1047,73 +1039,63 @@
         <section class="block" id="experience">
             <div class="sec-head reveal">
                 <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
-                <div><h2>Work Experience</h2><div class="sub">A track record across development, operations &amp; teaching</div></div>
+                <div><h2 data-i18n="exp.head.title">Work Experience</h2><div class="sub" data-i18n="exp.head.sub">A track record across development, operations &amp; teaching</div></div>
             </div>
             <div class="timeline">
                 <div class="tl-item reveal">
                     <div class="tl-card">
-                        <div class="tl-top"><span class="tl-role">Senior Web Developer</span><span class="tl-time">Jul 2025 – Present</span></div>
-                        <div class="tl-co">Octo Global · Colombo, Sri Lanka</div>
-                        <p>Lead web development end-to-end — architecting, building and maintaining production web
-                            applications, from back-end APIs and databases to responsive, high-performance front-ends.</p>
+                        <div class="tl-top"><span class="tl-role" data-i18n="exp.octo.role">Senior Web Developer</span><span class="tl-time" data-i18n="exp.octo.time">Jul 2025 – Present</span></div>
+                        <div class="tl-co" data-i18n="exp.octo.co">Octo Global · Colombo, Sri Lanka</div>
+                        <p data-i18n="exp.octo.desc">Lead web development end-to-end — architecting, building and maintaining production web applications, from back-end APIs and databases to responsive, high-performance front-ends.</p>
                     </div>
                 </div>
                 <div class="tl-item reveal">
                     <div class="tl-card">
-                        <div class="tl-top"><span class="tl-role">Website Developer</span><span class="tl-time">Oct 2023 – Dec 2025</span></div>
-                        <div class="tl-co">Infinix Philippines · Makati, Metro Manila · Remote from Jul 2025</div>
-                        <p>Built and maintained company websites and internal web tools — developing new features,
-                            optimizing performance, and ensuring reliable production deployments. Retained remotely
-                            after relocating to Colombo, running in parallel with the Octo Global role until the
-                            engagement closed.</p>
+                        <div class="tl-top"><span class="tl-role" data-i18n="exp.infinixweb.role">Website Developer</span><span class="tl-time" data-i18n="exp.infinixweb.time">Oct 2023 – Dec 2025</span></div>
+                        <div class="tl-co" data-i18n="exp.infinixweb.co">Infinix Philippines · Makati, Metro Manila · Remote from Jul 2025</div>
+                        <p data-i18n="exp.infinixweb.desc">Built and maintained company websites and internal web tools — developing new features, optimizing performance, and ensuring reliable production deployments. Retained remotely after relocating to Colombo, running in parallel with the Octo Global role until the engagement closed.</p>
                     </div>
                 </div>
                 <div class="tl-item reveal">
                     <div class="tl-card">
-                        <div class="tl-top"><span class="tl-role">Database Administrator</span><span class="tl-time">Oct 2022 – Oct 2023</span></div>
-                        <div class="tl-co">Infinix Philippines · Makati, Metro Manila</div>
-                        <p>Administered and maintained company databases — ensuring data integrity, running backups,
-                            optimizing queries, and supporting application teams with reliable data access.</p>
+                        <div class="tl-top"><span class="tl-role" data-i18n="exp.infinixdba.role">Database Administrator</span><span class="tl-time" data-i18n="exp.infinixdba.time">Oct 2022 – Oct 2023</span></div>
+                        <div class="tl-co" data-i18n="exp.infinixdba.co">Infinix Philippines · Makati, Metro Manila</div>
+                        <p data-i18n="exp.infinixdba.desc">Administered and maintained company databases — ensuring data integrity, running backups, optimizing queries, and supporting application teams with reliable data access.</p>
                     </div>
                 </div>
                 <div class="tl-item reveal">
                     <div class="tl-card">
-                        <div class="tl-top"><span class="tl-role">Programming Teacher</span><span class="tl-time">Jun – Oct 2022</span></div>
-                        <div class="tl-co">Shane English Center Indonesia · West Jakarta</div>
-                        <p>Taught programming fundamentals to students, designing lessons and hands-on exercises that
-                            made technical concepts approachable and practical.</p>
+                        <div class="tl-top"><span class="tl-role" data-i18n="exp.shane.role">Programming Teacher</span><span class="tl-time" data-i18n="exp.shane.time">Jun – Oct 2022</span></div>
+                        <div class="tl-co" data-i18n="exp.shane.co">Shane English Center Indonesia · West Jakarta</div>
+                        <p data-i18n="exp.shane.desc">Taught programming fundamentals to students, designing lessons and hands-on exercises that made technical concepts approachable and practical.</p>
                     </div>
                 </div>
                 <div class="tl-item reveal">
                     <div class="tl-card">
-                        <div class="tl-top"><span class="tl-role">Private Programming Tutor</span><span class="tl-time">Dec 2021 – Jul 2022</span></div>
-                        <div class="tl-co">Flashcom Indonesia · DKI Jakarta</div>
-                        <p>Delivered one-on-one programming tutoring, tailoring the curriculum to each learner's pace
-                            and goals across web and general programming topics.</p>
+                        <div class="tl-top"><span class="tl-role" data-i18n="exp.flashcom.role">Private Programming Tutor</span><span class="tl-time" data-i18n="exp.flashcom.time">Dec 2021 – Jul 2022</span></div>
+                        <div class="tl-co" data-i18n="exp.flashcom.co">Flashcom Indonesia · DKI Jakarta</div>
+                        <p data-i18n="exp.flashcom.desc">Delivered one-on-one programming tutoring, tailoring the curriculum to each learner's pace and goals across web and general programming topics.</p>
                     </div>
                 </div>
                 <div class="tl-item reveal">
                     <div class="tl-card">
-                        <div class="tl-top"><span class="tl-role">App Support Developer</span><span class="tl-time">May – Nov 2021</span></div>
-                        <div class="tl-co">PT Bisnis Integrasi Global · Kuningan, South Jakarta</div>
-                        <p>Analyzed application documentation and source code, then modified and added features to
-                            existing applications according to client requirements.</p>
+                        <div class="tl-top"><span class="tl-role" data-i18n="exp.big.role">App Support Developer</span><span class="tl-time" data-i18n="exp.big.time">May – Nov 2021</span></div>
+                        <div class="tl-co" data-i18n="exp.big.co">PT Bisnis Integrasi Global · Kuningan, South Jakarta</div>
+                        <p data-i18n="exp.big.desc">Analyzed application documentation and source code, then modified and added features to existing applications according to client requirements.</p>
                     </div>
                 </div>
                 <div class="tl-item reveal">
                     <div class="tl-card">
-                        <div class="tl-top"><span class="tl-role">Web Development Instructor</span><span class="tl-time">Aug 2018 – Apr 2019</span></div>
-                        <div class="tl-co">Balai Latihan Kerja (BLK) Pengembangan Industri · Bekasi</div>
-                        <p>Trained trainees in web development from fundamentals to advanced topics, and fostered an
-                            active, conducive classroom learning environment.</p>
+                        <div class="tl-top"><span class="tl-role" data-i18n="exp.blk.role">Web Development Instructor</span><span class="tl-time" data-i18n="exp.blk.time">Aug 2018 – Apr 2019</span></div>
+                        <div class="tl-co" data-i18n="exp.blk.co">Balai Latihan Kerja (BLK) Pengembangan Industri · Bekasi</div>
+                        <p data-i18n="exp.blk.desc">Trained trainees in web development from fundamentals to advanced topics, and fostered an active, conducive classroom learning environment.</p>
                     </div>
                 </div>
                 <div class="tl-item reveal">
                     <div class="tl-card">
-                        <div class="tl-top"><span class="tl-role">IT Support — Internship</span><span class="tl-time">Apr – Oct 2018</span></div>
-                        <div class="tl-co">Divisi IT Support, Perum PPD · East Jakarta</div>
-                        <p>Implemented network installations and troubleshot networks and software across all divisions
-                            of the Djakarta Passenger Transportation Corporation.</p>
+                        <div class="tl-top"><span class="tl-role" data-i18n="exp.ppd.role">IT Support — Internship</span><span class="tl-time" data-i18n="exp.ppd.time">Apr – Oct 2018</span></div>
+                        <div class="tl-co" data-i18n="exp.ppd.co">Divisi IT Support, Perum PPD · East Jakarta</div>
+                        <p data-i18n="exp.ppd.desc">Implemented network installations and troubleshot networks and software across all divisions of the Djakarta Passenger Transportation Corporation.</p>
                     </div>
                 </div>
             </div>
@@ -1123,7 +1105,7 @@
         <section class="block" id="portfolio">
             <div class="sec-head reveal">
                 <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
-                <div><h2>Featured Portfolio</h2><div class="sub">Products I've designed, built &amp; deployed to production</div></div>
+                <div><h2 data-i18n="port.head.title">Featured Portfolio</h2><div class="sub" data-i18n="port.head.sub">Products I've designed, built &amp; deployed to production</div></div>
             </div>
             <div class="port-grid">
 
@@ -1133,15 +1115,13 @@
                         <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.5 3 6 3s6-2 6-3v-5"/><path d="M22 10v6"/></svg>
                     </div>
                     <div class="proj-body">
-                        <div class="proj-head"><h3>SkillPath</h3><span class="live"><span class="pulse"></span>Live</span></div>
-                        <p>A complete e-learning platform — 8 courses across 6 categories with lessons, video/reading
-                            content, quizzes with scoring, live search, progress tracking and dark mode. Zero-backend
-                            static SPA in vanilla JavaScript.</p>
+                        <div class="proj-head"><h3>SkillPath</h3><span class="live" data-i18n-html="card.status.live"><span class="pulse"></span>Live</span></div>
+                        <p data-i18n="card.skillpath.desc">A complete e-learning platform — 8 courses across 6 categories with lessons, video/reading content, quizzes with scoring, live search, progress tracking and dark mode. Zero-backend static SPA in vanilla JavaScript.</p>
                         <div class="proj-tags"><span>Vanilla JS</span><span>SPA</span><span>LocalStorage</span><span>Responsive</span></div>
                         <div style="display:flex;gap:16px;flex-wrap:wrap">
-                            <a class="proj-link" href="https://biassp.github.io/skillpath/" target="_blank" rel="noopener">Live demo
+                            <a class="proj-link" href="https://biassp.github.io/skillpath/" target="_blank" rel="noopener"><span data-i18n="card.link.demo">Live demo</span>
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg></a>
-                            <a class="proj-link" href="https://github.com/biassp/skillpath" target="_blank" rel="noopener">Source
+                            <a class="proj-link" href="https://github.com/biassp/skillpath" target="_blank" rel="noopener"><span data-i18n="card.link.source">Source</span>
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.3-1.8-1.3-1.8-1.1-.7 0-.7 0-.7 1.2 0 1.9 1.2 1.9 1.2 1 1.8 2.8 1.3 3.5 1 0-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.3-3.1-.2-.4-.6-1.6 0-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8 0 3.2.9.8 1.3 1.9 1.3 3.2 0 4.6-2.8 5.6-5.5 5.9.5.3.9 1 .9 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3z"/></svg></a>
                         </div>
                     </div>
@@ -1153,16 +1133,13 @@
                         <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="8" height="3.4" rx="1.7"/><rect x="8" y="10.3" width="12" height="3.4" rx="1.7"/><rect x="5" y="16.1" width="7" height="3.4" rx="1.7"/></svg>
                     </div>
                     <div class="proj-body">
-                        <div class="proj-head"><h3>HARvest</h3><span class="live"><span class="pulse"></span>Live</span></div>
-                        <p>Drop a <code>.har</code> file from your own DevTools and it reverse-engineers the API behind
-                            it — endpoint templates, latency percentiles, a 28-rule HTTP &amp; security audit and an
-                            OpenAPI 3.1 draft. Runs entirely in the tab: the page ships <code>connect-src 'none'</code>
-                            and a live counter proving zero network calls.</p>
+                        <div class="proj-head"><h3>HARvest</h3><span class="live" data-i18n-html="card.status.live"><span class="pulse"></span>Live</span></div>
+                        <p data-i18n-html="card.harvest.desc">Drop a <code>.har</code> file from your own DevTools and it reverse-engineers the API behind it — endpoint templates, latency percentiles, a 28-rule HTTP &amp; security audit and an OpenAPI 3.1 draft. Runs entirely in the tab: the page ships <code>connect-src 'none'</code> and a live counter proving zero network calls.</p>
                         <div class="proj-tags"><span>Vanilla JS</span><span>OpenAPI 3.1</span><span>HTTP semantics</span><span>Security</span></div>
                         <div style="display:flex;gap:16px;flex-wrap:wrap">
-                            <a class="proj-link" href="https://biassp.github.io/labs/harvest/" target="_blank" rel="noopener">Live demo
+                            <a class="proj-link" href="https://biassp.github.io/labs/harvest/" target="_blank" rel="noopener"><span data-i18n="card.link.demo">Live demo</span>
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg></a>
-                            <a class="proj-link" href="https://github.com/biassp/biassp.github.io/tree/master/labs/harvest" target="_blank" rel="noopener">Source
+                            <a class="proj-link" href="https://github.com/biassp/biassp.github.io/tree/master/labs/harvest" target="_blank" rel="noopener"><span data-i18n="card.link.source">Source</span>
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.3-1.8-1.3-1.8-1.1-.7 0-.7 0-.7 1.2 0 1.9 1.2 1.9 1.2 1 1.8 2.8 1.3 3.5 1 0-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.3-3.1-.2-.4-.6-1.6 0-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8 0 3.2.9.8 1.3 1.9 1.3 3.2 0 4.6-2.8 5.6-5.5 5.9.5.3.9 1 .9 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3z"/></svg></a>
                         </div>
                     </div>
@@ -1174,16 +1151,13 @@
                         <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10.5h18M16.5 14.8h2"/><path d="M7 6V4.6a1.6 1.6 0 0 1 1.6-1.6h6.8A1.6 1.6 0 0 1 17 4.6V6"/></svg>
                     </div>
                     <div class="proj-body">
-                        <div class="proj-head"><h3>Saku</h3><span class="live"><span class="pulse"></span>Live</span></div>
-                        <p>An installable offline-first PWA whose own service worker answers the Android share sheet's
-                            <code>multipart/form-data</code> POST — parsing it, committing the entry and its outbox job
-                            in one IndexedDB transaction, then replying 303 so the back button cannot duplicate it. One
-                            click reproduces that exact path on any browser.</p>
+                        <div class="proj-head"><h3>Saku</h3><span class="live" data-i18n-html="card.status.live"><span class="pulse"></span>Live</span></div>
+                        <p data-i18n-html="card.saku.desc">An installable offline-first PWA whose own service worker answers the Android share sheet's <code>multipart/form-data</code> POST — parsing it, committing the entry and its outbox job in one IndexedDB transaction, then replying 303 so the back button cannot duplicate it. One click reproduces that exact path on any browser.</p>
                         <div class="proj-tags"><span>PWA</span><span>Service Worker</span><span>IndexedDB</span><span>Offline-first</span></div>
                         <div style="display:flex;gap:16px;flex-wrap:wrap">
-                            <a class="proj-link" href="https://biassp.github.io/labs/saku/" target="_blank" rel="noopener">Live demo
+                            <a class="proj-link" href="https://biassp.github.io/labs/saku/" target="_blank" rel="noopener"><span data-i18n="card.link.demo">Live demo</span>
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg></a>
-                            <a class="proj-link" href="https://github.com/biassp/biassp.github.io/tree/master/labs/saku" target="_blank" rel="noopener">Source
+                            <a class="proj-link" href="https://github.com/biassp/biassp.github.io/tree/master/labs/saku" target="_blank" rel="noopener"><span data-i18n="card.link.source">Source</span>
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.3-1.8-1.3-1.8-1.1-.7 0-.7 0-.7 1.2 0 1.9 1.2 1.9 1.2 1 1.8 2.8 1.3 3.5 1 0-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.3-3.1-.2-.4-.6-1.6 0-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8 0 3.2.9.8 1.3 1.9 1.3 3.2 0 4.6-2.8 5.6-5.5 5.9.5.3.9 1 .9 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3z"/></svg></a>
                         </div>
                     </div>
@@ -1195,18 +1169,13 @@
                         <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/><path d="M13.5 17.25h7.5M17.25 13.5v7.5"/></svg>
                     </div>
                     <div class="proj-body">
-                        <div class="proj-head"><h3>Sistem Informasi Suite</h3><span class="live"><span class="pulse"></span>Live</span></div>
-                        <p>Five domain systems — clinic, school, warehouse, payroll and accounting — each running
-                            entirely in a browser tab with no server and no dependencies. The point is domain
-                            correctness, not CRUD: medical record numbering, timetable conflict solving, FIFO
-                            costing with backdated recalculation, PPh 21 under the TER regime, and a cash flow
-                            statement that reconciles to the ledger. Every one runs its own assertion suite on
-                            load, so the rules can be checked rather than believed.</p>
+                        <div class="proj-head"><h3>Sistem Informasi Suite</h3><span class="live" data-i18n-html="card.status.live"><span class="pulse"></span>Live</span></div>
+                        <p data-i18n="card.sisuite.desc">Five domain systems — clinic, school, warehouse, payroll and accounting — each running entirely in a browser tab with no server and no dependencies. The point is domain correctness, not CRUD: medical record numbering, timetable conflict solving, FIFO costing with backdated recalculation, PPh 21 under the TER regime, and a cash flow statement that reconciles to the ledger. Every one runs its own assertion suite on load, so the rules can be checked rather than believed.</p>
                         <div class="proj-tags"><span>Domain modelling</span><span>3,483 assertions</span><span>Vanilla JS</span><span>Zero-backend</span></div>
                         <div style="display:flex;gap:16px;flex-wrap:wrap">
-                            <a class="proj-link" href="https://biassp.github.io/labs/" target="_blank" rel="noopener">Open the labs
+                            <a class="proj-link" href="https://biassp.github.io/labs/" target="_blank" rel="noopener"><span data-i18n="card.link.openlabs">Open the labs</span>
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg></a>
-                            <a class="proj-link" href="https://github.com/biassp/biassp.github.io/tree/master/labs" target="_blank" rel="noopener">Source
+                            <a class="proj-link" href="https://github.com/biassp/biassp.github.io/tree/master/labs" target="_blank" rel="noopener"><span data-i18n="card.link.source">Source</span>
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.3-1.8-1.3-1.8-1.1-.7 0-.7 0-.7 1.2 0 1.9 1.2 1.9 1.2 1 1.8 2.8 1.3 3.5 1 0-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.3-3.1-.2-.4-.6-1.6 0-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8 0 3.2.9.8 1.3 1.9 1.3 3.2 0 4.6-2.8 5.6-5.5 5.9.5.3.9 1 .9 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3z"/></svg></a>
                         </div>
                     </div>
@@ -1218,14 +1187,13 @@
                         <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/><path d="M12 2v2M20 8h2M2 8h2"/></svg>
                     </div>
                     <div class="proj-body">
-                        <div class="proj-head"><h3>BioAge</h3><span class="live"><span class="pulse"></span>Live</span></div>
-                        <p>AI biological-age scanner (web + mobile). Estimates biological age from a face &amp; body
-                            scan using an AI vision model, with a credit-based premium tier and multi-language support.</p>
+                        <div class="proj-head"><h3>BioAge</h3><span class="live" data-i18n-html="card.status.live"><span class="pulse"></span>Live</span></div>
+                        <p data-i18n="card.bioage.desc">AI biological-age scanner (web + mobile). Estimates biological age from a face &amp; body scan using an AI vision model, with a credit-based premium tier and multi-language support.</p>
                         <div class="proj-tags"><span>Node.js</span><span>Flutter</span><span>AI Vision</span><span>Payments</span></div>
                         <div style="display:flex;gap:16px;flex-wrap:wrap">
-                            <a class="proj-link" href="https://bioage.login.ac.pk" target="_blank" rel="noopener">Visit product
+                            <a class="proj-link" href="https://bioage.login.ac.pk" target="_blank" rel="noopener"><span data-i18n="card.link.visit">Visit product</span>
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg></a>
-                            <a class="proj-link" href="case/bioage/">Studi kasus
+                            <a class="proj-link" href="case/bioage/"><span data-i18n="card.link.case">Case study</span>
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></a>
                         </div>
                     </div>
@@ -1237,14 +1205,13 @@
                         <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg>
                     </div>
                     <div class="proj-body">
-                        <div class="proj-head"><h3>Radar Duit</h3><span class="live"><span class="pulse"></span>Live</span></div>
-                        <p>AI personal-finance guardian. Real-time expense tracking with instant at-capture alerts and
-                            AI-powered transaction parsing, delivered as web + a mobile app.</p>
+                        <div class="proj-head"><h3>Radar Duit</h3><span class="live" data-i18n-html="card.status.live"><span class="pulse"></span>Live</span></div>
+                        <p data-i18n="card.radarduit.desc">AI personal-finance guardian. Real-time expense tracking with instant at-capture alerts and AI-powered transaction parsing, delivered as web + a mobile app.</p>
                         <div class="proj-tags"><span>Node.js</span><span>Flutter</span><span>AI Parsing</span><span>Realtime</span></div>
                         <div style="display:flex;gap:16px;flex-wrap:wrap">
-                            <a class="proj-link" href="https://radarduit.com" target="_blank" rel="noopener">Visit product
+                            <a class="proj-link" href="https://radarduit.com" target="_blank" rel="noopener"><span data-i18n="card.link.visit">Visit product</span>
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg></a>
-                            <a class="proj-link" href="case/radar-duit/">Studi kasus
+                            <a class="proj-link" href="case/radar-duit/"><span data-i18n="card.link.case">Case study</span>
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></a>
                         </div>
                     </div>
@@ -1256,11 +1223,11 @@
                         <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
                     </div>
                     <div class="proj-body">
-                        <div class="proj-head"><h3>Cek Aman</h3><span class="live"><span class="pulse"></span>Live</span></div>
-                        <p>Anti-scam protection suite. Verifies suspicious links, phone numbers, bank accounts, online
-                            shops and loan apps, plus AI screenshot analysis (OCR + AI) to detect fraud.</p>
-                        <div class="proj-tags"><span>Flutter</span><span>Node.js</span><span>OCR + AI</span><span>Security</span></div>
-                        <span class="proj-link" style="color:var(--faint);cursor:default">Anti-fraud mobile suite</span>
+                        <div class="proj-head"><h3>Cek Aman</h3><span class="live" data-i18n-html="card.status.live"><span class="pulse"></span>Live</span></div>
+                        <p data-i18n="card.cekaman.desc">Anti-scam protection suite that checks suspicious links, phone numbers, bank accounts, sellers and OJK-registered loan apps, and reads screenshots of scam chats (OCR + DeepSeek) into a plain-language risk read — delivered as an Android app and web.</p>
+                        <div class="proj-tags"><span>Flutter</span><span>Node.js</span><span>OCR + DeepSeek</span><span>Security</span></div>
+                        <a class="proj-link" href="case/cek-aman/"><span data-i18n="card.link.case">Case study</span>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></a>
                     </div>
                 </article>
 
@@ -1270,11 +1237,10 @@
                         <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6M9 11h2"/></svg>
                     </div>
                     <div class="proj-body">
-                        <div class="proj-head"><h3>PakPDF Converter</h3><span class="live"><span class="pulse"></span>Live</span></div>
-                        <p>Online file-conversion platform for PDF and office documents, with user accounts, auth,
-                            and a fast SPA front-end backed by a Node API and containerized database.</p>
+                        <div class="proj-head"><h3>PakPDF Converter</h3><span class="live" data-i18n-html="card.status.live"><span class="pulse"></span>Live</span></div>
+                        <p data-i18n="card.pakpdf.desc">Online file-conversion platform for PDF and office documents, with user accounts, auth, and a fast SPA front-end backed by a Node API and containerized database.</p>
                         <div class="proj-tags"><span>Node.js</span><span>Vite SPA</span><span>MySQL</span><span>Docker</span></div>
-                        <a class="proj-link" href="https://converter.login.ac.pk" target="_blank" rel="noopener">Visit product
+                        <a class="proj-link" href="https://converter.login.ac.pk" target="_blank" rel="noopener"><span data-i18n="card.link.visit">Visit product</span>
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg></a>
                     </div>
                 </article>
@@ -1285,11 +1251,10 @@
                         <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
                     </div>
                     <div class="proj-body">
-                        <div class="proj-head"><h3>University Portal</h3><span class="live"><span class="pulse"></span>Live</span></div>
-                        <p>A university directory &amp; login-launcher portal with a journals section — a Node/Express
-                            + SQLite back-end serving a fast vanilla-JS front-end, fronted by Cloudflare.</p>
+                        <div class="proj-head"><h3>University Portal</h3><span class="live" data-i18n-html="card.status.live"><span class="pulse"></span>Live</span></div>
+                        <p data-i18n="card.uniportal.desc">A university directory &amp; login-launcher portal with a journals section — a Node/Express + SQLite back-end serving a fast vanilla-JS front-end, fronted by Cloudflare.</p>
                         <div class="proj-tags"><span>Express</span><span>SQLite</span><span>Vanilla JS</span><span>SEO</span></div>
-                        <a class="proj-link" href="https://login.ac.pk" target="_blank" rel="noopener">Visit product
+                        <a class="proj-link" href="https://login.ac.pk" target="_blank" rel="noopener"><span data-i18n="card.link.visit">Visit product</span>
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg></a>
                     </div>
                 </article>
@@ -1300,11 +1265,10 @@
                         <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 4v16M17 4v16M2 9h5M17 9h5M2 15h5M17 15h5"/></svg>
                     </div>
                     <div class="proj-body">
-                        <div class="proj-head"><h3>Movieca</h3><span class="live" style="color:#fbbf24;background:rgba(251,191,36,.12)"><span class="pulse" style="background:#fbbf24;box-shadow:none"></span>In progress</span></div>
-                        <p>A legal movie-discovery app with gamification — quests, XP, streaks, badges and referrals —
-                            built on Flutter with a Node back-end aggregating open content sources.</p>
+                        <div class="proj-head"><h3>Movieca</h3><span class="live" style="color:#fbbf24;background:rgba(251,191,36,.12)" data-i18n-html="card.status.progress"><span class="pulse" style="background:#fbbf24;box-shadow:none"></span>In progress</span></div>
+                        <p data-i18n="card.movieca.desc">A legal movie-discovery app with gamification — quests, XP, streaks, badges and referrals — built on Flutter with a Node back-end aggregating open content sources.</p>
                         <div class="proj-tags"><span>Flutter</span><span>Node.js</span><span>Gamification</span><span>REST API</span></div>
-                        <span class="proj-link" style="color:var(--faint);cursor:default">Cross-platform mobile app</span>
+                        <span class="proj-link" style="color:var(--faint);cursor:default" data-i18n="card.faint.mobile">Cross-platform mobile app</span>
                     </div>
                 </article>
 
@@ -1314,11 +1278,10 @@
                         <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
                     </div>
                     <div class="proj-body">
-                        <div class="proj-head"><h3>Login Hub PK</h3><span class="live"><span class="pulse"></span>Live</span></div>
-                        <p>A programmatic-SEO login directory covering banking &amp; service portals across Pakistan,
-                            built as a statically-exported Next.js site fronted by Cloudflare for speed and scale.</p>
+                        <div class="proj-head"><h3>Login Hub PK</h3><span class="live" data-i18n-html="card.status.live"><span class="pulse"></span>Live</span></div>
+                        <p data-i18n="card.loginhub.desc">A programmatic-SEO login directory covering banking &amp; service portals across Pakistan, built as a statically-exported Next.js site fronted by Cloudflare for speed and scale.</p>
                         <div class="proj-tags"><span>Next.js</span><span>Static Export</span><span>SEO</span><span>Cloudflare</span></div>
-                        <a class="proj-link" href="https://login.net.pk" target="_blank" rel="noopener">Visit product
+                        <a class="proj-link" href="https://login.net.pk" target="_blank" rel="noopener"><span data-i18n="card.link.visit">Visit product</span>
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg></a>
                     </div>
                 </article>
@@ -1329,11 +1292,10 @@
                         <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01M15 9h.01"/></svg>
                     </div>
                     <div class="proj-body">
-                        <div class="proj-head"><h3>FaceVibe</h3><span class="live" style="color:#fbbf24;background:rgba(251,191,36,.12)"><span class="pulse" style="background:#fbbf24;box-shadow:none"></span>In progress</span></div>
-                        <p>A viral face-scan personality app for Android &amp; iOS — analyzes a selfie to generate a
-                            fun personality profile, built end-to-end in Flutter and targeting both app stores.</p>
+                        <div class="proj-head"><h3>FaceVibe</h3><span class="live" style="color:#fbbf24;background:rgba(251,191,36,.12)" data-i18n-html="card.status.progress"><span class="pulse" style="background:#fbbf24;box-shadow:none"></span>In progress</span></div>
+                        <p data-i18n="card.facevibe.desc">A viral face-scan personality app for Android &amp; iOS — analyzes a selfie to generate a fun personality profile, built end-to-end in Flutter and targeting both app stores.</p>
                         <div class="proj-tags"><span>Flutter</span><span>Android + iOS</span><span>AI</span><span>Viral UX</span></div>
-                        <span class="proj-link" style="color:var(--faint);cursor:default">Cross-platform mobile app</span>
+                        <span class="proj-link" style="color:var(--faint);cursor:default" data-i18n="card.faint.mobile">Cross-platform mobile app</span>
                     </div>
                 </article>
 
@@ -1343,12 +1305,10 @@
                         <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M3 9.5v5M21 9.5v5M6.5 12h11"/></svg>
                     </div>
                     <div class="proj-body">
-                        <div class="proj-head"><h3>RepBout</h3><span class="live" style="color:#fbbf24;background:rgba(251,191,36,.12)"><span class="pulse" style="background:#fbbf24;box-shadow:none"></span>In progress</span></div>
-                        <p>A head-to-head workout-battle app for Android — players challenge each other on training
-                            sets. Built in Flutter, with release signing material kept in a separate encrypted store
-                            rather than in the app repository.</p>
+                        <div class="proj-head"><h3>RepBout</h3><span class="live" style="color:#fbbf24;background:rgba(251,191,36,.12)" data-i18n-html="card.status.progress"><span class="pulse" style="background:#fbbf24;box-shadow:none"></span>In progress</span></div>
+                        <p data-i18n="card.repbout.desc">A head-to-head workout-battle app for Android — players challenge each other on training sets. Built in Flutter, with release signing material kept in a separate encrypted store rather than in the app repository.</p>
                         <div class="proj-tags"><span>Flutter</span><span>Android</span><span>Fitness</span><span>Signed release</span></div>
-                        <a class="proj-link" href="case/repbout/">Studi kasus
+                        <a class="proj-link" href="case/repbout/"><span data-i18n="card.link.case">Case study</span>
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></a>
                     </div>
                 </article>
@@ -1360,14 +1320,14 @@
         <section class="block" id="repos">
             <div class="sec-head reveal">
                 <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v14a2 2 0 0 0 2 2h14"/><path d="M7 15V9m4 6V5m4 10v-3"/></svg></span>
-                <div><h2>Open-Source &amp; Repositories</h2><div class="sub">Public projects &amp; code on GitHub — <a href="https://github.com/biassp?tab=repositories" target="_blank" rel="noopener" style="color:var(--accent-2);font-weight:600">github.com/biassp</a></div></div>
+                <div><h2 data-i18n="repos.head.title">Open-Source &amp; Repositories</h2><div class="sub" data-i18n-html="repos.head.sub">Public projects &amp; code on GitHub — <a href="https://github.com/biassp?tab=repositories" target="_blank" rel="noopener" style="color:var(--accent-2);font-weight:600">github.com/biassp</a></div></div>
             </div>
             <!-- counter strip + language chips: filled in by the live feed, hidden until then -->
             <div class="stats" id="repoStats" hidden>
-                <div class="stat"><div class="num" id="repoStatCount">0</div><div class="lbl">Public repositories</div></div>
-                <div class="stat"><div class="num" id="repoStatLangs">0</div><div class="lbl">Languages used</div></div>
-                <div class="stat"><div class="num" id="repoStatStars">0</div><div class="lbl">Total stars</div></div>
-                <div class="stat"><div class="num" id="repoStatForks">0</div><div class="lbl">Total forks</div></div>
+                <div class="stat"><div class="num" id="repoStatCount">0</div><div class="lbl" data-i18n="repos.stat.count">Public repositories</div></div>
+                <div class="stat"><div class="num" id="repoStatLangs">0</div><div class="lbl" data-i18n="repos.stat.langs">Languages used</div></div>
+                <div class="stat"><div class="num" id="repoStatStars">0</div><div class="lbl" data-i18n="repos.stat.stars">Total stars</div></div>
+                <div class="stat"><div class="num" id="repoStatForks">0</div><div class="lbl" data-i18n="repos.stat.forks">Total forks</div></div>
             </div>
 
             <div class="repo-filters" id="repoFilters" hidden></div>
@@ -1460,7 +1420,7 @@
             <div style="text-align:center;margin-top:26px">
                 <a class="btn btn-ghost" href="https://github.com/biassp?tab=repositories" target="_blank" rel="noopener">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.3-1.8-1.3-1.8-1.1-.7 0-.7 0-.7 1.2 0 1.9 1.2 1.9 1.2 1 1.8 2.8 1.3 3.5 1 0-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.3-3.1-.2-.4-.6-1.6 0-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8 0 3.2.9.8 1.3 1.9 1.3 3.2 0 4.6-2.8 5.6-5.5 5.9.5.3.9 1 .9 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3z"/></svg>
-                    See all repositories on GitHub
+                    <span data-i18n="repos.seeall">See all repositories on GitHub</span>
                 </a>
             </div>
         </section>
@@ -1469,20 +1429,20 @@
         <section class="block" id="skills">
             <div class="sec-head reveal">
                 <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2 0-2.7a1.9 1.9 0 0 0-3 0z"/><path d="m12 15-3-3a22 22 0 0 1 8-10c1.7 3.5.7 8-2 12l-3 1z"/><path d="M9 12H4s.5-3 2-4c1.7-1 5 0 5 0"/><path d="M12 15v5s3-.5 4-2c1-1.3 0-5 0-5"/></svg></span>
-                <div><h2>Skills &amp; Proficiency</h2><div class="sub">Where I'm strongest, at a glance</div></div>
+                <div><h2 data-i18n="skills.head.title">Skills &amp; Proficiency</h2><div class="sub" data-i18n="skills.head.sub">Where I'm strongest, at a glance</div></div>
             </div>
             <div class="grid-2">
                 <div class="card reveal">
-                    <div class="skill"><div class="skill-top"><span>Web Development (HTML · CSS · JS)</span><span class="pct">90%</span></div><div class="bar"><span data-w="90%"></span></div></div>
-                    <div class="skill"><div class="skill-top"><span>PHP &amp; JavaScript</span><span class="pct">85%</span></div><div class="bar"><span data-w="85%"></span></div></div>
-                    <div class="skill"><div class="skill-top"><span>Node.js Backend &amp; REST APIs</span><span class="pct">82%</span></div><div class="bar"><span data-w="82%"></span></div></div>
-                    <div class="skill"><div class="skill-top"><span>MySQL / SQLite Databases</span><span class="pct">80%</span></div><div class="bar"><span data-w="80%"></span></div></div>
+                    <div class="skill"><div class="skill-top"><span data-i18n="skills.web">Web Development (HTML · CSS · JS)</span><span class="pct">90%</span></div><div class="bar"><span data-w="90%"></span></div></div>
+                    <div class="skill"><div class="skill-top"><span data-i18n="skills.php">PHP &amp; JavaScript</span><span class="pct">85%</span></div><div class="bar"><span data-w="85%"></span></div></div>
+                    <div class="skill"><div class="skill-top"><span data-i18n="skills.node">Node.js Backend &amp; REST APIs</span><span class="pct">82%</span></div><div class="bar"><span data-w="82%"></span></div></div>
+                    <div class="skill"><div class="skill-top"><span data-i18n="skills.db">MySQL / SQLite Databases</span><span class="pct">80%</span></div><div class="bar"><span data-w="80%"></span></div></div>
                 </div>
                 <div class="card reveal">
-                    <div class="skill"><div class="skill-top"><span>Linux &amp; Server / Nginx Ops</span><span class="pct">75%</span></div><div class="bar"><span data-w="75%"></span></div></div>
-                    <div class="skill"><div class="skill-top"><span>Flutter Mobile Development</span><span class="pct">72%</span></div><div class="bar"><span data-w="72%"></span></div></div>
-                    <div class="skill"><div class="skill-top"><span>Docker &amp; Deployment</span><span class="pct">70%</span></div><div class="bar"><span data-w="70%"></span></div></div>
-                    <div class="skill"><div class="skill-top"><span>Microsoft Office &amp; Power BI</span><span class="pct">95%</span></div><div class="bar"><span data-w="95%"></span></div></div>
+                    <div class="skill"><div class="skill-top"><span data-i18n="skills.linux">Linux &amp; Server / Nginx Ops</span><span class="pct">75%</span></div><div class="bar"><span data-w="75%"></span></div></div>
+                    <div class="skill"><div class="skill-top"><span data-i18n="skills.flutter">Flutter Mobile Development</span><span class="pct">72%</span></div><div class="bar"><span data-w="72%"></span></div></div>
+                    <div class="skill"><div class="skill-top"><span data-i18n="skills.docker">Docker &amp; Deployment</span><span class="pct">70%</span></div><div class="bar"><span data-w="70%"></span></div></div>
+                    <div class="skill"><div class="skill-top"><span data-i18n="skills.office">Microsoft Office &amp; Power BI</span><span class="pct">95%</span></div><div class="bar"><span data-w="95%"></span></div></div>
                 </div>
             </div>
         </section>
@@ -1491,55 +1451,55 @@
         <section class="block" id="education">
             <div class="sec-head reveal">
                 <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.5 3 6 3s6-2 6-3v-5"/></svg></span>
-                <div><h2>Education &amp; More</h2><div class="sub">Academic background, organizations, languages &amp; interests</div></div>
+                <div><h2 data-i18n="edu.head.title">Education &amp; More</h2><div class="sub" data-i18n="edu.head.sub">Academic background, organizations, languages &amp; interests</div></div>
             </div>
             <div class="grid-3">
                 <div class="card reveal">
-                    <h3>Education</h3>
+                    <h3 data-i18n="edu.education.title">Education</h3>
                     <ul class="info-list">
                         <li>
                             <svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.5 3 6 3s6-2 6-3v-5"/></svg>
-                            <div><div class="lead">Information Systems</div><div class="meta">Institute of Business Nusantara (IBN)</div></div>
+                            <div><div class="lead" data-i18n="edu.education.lead">Information Systems</div><div class="meta">Institute of Business Nusantara (IBN)</div></div>
                         </li>
                     </ul>
-                    <h3 style="margin-top:20px">Organizations</h3>
+                    <h3 style="margin-top:20px" data-i18n="edu.orgs.title">Organizations</h3>
                     <ul class="info-list">
                         <li><svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-3-3.87"/><path d="M4 21v-2a4 4 0 0 1 3-3.87"/><circle cx="12" cy="7" r="4"/></svg>
-                            <div><div class="lead">Chairman, UKM SINATERA IBN</div><div class="meta">Led all internal &amp; external activities · 2016–2017</div></div></li>
+                            <div><div class="lead" data-i18n="edu.org1.lead">Chairman, UKM SINATERA IBN</div><div class="meta" data-i18n="edu.org1.meta">Led all internal &amp; external activities · 2016–2017</div></div></li>
                         <li><svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-3-3.87"/><path d="M4 21v-2a4 4 0 0 1 3-3.87"/><circle cx="12" cy="7" r="4"/></svg>
-                            <div><div class="lead">Minister of Human Resources, BEM IBN</div><div class="meta">Membership &amp; job-desk management · 2015–2016</div></div></li>
+                            <div><div class="lead" data-i18n="edu.org2.lead">Minister of Human Resources, BEM IBN</div><div class="meta" data-i18n="edu.org2.meta">Membership &amp; job-desk management · 2015–2016</div></div></li>
                         <li><svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-3-3.87"/><path d="M4 21v-2a4 4 0 0 1 3-3.87"/><circle cx="12" cy="7" r="4"/></svg>
-                            <div><div class="lead">Secretary, UKM SINATERA IBN</div><div class="meta">Correspondence &amp; document filing · 2015–2016</div></div></li>
+                            <div><div class="lead" data-i18n="edu.org3.lead">Secretary, UKM SINATERA IBN</div><div class="meta" data-i18n="edu.org3.meta">Correspondence &amp; document filing · 2015–2016</div></div></li>
                         <li><svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-3-3.87"/><path d="M4 21v-2a4 4 0 0 1 3-3.87"/><circle cx="12" cy="7" r="4"/></svg>
-                            <div><div class="lead">IT Asset Division, HIMAKOM IBN</div><div class="meta">Routine maintenance of operational computers · 2015–2016</div></div></li>
+                            <div><div class="lead" data-i18n="edu.org4.lead">IT Asset Division, HIMAKOM IBN</div><div class="meta" data-i18n="edu.org4.meta">Routine maintenance of operational computers · 2015–2016</div></div></li>
                     </ul>
                 </div>
 
                 <div class="card reveal">
-                    <h3>Languages</h3>
-                    <div class="lang-row"><span>Indonesian <span class="meta">(Native)</span></span><span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></div>
-                    <div class="lang-row"><span>English</span><span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></div>
-                    <h3 style="margin-top:20px">Contact</h3>
+                    <h3 data-i18n="edu.lang.title">Languages</h3>
+                    <div class="lang-row"><span data-i18n-html="edu.lang.indonesian">Indonesian <span class="meta">(Native)</span></span><span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></div>
+                    <div class="lang-row"><span data-i18n="edu.lang.english">English</span><span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></div>
+                    <h3 style="margin-top:20px" data-i18n="edu.contact.title">Contact</h3>
                     <ul class="info-list">
                         <li><svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>
                             <div><a class="lead" href="mailto:biascanester@gmail.com">biascanester@gmail.com</a></div></li>
                         <li><svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>
-                            <div><div class="lead">Colombo, Sri Lanka</div><div class="sub">Indonesian · open to remote worldwide</div></div></li>
+                            <div><div class="lead">Colombo, Sri Lanka</div><div class="sub" data-i18n="edu.contact.remote">Indonesian · open to remote worldwide</div></div></li>
                         <li><svg class="mark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.3-1.8-1.3-1.8-1.1-.7 0-.7 0-.7 1.2 0 1.9 1.2 1.9 1.2 1 1.8 2.8 1.3 3.5 1 0-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.3-3.1-.2-.4-.6-1.6 0-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8 0 3.2.9.8 1.3 1.9 1.3 3.2 0 4.6-2.8 5.6-5.5 5.9.5.3.9 1 .9 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3z"/></svg>
                             <div><a class="lead" href="https://github.com/biassp" target="_blank" rel="noopener">github.com/biassp</a></div></li>
                     </ul>
                 </div>
 
                 <div class="card reveal">
-                    <h3>What Drives Me</h3>
-                    <p style="margin-bottom:14px">Beyond code, a few things that keep me curious and moving.</p>
+                    <h3 data-i18n="edu.drives.title">What Drives Me</h3>
+                    <p style="margin-bottom:14px" data-i18n="edu.drives.p">Beyond code, a few things that keep me curious and moving.</p>
                     <div class="tags">
-                        <span class="tag">Continuous learning</span>
-                        <span class="tag">Building products</span>
-                        <span class="tag">Education &amp; mentoring</span>
-                        <span class="tag">Travel</span>
-                        <span class="tag">Skateboarding</span>
-                        <span class="tag">Tech &amp; startups</span>
+                        <span class="tag" data-i18n="edu.drives.tag1">Continuous learning</span>
+                        <span class="tag" data-i18n="edu.drives.tag2">Building products</span>
+                        <span class="tag" data-i18n="edu.drives.tag3">Education &amp; mentoring</span>
+                        <span class="tag" data-i18n="edu.drives.tag4">Travel</span>
+                        <span class="tag" data-i18n="edu.drives.tag5">Skateboarding</span>
+                        <span class="tag" data-i18n="edu.drives.tag6">Tech &amp; startups</span>
                     </div>
                 </div>
             </div>
@@ -1548,7 +1508,7 @@
 
     <footer>
         <div class="wrap foot-inner">
-            <span class="copyright">© <span id="year"></span> Bias Satrio Putra · Built &amp; designed by hand.</span>
+            <span class="copyright">© <span id="year"></span> Bias Satrio Putra · <span data-i18n="footer.copyright">Built &amp; designed by hand.</span></span>
             <div class="soc">
                 <a class="icon-btn" href="https://github.com/biassp" target="_blank" rel="noopener" aria-label="GitHub">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.3-1.8-1.3-1.8-1.1-.7 0-.7 0-.7 1.2 0 1.9 1.2 1.9 1.2 1 1.8 2.8 1.3 3.5 1 0-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.3-3.1-.2-.4-.6-1.6 0-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8 0 3.2.9.8 1.3 1.9 1.3 3.2 0 4.6-2.8 5.6-5.5 5.9.5.3.9 1 .9 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3z"/></svg>
@@ -1988,6 +1948,216 @@
                     render(repos);
                 })['catch'](function () { fallback(); });
             })();
+        })();
+    </script>
+
+    <script>
+        // ---------- i18n: English is the default & the no-JS fallback ----------
+        // English ships inline in the markup; this switches to Indonesian and back
+        // and remembers the choice. Every localStorage call is guarded — an
+        // unguarded one previously blanked the site.
+        var I18N = {
+            meta_title: { en: "Bias Satrio Putra — IT Professional & Full-Stack Developer", id: "Bias Satrio Putra — Profesional IT & Full-Stack Developer" },
+            meta_desc: { en: "Bias Satrio Putra — IT Professional, Full-Stack Developer and Product Builder based in Colombo, Sri Lanka. 7+ years of experience shipping live web and mobile products across Indonesia, the Philippines, Pakistan and Sri Lanka.", id: "Bias Satrio Putra — Profesional IT, Full-Stack Developer, dan Product Builder yang berbasis di Colombo, Sri Lanka. Pengalaman 7+ tahun merilis produk web dan mobile yang aktif digunakan di Indonesia, Filipina, Pakistan, dan Sri Lanka." },
+            meta_ogtitle: { en: "Bias Satrio Putra — IT Professional & Full-Stack Developer", id: "Bias Satrio Putra — Profesional IT & Full-Stack Developer" },
+            meta_ogdesc: { en: "7+ years of experience shipping live web and mobile products. Explore my portfolio and experience.", id: "Pengalaman 7+ tahun merilis produk web dan mobile yang aktif digunakan. Jelajahi portofolio dan pengalaman saya." },
+
+            "nav.about": { en: "About", id: "Tentang" },
+            "nav.experience": { en: "Experience", id: "Pengalaman" },
+            "nav.portfolio": { en: "Portfolio", id: "Portofolio" },
+            "nav.repos": { en: "Repos", id: "Repositori" },
+            "nav.skills": { en: "Skills", id: "Keahlian" },
+            "nav.education": { en: "Education", id: "Pendidikan" },
+            "btn.downloadcv": { en: "Download CV", id: "Unduh CV" },
+
+            "hero.eyebrow": { en: "<span class=\"pulse\"></span>Available for opportunities", id: "<span class=\"pulse\"></span>Terbuka untuk peluang baru" },
+            "hero.title": { en: "Hi, I'm <span class=\"grad\">Bias Satrio Putra</span>", id: "Halo, saya <span class=\"grad\">Bias Satrio Putra</span>" },
+            "hero.role": { en: "IT Professional · Full-Stack Developer & Product Builder", id: "Profesional IT · Full-Stack Developer & Product Builder" },
+            "hero.lede": { en: "I design, build, and ship end-to-end web & mobile products — from backend APIs and databases to polished front-ends and live deployment. Indonesian, based in Colombo, Sri Lanka, with 7+ years across IT support, development, and teaching — and products shipped in four markets.", id: "Saya merancang, membangun, dan merilis produk web & mobile secara menyeluruh — dari API dan basis data di sisi backend hingga front-end yang rapi dan deployment ke produksi. Orang Indonesia, berbasis di Colombo, Sri Lanka, dengan pengalaman 7+ tahun di dukungan IT, pengembangan, dan pengajaran — serta produk yang dirilis di empat pasar." },
+            "hero.cta.portfolio": { en: "View Portfolio", id: "Lihat Portofolio" },
+            "hero.cta.contact": { en: "Get in Touch", id: "Hubungi Saya" },
+            "hero.badge": { en: "Colombo, LK", id: "Colombo, LK" },
+
+            "stat.years.lbl": { en: "Years in IT", id: "Tahun di IT" },
+            "stat.products.lbl": { en: "Live products shipped", id: "Produk aktif dirilis" },
+            "stat.scope.num": { en: "Web + Mobile", id: "Web + Mobile" },
+            "stat.scope.lbl": { en: "Full-stack scope", id: "Cakupan full-stack" },
+            "stat.infra.num": { en: "Web · SysOps", id: "Web · SysOps" },
+            "stat.infra.lbl": { en: "Dev & infrastructure", id: "Dev & infrastruktur" },
+
+            "about.head.title": { en: "About Me", id: "Tentang Saya" },
+            "about.head.sub": { en: "Who I am and what I work with", id: "Siapa saya dan apa yang saya kerjakan" },
+            "about.profile.title": { en: "Profile", id: "Profil" },
+            "about.profile.p1": { en: "I'm passionate about technology and education, and I genuinely enjoy learning new things — especially in the IT field. Over the years I've grown from IT support and teaching into hands-on full-stack development, building and launching real products that people use.", id: "Saya antusias pada teknologi dan pendidikan, dan saya benar-benar senang mempelajari hal baru — terutama di bidang IT. Selama bertahun-tahun saya berkembang dari dukungan IT dan pengajaran menjadi pengembangan full-stack langsung, membangun dan merilis produk nyata yang digunakan orang." },
+            "about.profile.p2": { en: "My experience spans IT support and web-development instruction in Indonesia, application support at Bisnis Integrasi Global, and web development & database administration at Infinix Philippines in Makati. Today, as a Senior Web Developer at Octo Global, I focus on shipping web and mobile products end-to-end — from API and database design to front-end and production deployment.", id: "Pengalaman saya mencakup dukungan IT dan pengajaran pengembangan web di Indonesia, dukungan aplikasi di Bisnis Integrasi Global, serta pengembangan web & administrasi basis data di Infinix Philippines, Makati. Kini, sebagai Senior Web Developer di Octo Global, saya fokus merilis produk web dan mobile secara menyeluruh — dari desain API dan basis data hingga front-end dan deployment ke produksi." },
+            "about.toolbox.title": { en: "Toolbox", id: "Perangkat Andalan" },
+            "about.toolbox.p": { en: "The languages, tools and platforms I reach for most often.", id: "Bahasa, tools, dan platform yang paling sering saya gunakan." },
+
+            "exp.head.title": { en: "Work Experience", id: "Pengalaman Kerja" },
+            "exp.head.sub": { en: "A track record across development, operations & teaching", id: "Rekam jejak di pengembangan, operasional & pengajaran" },
+            "exp.octo.role": { en: "Senior Web Developer", id: "Senior Web Developer" },
+            "exp.octo.time": { en: "Jul 2025 – Present", id: "Jul 2025 – Sekarang" },
+            "exp.octo.co": { en: "Octo Global · Colombo, Sri Lanka", id: "Octo Global · Colombo, Sri Lanka" },
+            "exp.octo.desc": { en: "Lead web development end-to-end — architecting, building and maintaining production web applications, from back-end APIs and databases to responsive, high-performance front-ends.", id: "Memimpin pengembangan web secara menyeluruh — merancang, membangun, dan memelihara aplikasi web produksi, dari API dan basis data di back-end hingga front-end yang responsif dan berperforma tinggi." },
+            "exp.infinixweb.role": { en: "Website Developer", id: "Website Developer" },
+            "exp.infinixweb.time": { en: "Oct 2023 – Dec 2025", id: "Okt 2023 – Des 2025" },
+            "exp.infinixweb.co": { en: "Infinix Philippines · Makati, Metro Manila · Remote from Jul 2025", id: "Infinix Philippines · Makati, Metro Manila · Remote sejak Jul 2025" },
+            "exp.infinixweb.desc": { en: "Built and maintained company websites and internal web tools — developing new features, optimizing performance, and ensuring reliable production deployments. Retained remotely after relocating to Colombo, running in parallel with the Octo Global role until the engagement closed.", id: "Membangun dan memelihara situs perusahaan serta perkakas web internal — mengembangkan fitur baru, mengoptimalkan performa, dan memastikan deployment produksi yang andal. Tetap dipertahankan secara remote setelah pindah ke Colombo, berjalan paralel dengan peran di Octo Global hingga kontrak berakhir." },
+            "exp.infinixdba.role": { en: "Database Administrator", id: "Database Administrator" },
+            "exp.infinixdba.time": { en: "Oct 2022 – Oct 2023", id: "Okt 2022 – Okt 2023" },
+            "exp.infinixdba.co": { en: "Infinix Philippines · Makati, Metro Manila", id: "Infinix Philippines · Makati, Metro Manila" },
+            "exp.infinixdba.desc": { en: "Administered and maintained company databases — ensuring data integrity, running backups, optimizing queries, and supporting application teams with reliable data access.", id: "Mengelola dan memelihara basis data perusahaan — menjaga integritas data, menjalankan backup, mengoptimalkan query, dan mendukung tim aplikasi dengan akses data yang andal." },
+            "exp.shane.role": { en: "Programming Teacher", id: "Guru Pemrograman" },
+            "exp.shane.time": { en: "Jun – Oct 2022", id: "Jun – Okt 2022" },
+            "exp.shane.co": { en: "Shane English Center Indonesia · West Jakarta", id: "Shane English Center Indonesia · Jakarta Barat" },
+            "exp.shane.desc": { en: "Taught programming fundamentals to students, designing lessons and hands-on exercises that made technical concepts approachable and practical.", id: "Mengajarkan dasar-dasar pemrograman kepada siswa, merancang materi dan latihan praktik yang membuat konsep teknis mudah dipahami dan aplikatif." },
+            "exp.flashcom.role": { en: "Private Programming Tutor", id: "Tutor Pemrograman Privat" },
+            "exp.flashcom.time": { en: "Dec 2021 – Jul 2022", id: "Des 2021 – Jul 2022" },
+            "exp.flashcom.co": { en: "Flashcom Indonesia · DKI Jakarta", id: "Flashcom Indonesia · DKI Jakarta" },
+            "exp.flashcom.desc": { en: "Delivered one-on-one programming tutoring, tailoring the curriculum to each learner's pace and goals across web and general programming topics.", id: "Memberikan bimbingan pemrograman satu lawan satu, menyesuaikan kurikulum dengan ritme dan tujuan tiap peserta di topik web maupun pemrograman umum." },
+            "exp.big.role": { en: "App Support Developer", id: "App Support Developer" },
+            "exp.big.time": { en: "May – Nov 2021", id: "Mei – Nov 2021" },
+            "exp.big.co": { en: "PT Bisnis Integrasi Global · Kuningan, South Jakarta", id: "PT Bisnis Integrasi Global · Kuningan, Jakarta Selatan" },
+            "exp.big.desc": { en: "Analyzed application documentation and source code, then modified and added features to existing applications according to client requirements.", id: "Menganalisis dokumentasi aplikasi dan kode sumber, lalu memodifikasi dan menambahkan fitur pada aplikasi yang ada sesuai kebutuhan klien." },
+            "exp.blk.role": { en: "Web Development Instructor", id: "Instruktur Pengembangan Web" },
+            "exp.blk.time": { en: "Aug 2018 – Apr 2019", id: "Agu 2018 – Apr 2019" },
+            "exp.blk.co": { en: "Balai Latihan Kerja (BLK) Pengembangan Industri · Bekasi", id: "Balai Latihan Kerja (BLK) Pengembangan Industri · Bekasi" },
+            "exp.blk.desc": { en: "Trained trainees in web development from fundamentals to advanced topics, and fostered an active, conducive classroom learning environment.", id: "Melatih peserta dalam pengembangan web dari dasar hingga tingkat lanjut, serta menciptakan lingkungan belajar kelas yang aktif dan kondusif." },
+            "exp.ppd.role": { en: "IT Support — Internship", id: "IT Support — Magang" },
+            "exp.ppd.time": { en: "Apr – Oct 2018", id: "Apr – Okt 2018" },
+            "exp.ppd.co": { en: "Divisi IT Support, Perum PPD · East Jakarta", id: "Divisi IT Support, Perum PPD · Jakarta Timur" },
+            "exp.ppd.desc": { en: "Implemented network installations and troubleshot networks and software across all divisions of the Djakarta Passenger Transportation Corporation.", id: "Melakukan instalasi jaringan serta menangani masalah jaringan dan perangkat lunak di seluruh divisi Perusahaan Pengangkutan Djakarta (Perum PPD)." },
+
+            "port.head.title": { en: "Featured Portfolio", id: "Portofolio Unggulan" },
+            "port.head.sub": { en: "Products I've designed, built & deployed to production", id: "Produk yang saya rancang, bangun & rilis ke produksi" },
+
+            "card.status.live": { en: "<span class=\"pulse\"></span>Live", id: "<span class=\"pulse\"></span>Aktif" },
+            "card.status.progress": { en: "<span class=\"pulse\" style=\"background:#fbbf24;box-shadow:none\"></span>In progress", id: "<span class=\"pulse\" style=\"background:#fbbf24;box-shadow:none\"></span>Dalam proses" },
+            "card.link.demo": { en: "Live demo", id: "Demo langsung" },
+            "card.link.source": { en: "Source", id: "Kode sumber" },
+            "card.link.visit": { en: "Visit product", id: "Kunjungi produk" },
+            "card.link.case": { en: "Case study", id: "Studi kasus" },
+            "card.link.openlabs": { en: "Open the labs", id: "Buka lab" },
+            "card.faint.mobile": { en: "Cross-platform mobile app", id: "Aplikasi mobile lintas platform" },
+
+            "card.skillpath.desc": { en: "A complete e-learning platform — 8 courses across 6 categories with lessons, video/reading content, quizzes with scoring, live search, progress tracking and dark mode. Zero-backend static SPA in vanilla JavaScript.", id: "Platform e-learning lengkap — 8 kursus di 6 kategori dengan materi, konten video/bacaan, kuis berpenilaian, pencarian langsung, pelacakan progres, dan mode gelap. SPA statis tanpa backend dengan vanilla JavaScript." },
+            "card.harvest.desc": { en: "Drop a <code>.har</code> file from your own DevTools and it reverse-engineers the API behind it — endpoint templates, latency percentiles, a 28-rule HTTP &amp; security audit and an OpenAPI 3.1 draft. Runs entirely in the tab: the page ships <code>connect-src 'none'</code> and a live counter proving zero network calls.", id: "Jatuhkan berkas <code>.har</code> dari DevTools Anda sendiri dan ia merekayasa balik API di baliknya — templat endpoint, persentil latensi, audit HTTP &amp; keamanan 28 aturan, dan draf OpenAPI 3.1. Berjalan sepenuhnya di dalam tab: halaman ini mengirim <code>connect-src 'none'</code> dan penghitung langsung yang membuktikan nol panggilan jaringan." },
+            "card.saku.desc": { en: "An installable offline-first PWA whose own service worker answers the Android share sheet's <code>multipart/form-data</code> POST — parsing it, committing the entry and its outbox job in one IndexedDB transaction, then replying 303 so the back button cannot duplicate it. One click reproduces that exact path on any browser.", id: "PWA offline-first yang bisa dipasang, yang service worker-nya sendiri menjawab POST <code>multipart/form-data</code> dari share sheet Android — mem-parsing-nya, menyimpan entri dan tugas outbox-nya dalam satu transaksi IndexedDB, lalu membalas 303 agar tombol kembali tidak menggandakannya. Satu klik mereproduksi alur persis itu di browser mana pun." },
+            "card.sisuite.desc": { en: "Five domain systems — clinic, school, warehouse, payroll and accounting — each running entirely in a browser tab with no server and no dependencies. The point is domain correctness, not CRUD: medical record numbering, timetable conflict solving, FIFO costing with backdated recalculation, PPh 21 under the TER regime, and a cash flow statement that reconciles to the ledger. Every one runs its own assertion suite on load, so the rules can be checked rather than believed.", id: "Lima sistem domain — klinik, sekolah, gudang, penggajian, dan akuntansi — masing-masing berjalan sepenuhnya di dalam tab browser tanpa server dan tanpa dependensi. Fokusnya pada ketepatan domain, bukan sekadar CRUD: penomoran rekam medis, penyelesaian bentrok jadwal, perhitungan biaya FIFO dengan rekalkulasi mundur, PPh 21 di rezim TER, dan laporan arus kas yang rekonsiliasi dengan buku besar. Masing-masing menjalankan rangkaian asersinya sendiri saat dimuat, sehingga aturannya bisa diperiksa, bukan sekadar dipercaya." },
+            "card.bioage.desc": { en: "AI biological-age scanner (web + mobile). Estimates biological age from a face & body scan using an AI vision model, with a credit-based premium tier and multi-language support.", id: "Pemindai usia biologis berbasis AI (web + mobile). Memperkirakan usia biologis dari pemindaian wajah & tubuh menggunakan model AI vision, dengan tier premium berbasis kredit dan dukungan multi-bahasa." },
+            "card.radarduit.desc": { en: "AI personal-finance guardian. Real-time expense tracking with instant at-capture alerts and AI-powered transaction parsing, delivered as web + a mobile app.", id: "Penjaga keuangan pribadi berbasis AI. Pelacakan pengeluaran real-time dengan notifikasi instan saat transaksi tertangkap dan penguraian transaksi bertenaga AI, hadir sebagai web + aplikasi mobile." },
+            "card.cekaman.desc": { en: "Anti-scam protection suite that checks suspicious links, phone numbers, bank accounts, sellers and OJK-registered loan apps, and reads screenshots of scam chats (OCR + DeepSeek) into a plain-language risk read — delivered as an Android app and web.", id: "Rangkaian proteksi anti-penipuan yang memeriksa link, nomor telepon, rekening, toko, dan pinjol berizin OJK yang mencurigakan, serta membaca screenshot chat penipuan (OCR + DeepSeek) menjadi pembacaan risiko berbahasa sederhana — hadir sebagai aplikasi Android dan web." },
+            "card.pakpdf.desc": { en: "Online file-conversion platform for PDF and office documents, with user accounts, auth, and a fast SPA front-end backed by a Node API and containerized database.", id: "Platform konversi berkas online untuk PDF dan dokumen office, dengan akun pengguna, autentikasi, dan front-end SPA cepat yang didukung Node API serta basis data terkontainerisasi." },
+            "card.uniportal.desc": { en: "A university directory & login-launcher portal with a journals section — a Node/Express + SQLite back-end serving a fast vanilla-JS front-end, fronted by Cloudflare.", id: "Portal direktori universitas & peluncur login dengan bagian jurnal — back-end Node/Express + SQLite yang melayani front-end vanilla-JS cepat, di depan Cloudflare." },
+            "card.movieca.desc": { en: "A legal movie-discovery app with gamification — quests, XP, streaks, badges and referrals — built on Flutter with a Node back-end aggregating open content sources.", id: "Aplikasi penemuan film legal dengan gamifikasi — misi, XP, streak, lencana, dan referral — dibangun di Flutter dengan back-end Node yang mengagregasi sumber konten terbuka." },
+            "card.loginhub.desc": { en: "A programmatic-SEO login directory covering banking & service portals across Pakistan, built as a statically-exported Next.js site fronted by Cloudflare for speed and scale.", id: "Direktori login berbasis SEO programatik yang mencakup portal perbankan & layanan di seluruh Pakistan, dibangun sebagai situs Next.js ekspor statis di depan Cloudflare untuk kecepatan dan skala." },
+            "card.facevibe.desc": { en: "A viral face-scan personality app for Android & iOS — analyzes a selfie to generate a fun personality profile, built end-to-end in Flutter and targeting both app stores.", id: "Aplikasi kepribadian pemindai wajah yang viral untuk Android & iOS — menganalisis swafoto untuk menghasilkan profil kepribadian yang seru, dibangun menyeluruh di Flutter dan menyasar kedua app store." },
+            "card.repbout.desc": { en: "A head-to-head workout-battle app for Android — players challenge each other on training sets. Built in Flutter, with release signing material kept in a separate encrypted store rather than in the app repository.", id: "Aplikasi duel latihan head-to-head untuk Android — pemain saling menantang pada set latihan. Dibangun di Flutter, dengan materi signing rilis disimpan di penyimpanan terenkripsi terpisah, bukan di repositori aplikasi." },
+
+            "repos.head.title": { en: "Open-Source & Repositories", id: "Open-Source & Repositori" },
+            "repos.head.sub": { en: "Public projects &amp; code on GitHub — <a href=\"https://github.com/biassp?tab=repositories\" target=\"_blank\" rel=\"noopener\" style=\"color:var(--accent-2);font-weight:600\">github.com/biassp</a>", id: "Proyek &amp; kode publik di GitHub — <a href=\"https://github.com/biassp?tab=repositories\" target=\"_blank\" rel=\"noopener\" style=\"color:var(--accent-2);font-weight:600\">github.com/biassp</a>" },
+            "repos.stat.count": { en: "Public repositories", id: "Repositori publik" },
+            "repos.stat.langs": { en: "Languages used", id: "Bahasa digunakan" },
+            "repos.stat.stars": { en: "Total stars", id: "Total bintang" },
+            "repos.stat.forks": { en: "Total forks", id: "Total fork" },
+            "repos.seeall": { en: "See all repositories on GitHub", id: "Lihat semua repositori di GitHub" },
+
+            "skills.head.title": { en: "Skills & Proficiency", id: "Keahlian & Kemampuan" },
+            "skills.head.sub": { en: "Where I'm strongest, at a glance", id: "Di mana saya paling kuat, sekilas" },
+            "skills.web": { en: "Web Development (HTML · CSS · JS)", id: "Pengembangan Web (HTML · CSS · JS)" },
+            "skills.php": { en: "PHP & JavaScript", id: "PHP & JavaScript" },
+            "skills.node": { en: "Node.js Backend & REST APIs", id: "Backend Node.js & REST API" },
+            "skills.db": { en: "MySQL / SQLite Databases", id: "Basis Data MySQL / SQLite" },
+            "skills.linux": { en: "Linux & Server / Nginx Ops", id: "Linux & Ops Server / Nginx" },
+            "skills.flutter": { en: "Flutter Mobile Development", id: "Pengembangan Mobile Flutter" },
+            "skills.docker": { en: "Docker & Deployment", id: "Docker & Deployment" },
+            "skills.office": { en: "Microsoft Office & Power BI", id: "Microsoft Office & Power BI" },
+
+            "edu.head.title": { en: "Education & More", id: "Pendidikan & Lainnya" },
+            "edu.head.sub": { en: "Academic background, organizations, languages & interests", id: "Latar belakang akademik, organisasi, bahasa & minat" },
+            "edu.education.title": { en: "Education", id: "Pendidikan" },
+            "edu.education.lead": { en: "Information Systems", id: "Sistem Informasi" },
+            "edu.orgs.title": { en: "Organizations", id: "Organisasi" },
+            "edu.org1.lead": { en: "Chairman, UKM SINATERA IBN", id: "Ketua, UKM SINATERA IBN" },
+            "edu.org1.meta": { en: "Led all internal & external activities · 2016–2017", id: "Memimpin seluruh kegiatan internal & eksternal · 2016–2017" },
+            "edu.org2.lead": { en: "Minister of Human Resources, BEM IBN", id: "Menteri Sumber Daya Manusia, BEM IBN" },
+            "edu.org2.meta": { en: "Membership & job-desk management · 2015–2016", id: "Pengelolaan keanggotaan & job-desk · 2015–2016" },
+            "edu.org3.lead": { en: "Secretary, UKM SINATERA IBN", id: "Sekretaris, UKM SINATERA IBN" },
+            "edu.org3.meta": { en: "Correspondence & document filing · 2015–2016", id: "Surat-menyurat & pengarsipan dokumen · 2015–2016" },
+            "edu.org4.lead": { en: "IT Asset Division, HIMAKOM IBN", id: "Divisi Aset IT, HIMAKOM IBN" },
+            "edu.org4.meta": { en: "Routine maintenance of operational computers · 2015–2016", id: "Perawatan rutin komputer operasional · 2015–2016" },
+            "edu.lang.title": { en: "Languages", id: "Bahasa" },
+            "edu.lang.indonesian": { en: "Indonesian <span class=\"meta\">(Native)</span>", id: "Indonesia <span class=\"meta\">(Bahasa ibu)</span>" },
+            "edu.lang.english": { en: "English", id: "Inggris" },
+            "edu.contact.title": { en: "Contact", id: "Kontak" },
+            "edu.contact.remote": { en: "Indonesian · open to remote worldwide", id: "Orang Indonesia · terbuka untuk remote di seluruh dunia" },
+            "edu.drives.title": { en: "What Drives Me", id: "Yang Mendorong Saya" },
+            "edu.drives.p": { en: "Beyond code, a few things that keep me curious and moving.", id: "Di luar kode, beberapa hal yang membuat saya penasaran dan terus bergerak." },
+            "edu.drives.tag1": { en: "Continuous learning", id: "Belajar berkelanjutan" },
+            "edu.drives.tag2": { en: "Building products", id: "Membangun produk" },
+            "edu.drives.tag3": { en: "Education & mentoring", id: "Pendidikan & mentoring" },
+            "edu.drives.tag4": { en: "Travel", id: "Traveling" },
+            "edu.drives.tag5": { en: "Skateboarding", id: "Skateboarding" },
+            "edu.drives.tag6": { en: "Tech & startups", id: "Teknologi & startup" },
+
+            "footer.copyright": { en: "Built & designed by hand.", id: "Dibuat & dirancang dengan tangan." }
+        };
+
+        (function () {
+            var root = document.documentElement;
+            var stored = 'en';
+            try {
+                var s = localStorage.getItem('cv_lang');
+                if (s === 'en' || s === 'id') stored = s;
+            } catch (err) { }
+            var current = stored;
+
+            function setMeta(sel, val) {
+                var el = document.querySelector(sel);
+                if (el) el.setAttribute('content', val);
+            }
+
+            function applyLang(lang) {
+                if (lang !== 'en' && lang !== 'id') lang = 'en';
+                current = lang;
+                root.lang = lang;
+
+                var els, i, dict;
+                els = document.querySelectorAll('[data-i18n]');
+                for (i = 0; i < els.length; i++) {
+                    dict = I18N[els[i].getAttribute('data-i18n')];
+                    if (dict && typeof dict[lang] === 'string') els[i].textContent = dict[lang];
+                }
+                els = document.querySelectorAll('[data-i18n-html]');
+                for (i = 0; i < els.length; i++) {
+                    dict = I18N[els[i].getAttribute('data-i18n-html')];
+                    if (dict && typeof dict[lang] === 'string') els[i].innerHTML = dict[lang];
+                }
+
+                if (I18N.meta_title && I18N.meta_title[lang]) document.title = I18N.meta_title[lang];
+                if (I18N.meta_desc && I18N.meta_desc[lang]) setMeta('meta[name="description"]', I18N.meta_desc[lang]);
+                if (I18N.meta_ogtitle && I18N.meta_ogtitle[lang]) setMeta('meta[property="og:title"]', I18N.meta_ogtitle[lang]);
+                if (I18N.meta_ogdesc && I18N.meta_ogdesc[lang]) setMeta('meta[property="og:description"]', I18N.meta_ogdesc[lang]);
+
+                var btn = document.getElementById('langToggle');
+                if (btn) btn.textContent = lang === 'en' ? 'ID' : 'EN';
+
+                try { localStorage.setItem('cv_lang', lang); } catch (err) { }
+            }
+
+            function boot() {
+                applyLang(current);
+                var btn = document.getElementById('langToggle');
+                if (btn) btn.addEventListener('click', function () {
+                    applyLang(current === 'en' ? 'id' : 'en');
+                });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', boot);
+            } else {
+                boot();
+            }
         })();
     </script>
 </body>

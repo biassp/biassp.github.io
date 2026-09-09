@@ -83,8 +83,11 @@ Last updated: 2026-09-08.
 - `package.json` + `package-lock.json` are dev-only. The site still ships zero dependencies.
 - CHROMIUM_PATH env var overrides Playwright's browser lookup — needed in the sandbox where
   the installed Chromium build does not match what this Playwright version expects.
-- NOTE: pushing `.github/workflows/*` needs a token with the `workflow` scope. If the push is
-  rejected for that reason, the file has to be added from the web UI or a local machine.
+- Runner output, README, workflow step names and the labs-index sentence are all in English,
+  matching the English-first pass that landed on master the same day.
+- FIRST CATCH, within minutes of existing: the English-first commit added `#langToggle` to
+  index.html without `type`, and `test:markup` failed on it. Exactly the class of thing that
+  used to reach master unnoticed.
 
 ## Standing rules (decided 2026-09-08 — apply without asking again)
 - COPYRIGHT: the repo ships an all-rights-reserved LICENSE and every lab source file carries a
@@ -225,3 +228,37 @@ try/catch; zero network egress scoped to the lab page; copyright header in every
 - Both are static. Preview locally: `python -m http.server 8080` then open the folder.
 - Deploy = git push to the Pages branch (master for CV, main for skillpath). Pages auto-builds.
 - Validate CV HTML nesting before push (0 errors expected).
+
+## 2026-09-09 — CV is English-first + EN/ID toggle; case studies audited vs code
+- LANGUAGE: index.html, labs/index.html and all case studies are now English-first
+  (English ships inline = the no-JS default) with a persistent EN/ID toggle.
+  Mechanism: per-page dict of {key:{en,id}}, elements marked data-i18n / data-i18n-html,
+  localStorage key 'cv_lang' (default 'en', every call try/catch'd), a #langToggle button
+  next to the theme toggle. CV keeps it INLINE (var I18N) so index.html stays single-file;
+  case pages share the core added to case/case.js (reads window.PAGE_I18N). Theme-button
+  label is now language-aware (Light/Dark vs Terang/Gelap). Repos feed + reveal fallback
+  preserved. NOTE: individual lab apps under /labs/<name>/ were NOT translated (Indonesian
+  domain systems) — only the labs INDEX is bilingual.
+- CONTENT: the 3 previously-unanswered case-study problems are now answered from real code
+  (radar-duit format drift, bioage backward-compat API, repbout result verification).
+  New case study case/cek-aman/index.html + a Cek Aman portfolio card on the CV.
+- AUDIT (IMPORTANT discipline): a skeptic agent cross-checked every case-study/CV claim vs
+  the actual product code and found 5 overclaims — ALL now corrected in prose + both dict
+  languages:
+    * radar-duit p3: NOT on-device parsing. Flutter only whitelists which apps are read;
+      full notification text IS sent to the server (DeepSeek). Earlier "nothing leaves the
+      phone" wording (mine, from 47d9530) was itself wrong — re-corrected here.
+    * radar-duit p1: "silence = failure signal" is NOT built; softened to permission re-check
+      only, silence-detection marked as planned.
+    * repbout p1: only the company VAULT balance is ledger-derived; user gems are a stored
+      column guarded by idempotency keys (ledger-derived gems = planned next step).
+    * bioage p1: no server-side face/brightness gate; credits refunded only when nothing
+      usable returns; biological age is a single number + confidence, not a range.
+  LESSON: never let a case study claim more than the code does — verify against the repo,
+  not against another comment in the code (the backend comment claimed a Flutter regex layer
+  that does not exist). Commit f4cd3dd.
+- STILL OPEN (unchanged / next): repo GitHub About+Topics metadata; biassp/biassp profile
+  README; Company Vault screenshot (owner must capture+redact); SkillPath cert/instructor/
+  more courses; decide on dropped forks. The problem-framing "why hard" blocks were left as
+  aspirational requirements (they read as the ideal; the solved blocks now state what is
+  actually built vs planned).

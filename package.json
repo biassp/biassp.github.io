@@ -2,7 +2,7 @@
   "name": "biassp-github-io",
   "version": "1.0.0",
   "private": true,
-  "description": "CV dan portofolio statis. Situsnya sendiri tidak punya satu pun dependensi — semua yang ada di sini hanya untuk pengujian.",
+  "description": "Static CV and portfolio. The site itself has zero dependencies; everything here exists only to test it.",
   "license": "SEE LICENSE IN LICENSE",
   "author": "Bias Satrio Putra",
   "scripts": {

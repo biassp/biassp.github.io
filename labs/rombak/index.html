@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<!--
+  Rombak — part of the biassp.github.io portfolio
+  Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+  Not open source. Readable for evaluation only — copying, modification,
+  re-branding or redistribution is not permitted. See /LICENSE.
+  https://biassp.github.io/
+-->
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; worker-src 'self' blob:; form-action 'none'; base-uri 'none'; object-src 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Rombak — changing a schema that already has rows in it</title>
+    <meta name="description" content="A real SQLite database in the tab, walked forward through nine schema versions against data that is already in it — including the table rebuild that commits successfully, passes every integrity check, and has silently deleted rows.">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2032%2032%22%3E%3Crect%20width=%2232%22%20height=%2232%22%20rx=%227%22%20fill=%22%236366f1%22/%3E%3Crect%20x=%226%22%20y=%228%22%20width=%2220%22%20height=%224%22%20rx=%221%22%20fill=%22%23fff%22/%3E%3Crect%20x=%226%22%20y=%2214%22%20width=%2220%22%20height=%224%22%20rx=%221%22%20fill=%22%23fff%22/%3E%3Crect%20x=%226%22%20y=%2220%22%20width=%2212%22%20height=%224%22%20rx=%221%22%20fill=%22%23fff%22/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="app.css">
+    <script src="guard.js"></script>
+</head>
+
+<body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <!-- One polite live region for the whole app. Every panel is torn down and
+         rebuilt on each state change, which announces nothing on its own: the
+         migration that landed, the migration that refused and the row it refused
+         over, the census checksum that moved, and the live invariant count are
+         all written here. -->
+    <div id="say" role="status" aria-live="polite" class="sr-only"></div>
+
+    <header class="top">
+        <div class="brand">
+            <span class="mark" aria-hidden="true">RMB</span>
+            <div>
+                <h1>Rombak</h1>
+                <p class="sub">Nine schema versions against data that is already in it. A real SQLite in this tab. Nothing leaves it.</p>
+            </div>
+        </div>
+        <div class="top-actions">
+            <button type="button" class="testbadge" id="testBadge" title="Open the assertion suite — it runs against a database rebuilt from the seed">
+                <span class="dot" aria-hidden="true"></span><span id="testText">tests: waiting…</span>
+            </button>
+            <button type="button" class="testbadge" id="liveBadge" title="The same invariants recomputed over the database actually in front of you, including whatever you just did in the Console">
+                <span class="dot" aria-hidden="true"></span><span id="liveText">live db: checking…</span>
+            </button>
+            <span class="netbadge" id="netBadge" title="fetch / XMLHttpRequest / WebSocket / EventSource / sendBeacon attempts made by this page since load">
+                <span class="dot" aria-hidden="true"></span><span id="netCount">network calls from this page: 0</span>
+            </span>
+            <button type="button" id="themeBtn" class="btn ghost" title="Switch to the light theme">Light</button>
+            <a class="btn ghost" href="../../">CV</a>
+        </div>
+    </header>
+
+    <main id="main">
+        <p class="banner" id="fabricBanner">
+            <b>Every row on this page is fabricated, and the schema itself enforces it.</b>
+            No patient, staff member, diagnosis, bill or rupiah here is real. Every national identity number is
+            <code>NIK-FIKTIF-…</code> and every insurance number <code>BPJS-FIKTIF-…</code>, both under a
+            <code>CHECK … GLOB</code> that makes a valid-shaped one <em>unstorable</em>; phone numbers carry
+            <code>FIKTIF</code> in the middle; and <code>patient.is_demo</code> is
+            <code>CHECK (is_demo = 1)</code>, so the table is structurally incapable of holding a row that claims
+            to be real. The whole database is rebuilt from one seed number and one pinned date every time this
+            page loads, so the figures you see are the figures in the README and you can check them yourself.
+        </p>
+
+        <!-- Above the fold, in <main>, immediately after the fabrication banner,
+             and not collapsible. It contradicts a number printed on the suite
+             index, and a correction the reader has to open is not a correction. -->
+        <section class="vendorcall" aria-labelledby="vendorcall-h">
+            <h2 id="vendorcall-h">This page ships 878&nbsp;KB of somebody else's code, and that makes a claim on this site wrong.</h2>
+            <p>
+                The suite index says <code>0 dependencies</code>. This lab vendors SQLite — compiled to
+                WebAssembly by the sql.js project, MIT-licensed, checked into the repository — and that sentence
+                is now false, not nuanced. It has been corrected everywhere it appears rather than reworded into
+                something technically defensible.
+            </p>
+            <p>
+                The file is <code>vendor/sqlite-wasm-base64.js</code>. About a fifth of it is pure base64
+                overhead over the <span class="num">658,410</span>-byte binary — paid by every visitor,
+                including on a metered phone connection, before any of my own code runs. It is base64 rather
+                than a <code>fetch</code> because fetching the <code>.wasm</code> the normal way is a network
+                request, and every lab on this site ships <code>connect-src 'none'</code> with a counter pinned
+                at zero. That claim is worth more than the overhead. The counter in the header still reads 0
+                after everything on this page has run, including the export.
+            </p>
+            <p>
+                It is also the one exception to this site's promise that you can read the source. That file is a
+                single unreadable line and it is roughly a quarter of what this lab ships.
+                <code>node tools/vendor-sqljs.js labs/rombak</code> regenerates all three vendored files and
+                <code>git diff</code> afterwards is empty — which is why sql.js is pinned to exactly 1.14.2
+                rather than a caret range that would quietly expire. The MIT licence is at
+                <a href="vendor/LICENSE">vendor/LICENSE</a> and the third-party banner at the top of each
+                generated file is not to be removed.
+            </p>
+            <p>
+                The Content-Security-Policy on this page is also weaker than on the other seven labs:
+                <code>script-src</code> gains <code>'wasm-unsafe-eval'</code>. That directive permits
+                WebAssembly compilation and instantiation. It does <b>not</b> permit <code>eval()</code>,
+                <code>new Function()</code>, or inline script. <code>connect-src 'none'</code> — the directive
+                that actually protects the data — is byte-identical to every other lab here.
+            </p>
+        </section>
+
+        <nav class="tabs" id="tabs" role="tablist" aria-label="Database views">
+            <button type="button" role="tab" id="tab-schema" aria-controls="panel-schema" aria-selected="true" class="tab">Schema</button>
+            <button type="button" role="tab" id="tab-migrations" aria-controls="panel-migrations" aria-selected="false" tabindex="-1" class="tab">Migrations</button>
+            <button type="button" role="tab" id="tab-rebuild" aria-controls="panel-rebuild" aria-selected="false" tabindex="-1" class="tab">Rebuild</button>
+            <button type="button" role="tab" id="tab-constraints" aria-controls="panel-constraints" aria-selected="false" tabindex="-1" class="tab">Constraints</button>
+            <button type="button" role="tab" id="tab-plans" aria-controls="panel-plans" aria-selected="false" tabindex="-1" class="tab">Plans</button>
+            <button type="button" role="tab" id="tab-console" aria-controls="panel-console" aria-selected="false" tabindex="-1" class="tab">Console</button>
+            <button type="button" role="tab" id="tab-tests" aria-controls="panel-tests" aria-selected="false" tabindex="-1" class="tab">Tests</button>
+        </nav>
+
+        <!-- All seven panels are EMPTY here on purpose, and it is not laziness.
+             Every panel on this page shows SQL, and SQL is full of `<` and `&`:
+             one `WHERE a <> b` written into this file is an html-validate
+             no-raw-characters violation and a parse5
+             invalid-first-character-of-tag-name error at the same time. Rendered
+             through textContent from app.js, the same string cannot be markup at
+             all. -->
+        <div class="panels">
+            <section id="panel-schema" role="tabpanel" aria-labelledby="tab-schema" tabindex="0" class="panel"></section>
+            <section id="panel-migrations" role="tabpanel" aria-labelledby="tab-migrations" tabindex="0" class="panel" hidden></section>
+            <section id="panel-rebuild" role="tabpanel" aria-labelledby="tab-rebuild" tabindex="0" class="panel" hidden></section>
+            <section id="panel-constraints" role="tabpanel" aria-labelledby="tab-constraints" tabindex="0" class="panel" hidden></section>
+            <section id="panel-plans" role="tabpanel" aria-labelledby="tab-plans" tabindex="0" class="panel" hidden></section>
+            <section id="panel-console" role="tabpanel" aria-labelledby="tab-console" tabindex="0" class="panel" hidden></section>
+            <section id="panel-tests" role="tabpanel" aria-labelledby="tab-tests" tabindex="0" class="panel" hidden></section>
+        </div>
+
+        <!-- Outside the tab strip, so it cannot be the one tab nobody opens. -->
+        <section class="notproven" id="notproven" aria-labelledby="notproven-h">
+            <h2 id="notproven-h">What this page does not prove</h2>
+            <p class="note">
+                Every limit below is a real one, and none of them is a limit this page could design away.
+            </p>
+            <p>
+                <b>It is not MySQL, and it is not Postgres.</b>
+                SQLite has one writer, one isolation model, no InnoDB buffer pool, no query cache, no
+                replication, no <code>EXPLAIN ANALYZE</code>, no <code>ALGORITHM=INPLACE</code>, no
+                <code>pt-online-schema-change</code>, no logical-replication cutover, and a planner with a
+                different cost model. The ordering discipline on this page transfers completely — capture the
+                DDL of your indexes and triggers before you drop the table, run the integrity check inside the
+                transaction, know which children cascade, never assume a clean check means a correct migration.
+                The concurrency problem does not transfer at all, and the hardest part of a real migration is
+                doing it while writes are arriving. There is nothing here to write to this database but you.
+            </p>
+            <p>
+                <b>Durability is not demonstrated.</b> The database is in RAM. There is no WAL, no fsync, no
+                journal on disk. "Atomic" here means the transaction was atomic, not that the file survived a
+                power cut. The twelve-step rebuild protects against a logic error, not against a crash.
+            </p>
+            <p>
+                <b>The scale is wrong by orders of magnitude.</b> These migrations run in single-digit
+                milliseconds. Lock waits, a rebuild that outruns its maintenance window, a replica falling
+                behind — none of those can appear at this size and none is simulated.
+            </p>
+            <p>
+                <b>This build is missing things.</b> <code>PRAGMA compile_options</code> is on the Schema tab.
+                FTS5 is absent, so there is no full-text chapter and the ICD-10 search is a plain index. No
+                rtree. No <code>dbstat</code>, so index size is shown as a
+                <code>page_count − freelist_count</code> delta rather than per-index pages. No
+                <code>sqlite_stat4</code>, so <code>ANALYZE</code> produces average rows-per-value and nothing
+                finer. No <code>generate_series</code>, no <code>DELETE … LIMIT</code>.
+            </p>
+            <p>
+                <b><code>STRICT</code> is not "no coercion", it is "no lossy coercion".</b> <code>'abc'</code>
+                and <code>12.5</code> are refused in an INTEGER column. <code>'123'</code> still stores as 123
+                and <code>12.0</code> as 12. That is on the Constraints tab as its own row rather than quietly
+                omitted.
+            </p>
+            <p>
+                <b>The commitment is not an external anchor.</b> <code>audit_commitment</code> makes truncating
+                the tail cost the same as editing the middle. It does not make either impossible: anyone who can
+                write the audit rows can write the commitment. Only a countersigning server or a published daily
+                head hash fixes that, and neither is available to a page that makes no network calls. The
+                append-only triggers are likewise enforcement through SQL and not against someone editing the
+                bytes — and, as v9 shows, not even against a table rebuild.
+            </p>
+            <p>
+                <b>The polymorphic audit column is a trade-off, not a solution.</b> Three nullable typed columns
+                plus a CHECK that exactly one is non-null buys real foreign keys on all three, at the cost of
+                two always-NULL columns, a <code>coalesce()</code> on every read, and a table rebuild the day a
+                fourth entity type appears. The alternative keeps the table narrow and moves the check into a
+                trigger a bulk load can be told to skip. Both are named on the Constraints tab. This one was
+                taken.
+            </p>
+            <p>
+                <b>Four defects in this fixture were planted.</b> They are listed on the Migrations tab with
+                what each one is the residue of. The fifth failure — the rebuild that commits and destroys — is
+                not planted: the <code>ON DELETE CASCADE</code> on <code>addendum</code> is correct domain
+                modelling that happens to be a trap, and nothing about it was arranged for this page.
+            </p>
+            <p>
+                <b>The numbers here will not match the numbers in the README.</b> Every timing is measured on
+                your machine at this moment, as a mean over N runs with N shown. The README's figures are
+                labelled "one run, one machine" and are expected to differ. A lab whose numbers never move is a
+                lab that never ran.
+            </p>
+            <p>
+                <b>Down-migrations are mostly absent, and that is a position.</b> Two of the nine steps have a
+                real down and it runs. The other seven refuse, with the reason printed. A down that cannot
+                restore what the up dropped is worse than no down, because it advertises a safety that is not
+                there.
+            </p>
+            <p>
+                <b>What this is for.</b> The CV claims <em>Database Administrator, Infinix Philippines, Oct 2022
+                – Oct 2023 — ensuring data integrity, running backups, optimizing queries.</em> That is a year of
+                database work with no artifact anywhere on this site. <code>case/bioage</code> claims in prose
+                that every migration there is a guarded additive <code>ALTER TABLE</code> and never a rename or
+                a drop. <code>case/repbout</code> admits a stored balance column that still needs converting to
+                an append-only ledger. Three database claims, all prose, all about repositories nobody can see.
+                This page makes two of the three runnable. It does not demonstrate backups.
+            </p>
+        </section>
+
+        <footer class="foot">
+            <p>
+                <b>A clean integrity check is not evidence of a correct migration.</b> That is the one sentence
+                this page exists to make runnable. Two rebuilds on the Rebuild tab commit, return no error,
+                and leave <code>PRAGMA foreign_key_check</code> returning an empty set: one of them deletes
+                rows, and the other keeps every row and silently removes both append-only triggers. They are
+                two rebuilds of two different tables, because no single one does both — the table that loses
+                rows here carries no trigger to lose, which is itself worth knowing. Every figure on the
+                live-database card is computed twice, once by SQLite's query engine and once by hand-written
+                JavaScript folding raw rows, with both numbers and their difference on screen. That discipline
+                covers the figures and not everything on this page: a plan string and a timing have one route
+                each.
+            </p>
+            <p>
+                <b>Why the network number matters here.</b> This page ships <code>connect-src 'none'</code>
+                inside a <code>&lt;meta http-equiv="Content-Security-Policy"&gt;</code> tag in its own source,
+                so the browser refuses every outbound connection <em>this document's</em> JavaScript asks for.
+                The wrappers in <code>guard.js</code> close over <code>fetch</code>,
+                <code>XMLHttpRequest</code>, <code>WebSocket</code>, <code>EventSource</code> and
+                <code>sendBeacon</code> and count every <em>attempt</em>, which is why the vendored engine is
+                base64 in a <code>&lt;script&gt;</code> and not a <code>.wasm</code> behind a fetch. Open
+                DevTools; the Network tab stays empty. This is a statement about <em>this page</em> — the CV
+                homepage at biassp.github.io does call the GitHub API for its repository list.
+            </p>
+            <p class="small">
+                No framework, no bundler, no build step, and one vendored dependency stated in full above:
+                <code>guard.js</code>, <code>domain.js</code>, <code>schema.js</code>, <code>plans.js</code>,
+                <code>seed.js</code>, <code>census.js</code>, <code>engine.js</code>, <code>runner.js</code>,
+                <code>store.js</code>, <code>tests.js</code>, <code>app.js</code>, <code>app.css</code>, and
+                <code>vendor/</code> — sql.js 1.14.2, MIT, Copyright (c) 2017 sql.js authors, with SQLite
+                itself in the public domain: <a href="vendor/LICENSE">vendor/LICENSE</a>.
+                <a href="README.md">README</a>
+            </p>
+        </footer>
+    </main>
+
+    <script src="vendor/sqlite-wasm-base64.js"></script>
+    <script src="vendor/sql-wasm.js"></script>
+    <script src="domain.js"></script>
+    <script src="schema.js"></script>
+    <script src="plans.js"></script>
+    <script src="seed.js"></script>
+    <script src="census.js"></script>
+    <script src="engine.js"></script>
+    <script src="runner.js"></script>
+    <script src="store.js"></script>
+    <script src="tests.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

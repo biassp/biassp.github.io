@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<!--
+  Case study: RepBout — biassp.github.io
+  Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+  Not open source. Readable for evaluation only — copying, modification,
+  re-branding or redistribution is not permitted. See /LICENSE.
+-->
+<html lang="id" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RepBout — studi kasus</title>
+    <meta name="description"
+        content="Studi kasus RepBout: aplikasi Android adu latihan head-to-head dengan ekonomi dalam aplikasi. Dua masalah teknis — ledger gems yang tidak boleh menciptakan saldo dari udara kosong, dan memverifikasi hasil latihan yang mudah dicurangi.">
+    <meta name="author" content="Bias Satrio Putra">
+    <meta name="copyright" content="Copyright (c) 2026 Bias Satrio Putra. All rights reserved.">
+    <link rel="stylesheet" href="../case.css">
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2032%2032%22%3E%3Crect%20width=%2232%22%20height=%2232%22%20rx=%227%22%20fill=%22%2322c55e%22/%3E%3Cpath%20d=%22M9%2010v12M23%2010v12M5%2013v6M27%2013v6M9%2016h14%22%20stroke=%22%23fff%22%20stroke-width=%223%22%20fill=%22none%22%20stroke-linecap=%22round%22/%3E%3C/svg%3E">
+</head>
+
+<body>
+    <header class="top">
+        <div class="top-in">
+            <span class="crumb"><a href="../../">CV</a> · Studi kasus</span>
+            <div class="tools">
+                <button class="btn" type="button" id="tema" aria-pressed="false">Terang</button>
+                <a class="btn" href="../../#portfolio">← Portfolio</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="wrap">
+        <div class="hero">
+            <span class="eyebrow">Studi kasus</span>
+            <h1><span class="grad">RepBout</span> — adu latihan, dengan uang di dalamnya</h1>
+            <p class="lede">Aplikasi Android tempat dua orang saling menantang pada set latihan. Yang membuatnya
+                bukan sekadar aplikasi kebugaran: ada ekonomi di dalamnya — saldo gems, order yang dibayar, dan
+                penarikan yang keluar ke dunia nyata. Begitu ada uang, semua asumsi berubah.</p>
+
+            <div class="facts">
+                <div class="fact"><b>Peran</b><span>Dibangun sendiri, aplikasi dan backend</span></div>
+                <div class="fact"><b>Stack</b><span>Flutter · Android · backend wallet</span></div>
+                <div class="fact"><b>Status</b><span>Dalam pengerjaan · rilis bertanda tangan</span></div>
+            </div>
+
+            <div class="tags">
+                <span>Flutter</span><span>Android</span><span>Ledger</span><span>Matchmaking</span>
+                <span>Verifikasi hasil</span><span>Signed release</span>
+            </div>
+        </div>
+
+        <h2>Dua masalah yang membentuk produknya</h2>
+        <p class="muted">Aplikasi kebugaran biasa hanya perlu benar secara kira-kira — salah hitung repetisi tidak
+            merugikan siapa pun. RepBout tidak punya kemewahan itu: hasil latihan menentukan siapa menang, dan
+            kemenangan menggerakkan saldo yang bisa ditarik.</p>
+
+        <div class="prob">
+            <h3>1. Ledger gems dan siklus order</h3>
+            <p>Tiap pengguna punya saldo gems. Saldo bertambah lewat order yang dibayar, berkurang saat dipakai
+                bertanding, dan berpindah saat seseorang menang. Order sendiri punya siklus: dibuat, dibayar, atau
+                kedaluwarsa.</p>
+            <div class="why">
+                <b>Kenapa ini sulit</b>
+                Saldo tidak boleh pernah tercipta dari udara kosong. Itu terdengar sepele sampai kamu menghitung
+                jalur yang bisa melanggarnya: pembayaran yang dikonfirmasi dua kali, order yang kedaluwarsa
+                bersamaan dengan pembayarannya masuk, pertandingan yang selesai dua kali karena koneksi terputus
+                lalu dicoba ulang, atau dua permintaan yang tiba bersamaan dan sama-sama membaca saldo lama sebelum
+                salah satunya menulis. Setiap satu dari jalur itu, kalau salah, menciptakan uang.
+            </div>
+            <div class="why">
+                <b>Yang membuatnya berbeda dari fitur biasa</b>
+                Bug tampilan bisa diperbaiki besok. Bug ledger sudah terlanjur membayar orang. Dan begitu saldonya
+                bisa ditarik keluar, kesalahannya tidak bisa dibatalkan dengan menekan tombol undo — sama seperti
+                sistem persediaan atau akuntansi, satu-satunya cara aman adalah membuat saldo <em>diturunkan</em>
+                dari catatan transaksi, bukan disimpan sebagai angka yang bisa ditimpa.
+            </div>
+        </div>
+
+        <div class="prob">
+            <h3>2. Memverifikasi hasil latihan yang mudah dicurangi</h3>
+            <p>Dua pemain bertanding pada set latihan. Sistem harus memutuskan siapa yang menang.</p>
+            <div class="why">
+                <b>Kenapa ini sulit</b>
+                Tidak ada wasit. Yang melapor adalah orang yang diuntungkan oleh laporannya sendiri — dan begitu
+                hasilnya bernilai uang, sebagian orang akan mencoba. Mengetik “100 push-up” itu gratis. Sensor
+                ponsel bisa dikelabui dengan mengguncang perangkat. Video bisa diulang, dipercepat, atau diambil
+                dari orang lain. Setiap mekanisme verifikasi punya biaya di sisi lain: makin ketat, makin
+                merepotkan orang jujur, dan aplikasi kebugaran yang menyebalkan tidak akan dipakai siapa pun.
+            </div>
+            <div class="why">
+                <b>Masalah yang menempel di belakangnya</b>
+                Pemain yang kabur di tengah pertandingan. Apakah taruhannya hangus, dikembalikan, atau dihitung
+                kalah? Ketiganya bisa dieksploitasi kalau salah pilih — dan apa pun jawabannya harus konsisten
+                dengan ledger di atas, karena setiap keputusan itu memindahkan saldo.
+            </div>
+        </div>
+
+        <h2>Batasan yang menentukan bentuknya</h2>
+        <ul>
+            <li><b>Uang membuat semuanya permanen.</b> Penarikan tidak bisa dibatalkan, jadi kebenaran ledger harus
+                dijaga sebelum fitur, bukan sesudah.</li>
+            <li><b>Lawan yang punya insentif.</b> Berbeda dari aplikasi kebugaran biasa, di sini sebagian pengguna
+                punya alasan nyata untuk berbohong.</li>
+            <li><b>Verifikasi punya harga.</b> Setiap lapisan anti-curang menambah gesekan bagi mayoritas yang
+                jujur; ada titik di mana produknya mati karena terlalu ketat.</li>
+            <li><b>Kunci rilis dipisahkan.</b> Keystore penandatangan tidak berada di repositori aplikasi — dia
+                disimpan terenkripsi terpisah, dengan passphrase yang tidak pernah ikut tersimpan.</li>
+        </ul>
+
+        <div class="honest">
+            <b>Batas halaman ini.</b> Ini menjelaskan masalah yang saya pilih untuk dihadapi dan alasan
+            masalah-masalah itu sulit — bukan panduan implementasi, dan tidak memuat angka pengguna maupun
+            pendapatan. RepBout juga masih dalam pengerjaan, jadi halaman ini menggambarkan bentuk masalahnya, bukan
+            produk yang sudah selesai. Kalau kamu ingin tahu <em>bagaimana</em> tiap masalah diselesaikan, hubungi
+            saya.
+        </div>
+
+        <div class="next">
+            <a class="btn" href="../bioage/">Studi kasus lain: BioAge</a>
+            <a class="btn" href="../../#portfolio">← Kembali ke portfolio</a>
+        </div>
+
+        <footer>
+            <p>© 2026 Bias Satrio Putra. Seluruh hak dilindungi. Bukan open source — lihat
+                <a href="../../LICENSE">LICENSE</a>.</p>
+        </footer>
+    </main>
+
+    <script src="../case.js"></script>
+</body>
+
+</html>

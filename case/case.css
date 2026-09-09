@@ -1,0 +1,275 @@
+/*!
+ * Case studies — biassp.github.io
+ * Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+ * Not open source. Readable for evaluation only — copying, modification,
+ * re-branding or redistribution is not permitted. See /LICENSE.
+ */
+
+:root {
+    --bg: #0b1020;
+    --bg-soft: #10162b;
+    --card: #141b33;
+    --card-2: #182142;
+    --border: rgba(255, 255, 255, .08);
+    --border-strong: rgba(255, 255, 255, .16);
+    --text: #eaeefb;
+    --muted: #9aa6c4;
+    --faint: #7f8aad;
+    --accent: #6366f1;
+    --accent-2: #22d3ee;
+    --accent-3: #a855f7;
+    --link: #22d3ee;
+    --focus: #22d3ee;
+    --ok: #34d399;
+    --warn: #fbbf24;
+    --radius: 16px;
+    --shadow: 0 18px 40px rgba(0, 0, 0, .34);
+    --shadow-sm: 0 6px 18px rgba(0, 0, 0, .22);
+    --grad: linear-gradient(120deg, #6366f1, #a855f7 50%, #22d3ee);
+}
+
+/* Every accent token is overridden here on purpose: the dark-surface cyan
+   fails contrast on a near-white card. Three sibling labs shipped that bug. */
+html[data-theme="light"] {
+    --bg: #f6f7fb;
+    --bg-soft: #eef1f9;
+    --card: #ffffff;
+    --card-2: #eef1f9;
+    --border: rgba(15, 23, 42, .10);
+    --border-strong: rgba(15, 23, 42, .20);
+    --text: #131a2f;
+    --muted: #4a5578;
+    --faint: #5c6584;
+    --accent: #4f46e5;
+    --accent-2: #0e7490;
+    --accent-3: #7c3aed;
+    --link: #0e7490;
+    --focus: #4f46e5;
+    --ok: #047857;
+    --warn: #92620a;
+    --shadow: 0 18px 40px rgba(15, 23, 42, .10);
+    --shadow-sm: 0 6px 18px rgba(15, 23, 42, .07);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    line-height: 1.68;
+    -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--link); }
+
+code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .89em;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 5px;
+}
+
+:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+.wrap { max-width: 780px; margin: 0 auto; padding: 0 20px; }
+
+header.top { border-bottom: 1px solid var(--border); background: var(--bg-soft); }
+
+.top-in {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.crumb { color: var(--muted); font-size: .86rem; }
+
+.tools { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.btn {
+    font: inherit;
+    font-size: .82rem;
+    font-weight: 600;
+    padding: 7px 13px;
+    border-radius: 100px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: .2s;
+}
+
+.btn:hover { border-color: var(--border-strong); }
+
+.hero { padding: 40px 0 8px; }
+
+.eyebrow {
+    font-size: .76rem;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    font-weight: 700;
+    color: var(--faint);
+}
+
+h1 {
+    font-size: clamp(1.75rem, 4.6vw, 2.5rem);
+    line-height: 1.14;
+    letter-spacing: -.02em;
+    margin: 8px 0 12px;
+}
+
+.grad {
+    background: var(--grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.lede { color: var(--muted); font-size: 1.05rem; margin: 0 0 20px; }
+
+.facts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 22px 0;
+}
+
+.fact {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 13px 15px;
+    box-shadow: var(--shadow-sm);
+}
+
+.fact b {
+    display: block;
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--faint);
+    margin-bottom: 2px;
+}
+
+.fact span { font-size: .92rem; }
+
+h2 {
+    font-size: 1.32rem;
+    margin: 44px 0 10px;
+    letter-spacing: -.01em;
+}
+
+h3 { font-size: 1.06rem; margin: 30px 0 8px; }
+
+p { margin: 0 0 15px; }
+
+.muted { color: var(--muted); }
+
+.prob {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 18px 22px;
+    margin: 20px 0;
+    box-shadow: var(--shadow-sm);
+}
+
+.prob h3 { margin-top: 0; }
+
+.prob p:last-child { margin-bottom: 0; }
+
+.why {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 13px 16px;
+    margin: 14px 0 0;
+    font-size: .93rem;
+}
+
+.why b {
+    display: block;
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--faint);
+    margin-bottom: 4px;
+}
+
+ul { margin: 0 0 15px; padding-left: 20px; }
+
+li { margin-bottom: 7px; color: var(--muted); }
+
+li b { color: var(--text); }
+
+.tags { display: flex; flex-wrap: wrap; gap: 7px; margin: 16px 0; }
+
+.tags span {
+    font-size: .75rem;
+    padding: 5px 10px;
+    border-radius: 8px;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+}
+
+.honest {
+    border-left: 3px solid var(--warn);
+    background: var(--card);
+    border-radius: 0 12px 12px 0;
+    padding: 16px 20px;
+    margin: 34px 0 0;
+    font-size: .93rem;
+    color: var(--muted);
+}
+
+.honest b { color: var(--text); }
+
+footer {
+    margin-top: 52px;
+    border-top: 1px solid var(--border);
+    padding: 22px 0 44px;
+    color: var(--faint);
+    font-size: .84rem;
+}
+
+footer p { margin: 0 0 8px; }
+
+.next {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 30px 0 0;
+}
+
+@media (max-width: 620px) {
+    .facts { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+}
+
+@media print {
+    header.top, .tools, .next { display: none !important; }
+    body { background: #fff; color: #000; }
+    .prob, .fact, .why, .honest { box-shadow: none; border-color: #ccc; break-inside: avoid; }
+    .grad { -webkit-text-fill-color: #4338ca !important; }
+}

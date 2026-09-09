@@ -259,6 +259,33 @@ footer p { margin: 0 0 8px; }
     margin: 30px 0 0;
 }
 
+.solved {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--ok);
+    border-radius: 0 11px 11px 0;
+    padding: 13px 16px;
+    margin: 14px 0 0;
+    font-size: .93rem;
+}
+
+.solved b {
+    display: block;
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--ok);
+    margin-bottom: 4px;
+}
+
+.solved .trade {
+    display: block;
+    margin-top: 9px;
+    padding-top: 9px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+}
+
 figure.shot {
     margin: 24px 0;
     background: var(--card);

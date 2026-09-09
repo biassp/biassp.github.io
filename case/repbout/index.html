@@ -76,6 +76,19 @@
                 sistem persediaan atau akuntansi, satu-satunya cara aman adalah membuat saldo <em>diturunkan</em>
                 dari catatan transaksi, bukan disimpan sebagai angka yang bisa ditimpa.
             </div>
+            <div class="solved">
+                <b>Bagaimana ini ditangani</b>
+                Dua hal yang saling menutup. Pertama, <strong>saldo tidak pernah disimpan sebagai kolom</strong> —
+                dia selalu dijumlahkan dari tabel transaksi yang hanya bisa ditambah, tidak pernah ditimpa. Kedua,
+                setiap transaksi membawa <strong>idempotency key</strong>, jadi permintaan yang sama masuk dua kali
+                — webhook pembayaran yang dikirim ulang, aplikasi yang mencoba lagi setelah koneksi putus — hanya
+                dihitung sekali.
+                <span class="trade">Kombinasi itu menutup dua jalur berbeda: saldo turunan menghilangkan
+                kemungkinan angka ditimpa keliru, sementara idempotency key menghilangkan pencatatan ganda dari
+                percobaan ulang. Menutup salah satunya saja masih menyisakan lubang yang bisa menciptakan uang.
+                Prinsip yang sama saya pakai di <a href="../../labs/gudang/">Gudang</a>, di mana saldo stok juga
+                tidak pernah disimpan.</span>
+            </div>
         </div>
 
         <figure class="shot">

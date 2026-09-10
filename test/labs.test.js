@@ -98,6 +98,23 @@ async function main() {
     page.on('console', (m) => { if (m.type() === 'error') noise.push('console: ' + m.text()); });
     page.on('pageerror', (e) => noise.push('pageerror: ' + (e && e.message)));
 
+    /* Egress, policed at the network layer rather than by asking the page.
+       This matters more than it looks: a <meta http-equiv="Content-Security-
+       Policy"> does NOT reach a worker realm. Measured under the labs' own CSP,
+       a fetch from the page is refused with connect-src 'none' while the
+       IDENTICAL fetch from inside a worker resolves — silently, no console
+       error, and nothing window.<DIR>_GUARD can see, because that object lives
+       in the page realm only. Asking the workers directly does not work either:
+       at the moment this runner checks, the lab's worker has not spawned yet,
+       and by the time it has it has already terminated itself.
+       page.on('request') sees every realm, needs no cooperation from the code
+       under test, and cannot be fooled by an instrumented object that lies. */
+    const egressed = [];
+    const EGRESS_TYPES = new Set(['fetch', 'xhr', 'websocket', 'eventsource', 'ping']);
+    page.on('request', (r) => {
+      if (EGRESS_TYPES.has(r.resourceType())) egressed.push(r.resourceType() + ' ' + r.url());
+    });
+
     const url = 'http://127.0.0.1:' + port + '/labs/' + lab.dir + '/';
     let out;
     try {
@@ -109,9 +126,12 @@ async function main() {
          header; until now nothing proved it stayed at zero under CI. A lab with
          no guard object reports -1, which is not a failure — only a positive
          count is. */
+      const guardName = lab.dir.toUpperCase() + '_GUARD';
       const egress = await page.evaluate(
-        (g) => (window[g] ? window[g].total() : -1), lab.dir.toUpperCase() + '_GUARD');
+        (g) => (window[g] ? window[g].total() : -1), guardName);
       if (egress > 0) noise.push('egress: ' + egress + ' network call(s) from ' + lab.dir);
+
+      for (const e of egressed) noise.push('egress: ' + lab.dir + ' requested ' + e);
     } catch (err) {
       console.log(RED + '✗ ' + lab.dir + OFF + '  page failed to load: ' + err.message);
       pagesBroken++;

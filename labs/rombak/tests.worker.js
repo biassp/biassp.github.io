@@ -29,9 +29,20 @@
  *
  * The wasm arrives as base64 in a plain script, same as on the page, so the
  * worker makes no network request either — importScripts of a same-origin file
- * is not fetch, and connect-src 'none' still holds.
+ * is not fetch. Note that connect-src 'none' does NOT hold in here: see the note
+ * above importScripts('guard.js') below.
  */
 'use strict';
+
+/* guard.js FIRST, and not for the theme — a <meta> Content-Security-Policy does
+   NOT reach a worker realm. Measured under this lab's own CSP: a fetch from the
+   page is refused with connect-src 'none', and the identical fetch from inside a
+   worker RESOLVES, silently, with no console error and nothing the page's counter
+   can see. So the worker instruments its own fetch/XHR/WebSocket/EventSource
+   rather than inheriting a guarantee it does not actually have. This file makes
+   no network call; the wrap exists so that claim is enforced here too, not just
+   asserted in a comment. */
+importScripts('guard.js');
 
 importScripts(
   'vendor/sqlite-wasm-base64.js',

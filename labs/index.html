@@ -388,15 +388,15 @@
 
             <div class="stats">
                 <div class="stat">
-                    <div class="num">8</div>
+                    <div class="num">9</div>
                     <div class="lbl" data-i18n="stat.apps.lbl">applications</div>
                 </div>
                 <div class="stat">
-                    <div class="num" data-i18n="stat.assert.num">4,671</div>
+                    <div class="num" data-i18n="stat.assert.num">4,840</div>
                     <div class="lbl" data-i18n="stat.assert.lbl">assertions run on the page</div>
                 </div>
                 <div class="stat">
-                    <div class="num">7/8</div>
+                    <div class="num">8/9</div>
                     <div class="lbl" data-i18n="stat.deps.lbl">labs with zero dependencies</div>
                 </div>
                 <div class="stat">
@@ -493,12 +493,29 @@
         <section>
             <div class="sec-head">
                 <h2 data-i18n="eng.h2">Engineering demos</h2>
-                <p data-i18n="eng.p">Three that aren't information systems. They target things that are hard to prove in a
-                    line on a CV: a grasp of HTTP, what the web platform can do on a phone, and what happens when a
-                    schema has to change while the rows are already in it.</p>
+                <p data-i18n="eng.p">Four that aren't information systems. They target things that are hard to prove in a
+                    line on a CV: a grasp of HTTP, what the web platform can do on a phone, what happens when a
+                    schema has to change while the rows are already in it, and what it costs to let four devices edit
+                    one thing at once with nothing in charge.</p>
             </div>
 
             <div class="grid">
+                <a class="lab" href="./sepakat/">
+                    <div class="lab-head">
+                        <h3>Sepakat</h3><span class="uji" data-i18n="sepakat.assert">169 properties</span>
+                    </div>
+                    <p data-i18n-html="sepakat.desc">Four phones share one job board with no server between them, each
+                        editing offline. Three merge strategies — an operation log, last-writer-wins, and CRDTs
+                        (<code>OR-Set</code>, <code>PN-Counter</code>, a hybrid logical clock) — run against the same
+                        hostile network: reordered, duplicated, partitioned, with the clocks disagreeing.</p>
+                    <div class="hard" data-i18n-html="sepakat.hard"><b>The hardest part</b>The strategy that loses your
+                        data is not the one that looks broken. Last-writer-wins converges perfectly — every phone shows
+                        the same board — and the board is missing a technician's work, because 3 + 2 over a 5 is an 8 or
+                        a 7, and whose phone clock was fast decides which.</div>
+                    <div class="tags"><span>CRDT</span><span data-i18n="sepakat.tag.offline">Offline-first</span><span data-i18n="sepakat.tag.clocks">Logical clocks</span><span data-i18n="sepakat.tag.sim">Deterministic simulation</span></div>
+                    <span class="go" data-i18n="sepakat.go">Open Sepakat →</span>
+                </a>
+
                 <a class="lab" href="./rombak/">
                     <div class="lab-head">
                         <h3>Rombak</h3><span class="uji" data-i18n="rombak.assert">262 properties</span>
@@ -602,8 +619,8 @@
                     "id": "aplikasi"
                 },
                 "stat.assert.num": {
-                    "en": "4,671",
-                    "id": "4.671"
+                    "en": "4,840",
+                    "id": "4.840"
                 },
                 "stat.assert.lbl": {
                     "en": "assertions run on the page",
@@ -730,8 +747,36 @@
                     "id": "Demo rekayasa"
                 },
                 "eng.p": {
-                    "en": "Three that aren't information systems. They target things that are hard to prove in a line on a CV: a grasp of HTTP, what the web platform can do on a phone, and what happens when a schema has to change while the rows are already in it.",
-                    "id": "Tiga yang bukan sistem informasi. Ketiganya menyasar hal yang sulit dibuktikan lewat kalimat di CV: pemahaman HTTP, kemampuan platform web di ponsel, dan apa yang terjadi ketika skema harus berubah sementara barisnya sudah ada di dalamnya."
+                    "en": "Four that aren't information systems. They target things that are hard to prove in a line on a CV: a grasp of HTTP, what the web platform can do on a phone, what happens when a schema has to change while the rows are already in it, and what it costs to let four devices edit one thing at once with nothing in charge.",
+                    "id": "Empat yang bukan sistem informasi. Keempatnya menyasar hal yang sulit dibuktikan lewat kalimat di CV: pemahaman HTTP, kemampuan platform web di ponsel, apa yang terjadi ketika skema harus berubah sementara barisnya sudah ada di dalamnya, dan berapa ongkosnya membiarkan empat perangkat menyunting satu hal sekaligus tanpa ada yang memimpin."
+                },
+                "sepakat.assert": {
+                    "en": "169 properties",
+                    "id": "169 properti"
+                },
+                "sepakat.desc": {
+                    "en": "Four phones share one job board with no server between them, each editing offline. Three merge strategies — an operation log, last-writer-wins, and CRDTs (<code>OR-Set</code>, <code>PN-Counter</code>, a hybrid logical clock) — run against the same hostile network: reordered, duplicated, partitioned, with the clocks disagreeing.",
+                    "id": "Empat ponsel berbagi satu papan pekerjaan tanpa server di antaranya, masing-masing menyunting secara offline. Tiga strategi penggabungan — log operasi, last-writer-wins, dan CRDT (<code>OR-Set</code>, <code>PN-Counter</code>, hybrid logical clock) — dijalankan di jaringan tidak bersahabat yang sama: pesan teracak urutannya, terkirim ganda, terputus, dan jamnya tidak sinkron."
+                },
+                "sepakat.hard": {
+                    "en": "<b>The hardest part</b>The strategy that loses your data is not the one that looks broken. Last-writer-wins converges perfectly — every phone shows the same board — and the board is missing a technician's work, because 3 + 2 over a 5 is an 8 or a 7, and whose phone clock was fast decides which.",
+                    "id": "<b>Bagian tersulitnya</b>Strategi yang menghilangkan datamu bukan yang kelihatan rusak. Last-writer-wins konvergen dengan sempurna — semua ponsel menampilkan papan yang sama — dan papan itu kehilangan pekerjaan seorang teknisi, karena 3 + 2 di atas 5 menghasilkan 8 atau 7, dan yang menentukan adalah ponsel siapa yang jamnya lebih cepat."
+                },
+                "sepakat.tag.offline": {
+                    "en": "Offline-first",
+                    "id": "Offline-first"
+                },
+                "sepakat.tag.clocks": {
+                    "en": "Logical clocks",
+                    "id": "Logical clock"
+                },
+                "sepakat.tag.sim": {
+                    "en": "Deterministic simulation",
+                    "id": "Simulasi deterministik"
+                },
+                "sepakat.go": {
+                    "en": "Open Sepakat →",
+                    "id": "Buka Sepakat →"
                 },
                 "rombak.assert": {
                     "en": "262 properties",

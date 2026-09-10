@@ -6,8 +6,14 @@
  * https://biassp.github.io/
  */
 /* Sepakat - tests.js
- * The property suite. Runs in the page (Properties tab, in a Worker) and under
- * node from the same source, so what a visitor sees green is what gates the code.
+ * The property suite. Runs in the page (Properties tab) and under node from the
+ * same source, so what a visitor sees green is what gates the code.
+ *
+ * On the MAIN THREAD, deliberately: the whole suite is about 170 ms, and the
+ * page stays responsive throughout. Rombak next door moved its suite into a
+ * Worker because that one takes twenty seconds and froze the tab. Copying the
+ * worker here would buy nothing and cost a realm that a <meta> CSP cannot
+ * reach — so this page grants no worker at all.
  *
  * Three rules this file is written to, all of them learned the hard way in the
  * other labs in this folder:

@@ -188,6 +188,62 @@ Last updated: 2026-09-10.
   every key. It immediately caught a SECOND stale entry (`eng.p`) that I had also missed.
 - The check has never needed a synthetic red proof: it went red twice on real drift.
 
+## Serobot — the race lab (added 2026-09-10)
+- `labs/serobot/`. *Menyerobot* = to cut in line. Two writers race one balance: a stored column
+  loses updates in silence, an append-only ledger cannot, and a rendezvous turns the race into an
+  exact integer — which is the only reason any of it is assertable. 15 files, 616KB, ZERO
+  vendored bytes, CSP byte-identical to the strict labs (`diff` of line 13 vs harvest is empty).
+- 187 distinct properties, 66 negative, 567 executions, 13 groups. Site total 5,657 / 9 labs.
+- Closes the gap rombak declared about itself. rombak/README's "No concurrency" bullet now points
+  at this lab — but still declines the migration-under-load case, which neither lab claims.
+- THE BIG CORRECTION, and it falsified a claim I made to the owner twice: the lost update is NOT
+  caused by OS-thread parallelism. The identical loss happens on ONE event loop with no workers,
+  and there it is EXACT — final === N regardless of writer count; ten writers doing ten
+  increments each produce ten, not one hundred. Cause: a read-set spanning an await. Parallelism
+  makes the interleaving easy to hit, not possible. The exact version is also the assertable one.
+- THE FLAKE GATE IS THE NEW STANDING PRACTICE FOR ANY NONDETERMINISTIC LAB. The spec fixes which
+  assertions ship (30/30 at 1x, 4x AND 8x CPU throttle via CDP Emulation.setCPUThrottlingRate),
+  which are DEMOTED to on-screen observations, and which are REFUSED. Binding on builders.
+  * WHY 60 AND NOT 20: the survey's own 20-run pass reported an assertion 20/20 green that a
+    12-run pass had already caught failing 2/12. Twenty runs cannot certify a race assertion.
+  * Verified independently by me on the final tree: 25/25 green at 1x, 30/30 at 8x, all 567/567.
+    The flake verifier reported 245 consecutive green runs.
+- Main-thread block 33–50 ms across four verifiers — the best in the repository. rombak was
+  23,600 ms and nobody caught it; sahih 58–141 ms. Measured with rAF, never setInterval: a
+  setInterval monitor reports 0 ms for a real 788 ms block because it cannot fire during one.
+- BLOCKERS FOUND AND FIXED, one of them on the site's most load-bearing claim: the header egress
+  badge read "network calls from this page: 4" on EVERY page load while nothing had left the tab
+  — a probe function was polluting the live counter, then "repairing" it by ZEROING, which would
+  have destroyed a genuine egress count. Also: the independence table could be collapsed to a
+  single route in two places and nothing noticed (route A was written twice).
+- HONEST LIMIT SHIPPED AS A NUMBER, NOT A HEDGE: the firewall's cached-replay case is 0 of 187 —
+  a witness handed a faithful replay of the engine's own rows agrees with it, and no arithmetic
+  can catch that. The structural defence is that fold() takes a reader FUNCTION, never an array.
+- Verifier verdicts worth keeping: "THE LAB IS RIGHT ABOUT ITS BIG CLAIMS AND I COULD NOT BREAK
+  THEM" and "NO NETWORK / CLOCK-SKEW / CRASH OVERCLAIM FOUND ANYWHERE."
+- STILL OPEN, in the lab README: the tab strip sits at y=946 desktop / y=2357 at 390px, the worst
+  on the site (spec-mandated — the lede sits above it); print keeps only the visible panel (house
+  decision, matches sahih); an abandoned run can leave one orphaned run-scoped IndexedDB
+  database, whose only safe repair is an AGE-GATED boot sweep.
+
+## The worker CSP hole (2026-09-10) — applies to EVERY lab, not one
+- A `<meta http-equiv="Content-Security-Policy">` DOES NOT REACH A WORKER REALM. Measured under
+  the labs' own CSP: a fetch from the page is refused with connect-src 'none' and logs two
+  console errors; the IDENTICAL fetch from inside a worker RESOLVES, silently, and
+  `window.<DIR>_GUARD.total()` cannot see it because that object lives in the page realm.
+- Two shipped labs run real workers under the zero-egress badge. Neither makes a network call, so
+  the badge was not lying — but the guarantee was weaker than the CI check I had added claimed.
+- MY FIRST FIX WAS THE FIFTH INSTANCE OF THE PROOF-THAT-CANNOT-FAIL BUG: asking each worker for
+  its guard total. That loop could never fire — at the moment the runner checks, the lab's worker
+  has not spawned (run() is called on the main thread), and by the time it has, it has
+  terminated itself. I wrote it while fixing the fourth instance.
+- CORRECT FIX, shipped: `page.on('request')` in test/labs.test.js, filtered to
+  fetch/xhr/websocket/eventsource/ping. It sees every realm, needs no cooperation from the code
+  under test, and cannot be fooled by an instrumented object that lies. Proved red from the page
+  realm; a standalone probe proved the same listener sees a worker's fetch.
+- rombak/tests.worker.js now importScripts('guard.js') first so the worker instruments itself.
+  sahih/guard.js is verified worker-safe; do NOT copy a guard that writes `window.` directly.
+
 ## Standing rules (decided 2026-09-08 — apply without asking again)
 - COPYRIGHT: the repo ships an all-rights-reserved LICENSE and every lab source file carries a
   copyright header. This is NOT open source and must not be relicensed. Keep the headers when

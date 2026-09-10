@@ -56,6 +56,7 @@ importScripts('guard.js', 'kode.js', 'db.js', 'kunci.js', 'arms.js');
   var GUARD = root.SEROBOT_GUARD;
 
   var ctx = null;
+  var ujiNet = false;
   var db = null;
   var w = 0;
   var tahan = null;
@@ -113,7 +114,30 @@ importScripts('guard.js', 'kode.js', 'db.js', 'kunci.js', 'arms.js');
 
   function selesai() {
     tutup();
+    /* The probe attempt is made HERE, one turn before the count that carries
+       it, so the page's own counter is raised and put back inside a single
+       exchange rather than for the length of a run. */
+    if (ujiNet) { ujiNet = false; ujiLipat(); }
     kirim({ t: 'done', w: w, egress: GUARD ? GUARD.total() : 0, jaga: dijaga() });
+  }
+
+  /* THE FOLD, DRIVEN END TO END, BECAUSE NOTHING ELSE COULD DRIVE IT.
+     The page's counter cannot see this realm — that is the whole reason the
+     fold exists — so the only way to know the fold is wired is to make one
+     attempt travel it. Measured before this existed: delete the folding line in
+     the page's squad, and not one property in the suite moved, because every
+     one of them asks the counters and none of them exercises the path between
+     them.
+
+     NO REQUEST IS MADE HERE AND NONE CAN BE. This calls the guard's own
+     arithmetic entry point with a target that is not an address, which is the
+     same thing the suite does in the page realm. What it exercises is the rest
+     of the path: this realm's guard being present at all, its onchange being
+     wired, the post site, and the page folding what arrives into its own count.
+     It runs only when the caller asks for it, and the page never asks. */
+  function ujiLipat() {
+    if (!GUARD || typeof GUARD.noteExternal !== 'function') return;
+    GUARD.noteExternal('fetch', 'FIKTIF-no-request-was-made', 'worker');
   }
 
   function jalankan(m) {
@@ -121,6 +145,7 @@ importScripts('guard.js', 'kode.js', 'db.js', 'kunci.js', 'arms.js');
     var n = m.n;
     var arms = m.arms;
     var mode = m.barrier ? 'hadang' : 'lepas';
+    ujiNet = !!m.uji;
 
     /* The run's own lock-name prefix, applied by the lock helper itself. Two
        runs sharing one lock name serialise against each other and the second
@@ -193,7 +218,8 @@ importScripts('guard.js', 'kode.js', 'db.js', 'kunci.js', 'arms.js');
         barrier: !!d.barrier,
         db: String(d.db == null ? '' : d.db),
         lockPrefix: String(d.lockPrefix == null ? '' : d.lockPrefix),
-        runId: String(d.runId == null ? '' : d.runId)
+        runId: String(d.runId == null ? '' : d.runId),
+        uji: !!d.uji
       });
       return;
     }

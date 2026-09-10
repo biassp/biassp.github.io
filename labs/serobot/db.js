@@ -346,6 +346,64 @@
     });
   };
 
+  /* --------------------------------------------------------- route A ----- */
+
+  /* THE ENGINE'S HALF OF THE INDEPENDENCE TABLE, IN ONE PLACE. It was in two —
+     one copy driving the page, one copy driving the suite — and only the second
+     of those could ever be audited, which is one copy more than a claim about
+     two independent routes can afford.
+
+     Every figure here is read back off this file's own cursor and folded with
+     this file's own adder. Nothing in this function may name the witness, and
+     that is checked at runtime rather than promised: the suite reads this
+     function back through Function.prototype.toString and refuses any line in
+     it that fills the map out of a verdict.
+
+     The map comes back FROZEN, and that is the load-bearing part. Measured on
+     the shipped page before it was: fill two of these figures from the witness
+     immediately after this call, and the on-screen difference column still
+     reads zero on every row and the badge still reads all green, because the
+     two columns had become one number. Frozen, that same edit changes nothing
+     at all — the engine's own figure stays in the map, and if the two routes
+     really do disagree the table says so. A silent collapse becomes a visible
+     difference. */
+  NS.ruteA = function (db, before, W, n) {
+    var awal = (before && before.akun) ? before.akun : {};
+    if (!KODE.bulat(W) || W < 1) throw KODE.refuse('E_BUKAN_BULAT', 'W must be a positive integer');
+    if (!KODE.bulat(n) || n < 1) throw KODE.refuse('E_BUKAN_BULAT', 'n must be a positive integer');
+    /* The expectation, multiplied here from two integers, exactly as the other
+       route multiplies it from its own two. Neither route is handed a product. */
+    var m = { expected: W * n };
+    /* `kolom` — a column, which is what this route reads back — and
+       deliberately NOT the word the other route uses for the same figures.
+       Borrowing that vocabulary made the one-command check for this claim print
+       this file's own local helper four times, and a check a stranger cannot
+       read at a glance is a check nobody runs. This is the FOURTH file in this
+       lab bitten by naming, in its own text, the thing a check greps that file
+       for — and the first draft of this very comment was the fifth. */
+    function kolom(k) {
+      return NS.read(db, 'akun', k).then(function (nilai) {
+        m[k] = nilai === null ? 0 : nilai;
+        m['delta.' + k] = m[k] - (awal[k] | 0);
+        return null;
+      });
+    }
+    return rowsVia(db, 'jurnal', 'objectStore', null).then(function (env) {
+      var deltas = [], i;
+      for (i = 0; i < env.rows.length; i++) deltas.push(env.rows[i].delta);
+      m['jurnal.rows'] = env.count;
+      m['jurnal.total'] = KODE.jumlah(deltas, 'the engine\'s own fold over the ledger');
+      return kolom('K-pisah');
+    }).then(function () {
+      m['kurang.K-pisah'] = m.expected - m['delta.K-pisah'];
+      return kolom('K-satu');
+    }).then(function () {
+      return kolom('K-kunci');
+    }).then(function () {
+      return Object.freeze(m);
+    });
+  };
+
   /* ------------------------------------------- the transaction-death line */
 
   /* The portfolio's signature bug, occurring inside Chromium rather than inside

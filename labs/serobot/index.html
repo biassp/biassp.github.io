@@ -337,7 +337,12 @@
                     this page says so</b> rather than quietly being the only correct one.</li>
                 <li><b>No worker or page here ever attempts real egress to prove the counter works.</b> Each
                     refusal the browser issues writes a console error, and CI counts one console error as a
-                    broken page. The counter's arithmetic is asserted instead, against a throwaway clone.</li>
+                    broken page. The counter's arithmetic is asserted instead, against a throwaway clone. What
+                    <b>is</b> exercised end to end is the fold between the two realms: two workers each put one
+                    fabricated attempt through their own counter — a target that is not an address — and the
+                    page's counter has to move by exactly one per realm and is then taken back out by count and
+                    by target, never by being zeroed. Until that existed, deleting the line that performs the
+                    fold left every assertion in this lab green.</li>
                 <li><b>A finding about this repository's own shipped code, and this lab does not fix it.</b>
                     <code>labs/saku/sync.js:47</code> <code>peerApplyOne</code> reads through
                     <code>peerGet</code> (a <code>readonly</code> transaction), decides whether the idempotency

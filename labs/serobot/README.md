@@ -35,12 +35,12 @@ printed with every sample and pinned by nothing at all.
 
 | | |
 |---|---|
-| Assertions | **174 distinct properties, 60 of them negative** (34.5 %), across 13 groups, executing 532 times. 0 failed. |
+| Assertions | **187 distinct properties, 66 of them negative** (35.3 %), across 13 groups, executing 567 times. 0 failed. |
 | Files | 15 |
 | Vendored bytes | **0** |
 | Content-Security-Policy relaxation | **none** — line 13 is byte-identical to the seven strictest labs |
 | Network calls | 0, page realm **and** worker realm |
-| Suite cost, one run | 1.71–1.88 s at 1×, 3.44–4.37 s at 8× CPU throttle |
+| Suite cost, one run | 1.91–2.33 s at 1×, 3.07–3.75 s at 4×, 4.46–5.31 s at 8× CPU throttle — page load included, 60 runs at each rate |
 | Whole page, load to every panel populated | ≈ 4.3 s |
 | Longest main-thread block | 31–49 ms across the whole boot; 92 ms across a 22-second window that also included seven tab renders. 0 gaps over 100 ms in either. |
 
@@ -208,7 +208,11 @@ Every figure the centrepiece prints appears twice, from two routes that share no
 with their difference beside them — rendered even when it is zero, because a difference
 column that only appears when it is non-zero is a column nobody checks.
 
-- **Route A** is `db.js` reading the stores back through its own cursor.
+- **Route A** is `db.js` reading the stores back through its own cursor — one function,
+  `DB.ruteA`, called by the page and by the suite alike, scanned at runtime for any line
+  that fills it out of the other route, and returning a **frozen** map so that no caller
+  can patch a figure into agreement afterwards. It used to be two copies of that code,
+  one of them driving the page and reachable by no assertion in the lab.
 - **Route B** is `saksi.js`. It receives an injected reader function, the "before"
   snapshot as a **value**, and `W` and `n` as **two separate integers it multiplies
   itself**. It never receives an `IDBDatabase`, an `IDBTransaction`, a `Lock`, a
@@ -229,8 +233,8 @@ naming one would make the grep print it.
 **Its limit, as a number rather than a hedge.** Both routes bottom out in the same
 `IDBObjectStore` and the same scheduler; there is no second storage engine in a browser
 and this file is not one. Measured by stubbing the injected reader to replay the
-engine's cached row array: **0 of 174 properties go red.** Falsify one row inside that
-cache and **12** go red. The route separation catches a mistake in this lab's
+engine's cached row array: **0 of 187 properties go red.** Falsify one row inside that
+cache and **13** go red. The route separation catches a mistake in this lab's
 arithmetic; it cannot catch a lie told by the browser's own transaction manager, and it
 cannot catch a witness that was never given anything to disagree with.
 
@@ -245,6 +249,8 @@ and not underneath it.
 | No delay-scheduling call in `arms.js` | `grep -n 'setTimeout\|setInterval' labs/serobot/arms.js` | nothing |
 | No worker writes to the error console | `grep -rn 'console\.error' labs/serobot/` | nothing |
 | The printed arm bodies are live | `grep -n 'String(credit)' labs/serobot/arms.js` | two lines, 255 and 267 |
+| The Audit tab's two transcriptions are transcriptions | `sed -n '135,139p' labs/gudang/store.js` and `sed -n '47,52p;68p' labs/saku/sync.js` | the words and the lines the page prints |
+| Route A never names the route it is compared against | `sed -n '/NS.ruteA = function/,/^  };/p' labs/serobot/db.js \| grep -c 'verdict\|buku\|saldo\|SAKSI\|alasan'` | `0` |
 
 Two of those are worth a sentence each.
 
@@ -268,11 +274,58 @@ without a red line.
 
 ---
 
+## The flake gate
+
+The suite was run **180 times against one frozen set of bytes** — 60 at 1×, 60 at 4× and
+60 at 8× CPU throttle, each one a fresh page load driven through the same route CI uses —
+and every run produced the identical eleven-field result:
+
+```
+1x   60/60 green   567 passed, 0 failed, 187 properties, 66 negatives, noise 0   1910–2326 ms
+4x   60/60 green   567 passed, 0 failed, 187 properties, 66 negatives, noise 0   3066–3745 ms
+8x   60/60 green   567 passed, 0 failed, 187 properties, 66 negatives, noise 0   4458–5307 ms
+```
+
+That is **34,020 assertion executions at each rate and not one of them failed**, and the
+per-assertion rate matters more than the per-run one: all 517 distinct `group · name` rows
+were 60/60 at every rate. The ordered list of rows was byte-identical across all 180 runs,
+so no assertion was skipped and none appeared conditionally — a suite whose row list moves
+between runs is a suite that can hide a failure by not running it. Zero page errors, zero
+console errors, zero network requests at the network layer, and `SEROBOT_GUARD.total()`
+was 0 every time. The times include page load and are asserted nowhere.
+
+Twenty runs would have proved nothing here. The survey this lab was built from recorded a
+20-run pass reporting 20/20 green for an assertion a 12-run pass had already caught failing
+2 of 12.
+
+**A 2-core box, simulated two ways at once** — the process pinned to two physical cores
+with `taskset` *and* `navigator.hardwareConcurrency` overridden to match — was green 30/30
+at 1× and 15/15 at 8×. Pinned to **one** core with `hardwareConcurrency` reporting 1, it
+was green 20/20, and the clamp did its job: `clampW` came back **2**, not 1.
+
+That clamp is the whole thesis, and the free-mode column on the same boxes is what it
+looks like when nothing is clamped. Ten batches at each core count, asserted by nothing:
+
+```
+1 core,  W=1, expected 20    20 20 20 20 20 20 20 20 20 20     10 of 10 reached it
+2 cores, W=2, expected 40    31 34 27 33 35 30 38 36 33 33      0 of 10
+4 cores, W=4, expected 80    41 43 44 45 46 45 42 46 51 43      0 of 10
+```
+
+On a single-core machine the broken arm loses nothing, every time, because there is only
+one writer to lose to. Free mode carries no assertion, which is why 10 of 10 is a display
+and not a failure — but it means the page's *"no loss observed on this machine today"*
+branch is not an edge case there, it is the **only** branch such a visitor ever sees. The
+barrier column is unaffected: the clamp puts two writers on the board whatever the machine
+says, and every exact integer in it held.
+
+---
+
 ## The mutation gate
 
 A check that has never been seen to go red is not a check. Every defect below was
 injected into the **shipped** file, the suite re-run in real Chromium, and the file
-restored byte for byte. Baseline 532 / 0.
+restored byte for byte. Baseline 567 / 0.
 
 | Defect | Result |
 |---|---|
@@ -289,10 +342,35 @@ restored byte for byte. Baseline 532 / 0.
 | `assertNoTimer` returns ok unconditionally | 1 red |
 | `guard.total()` returns 0 unconditionally | 3 red |
 | the writer-count clamp dropped | 3 red |
+| the two-route comparison echoes the engine's own figure back into the witness's column | **0 red** — see below. 2 red once the gap below was closed |
+| every boolean the step-log audit returns replaced by the literal `true` | **0 red** — see below. 2 red once the gap below was closed |
+| the witness's verdict forced to certify, its reasons emptied | **0 red** — see below. 1 red once the gap below was closed |
+| only the engine's own route corrupted — its ledger fold `+7`, then its read of the locked arm `+3` | 5 red each, and every one of them reached through the two-route comparison |
+| the broken arm's read and write moved into one transaction — the *bug* removed, the concurrency left | 4 red |
+| the single-thread writers started one after another instead of in one turn — the *race* removed | 12 red |
+| the two idempotency deliveries made to arrive one after the other | 5 red |
+| barrier mode stopped synchronising altogether | 6 red |
 | the rendezvous in `satu` moved to after the write | **0 red — survivor** |
 | the witness folds the engine's cached rows | **0 red — the firewall's own limit, above** |
 | the Atomics working-member count hardcoded again | 1 red — the recount disagreed with the literal |
 | one `Atomics` member made to throw | 1 red naming that member; the count fell to 6 of 9 on its own and the capability line still rendered |
+| route A's ledger fold filled from the witness's verdict, in the suite | **0 red before this pass** — the two columns became one number. Now a `TypeError`: the map is frozen |
+| route A's balance filled from the witness, in the page | **0 red before this pass**, and every on-screen difference still read 0. Now the edit changes nothing |
+| the same collapse moved *inside* route A, where no caller can see it | 1 red — the provenance scanner names the line and quotes it back |
+| a verdict handed to route A as a fifth argument, its expectation taken from it | 1 red — route A's argument count is pinned, because that is the only way a verdict can reach its scope |
+| route A's fold made to overstate by 7 | 5 red, all of them reached through the two-route comparison |
+| the same overstatement *plus* the caller's collapse | 1 red — the frozen map turns the collapse into a `TypeError` and the pre-pass reports it |
+| `Object.freeze` dropped from route A's map, with the caller's collapse | 9 red, three of them the freeze properties themselves |
+| every worker spawns, exchanges messages and reports done, and does no work at all | 1 red — the witness refuses the run outright (`E_SAKSI_KOSONG`) and the suite reports one row rather than 187 green ones |
+| the squad's line that folds a worker's egress report into the page count deleted | **0 red before this pass** — now 3 red |
+| the worker's own posting of an attempt removed | 3 red |
+| `guard.js` removed from the worker's import list | 7 red |
+| the worker's reported egress replaced by a literal `0` | 1 red — the second route to the same number |
+| the ledger-derived total copied from the stored column in `idem.js` | 2 red |
+| the writer clamp collapsed to a single writer | 9 red, one of them the property that the ledger and the broken column must disagree |
+| the ledger written with `put()` under a row id that drops the round | 12 red across three groups |
+| the one-transaction arm keeps its rendezvous and stops writing | 5 red |
+| the coordinator counts two releases for every one it performs | 1 red — the release count is a count, not a figure derived from `W` and `n` |
 
 A review pass afterwards found a check that had never been able to go red and could
 not have been: the count of `Atomics` members that work was a literal `6` assigned inside
@@ -313,6 +391,75 @@ rendezvous — which is that arm's entire point. Three other mutations survived 
 pass and **four properties were added in response**: the duplicate-row-id refusal, the
 arm-key and line-diff structure, the timer audit with a planted body, and the brand
 containment check. They are holes that were fixed, not reported.
+
+### Three checks that could not go red, and now can
+
+A flake pass went hunting for the opposite failure — assertions that pass because they
+cannot fail — by neutering, one at a time, the three derived judgements the suite was
+reading rather than reproducing. All three left **every one of the executions green**:
+
+- **The comparison between the two routes.** Rewrite it so that it copies the engine's
+  own figure into the witness's column — literally the vice this whole lab is about,
+  both operands from one message — and `differs === 0`, `ok === true` and
+  `rows.length >= 6` all still pass, because a difference count that is never incremented
+  reads exactly like a difference count that is zero. This mattered more than the other
+  two: corrupting *only* the engine's route turns five properties red, and every one of
+  those five reaches the defect **through that comparison**. It was the only thing
+  carrying route A at all, and nothing was carrying it.
+- **The step-log audit.** Replace every boolean `UTAS.audit` returns with the literal
+  `true` and five properties over eleven runs — fifty-five executions, more than eight
+  hundred log entries — stay green.
+- **The witness's verdict.** Force `ok` to true and empty its reasons, and the two
+  properties in the centrepiece group that read exactly those two fields stay green.
+
+The fix in all three cases is the same one this lab already applies to its timer audit and
+its index-backed reader: a planted fixture the check has to refuse. The comparison is now
+handed one engine figure moved by seven and must report the label, the direction and the
+size of the gap; the audit is driven against a log with a repeated sequence number, a
+hole and a reading large enough to be a clock, and a second log whose only write has no
+read behind it; the verdict is shown an append-only store holding fewer rows than the
+snapshot it was handed recorded, and must refuse to certify it and say why. Those three
+negatives are what turned the three `0 red` rows above into 2, 2 and 1.
+
+### And three more, found by asking the same question one level up
+
+A later adversarial pass asked the question the previous one had not: not *is this
+judgement reproduced*, but **are the two things being compared actually two things**.
+
+- **The two routes were one edit away from being one route, in two places.** Filling the
+  engine's own figure out of the witness's verdict — two lines — left all 542 executions
+  green (the suite's size before this pass), `differs === 0`, and, on the real page,
+  **every row of the on-screen difference column still reading zero** with the badge
+  green. A comparison cannot see that its
+  operands came from the same place. Three things changed. Route A is now **one
+  function**, `DB.ruteA`, called by the page and by the suite alike, where there were two
+  copies and only one of them could ever be audited. That function is read back at
+  runtime through `Function.prototype.toString` and any line in it that fills the map from
+  a verdict is a red line — proved against a planted body that does exactly that. And the
+  map it returns is **frozen**, so the collapse cannot be performed by a caller either:
+  the same edit that used to hide a seven-rupiah overstatement now throws, and the
+  overstatement shows up in the difference column where it belongs.
+- **The egress fold across the realm boundary was never exercised.** The page's counter
+  cannot see inside a worker — that is the entire reason a fold exists — and every
+  property in the suite read a counter while nothing travelled the path between them.
+  Deleting the folding line left all 542 executions green. Two worker realms are now each
+  asked for one **fabricated** attempt through their own guard (no request is made, and
+  the runner's network listener is the independent check on that), and the page's counter
+  must move by exactly one per realm and then be taken back out **by count and by target,
+  never by zeroing** — a line that zeroes that counter is a line that can hide a real
+  attempt. Deleting the fold is now 3 red; removing `guard.js` from the worker's imports
+  is 7; replacing a worker's reported total with a literal `0` is 1.
+- **A description was printed as a quotation.** The Audit tab quotes two shapes from this
+  repository with a file and a line. One of them, `labs/gudang/store.js:135-139`, is a
+  comment reproduced word for word. The other was **a sentence this lab had written about
+  somebody else's code**, set in curly quotes under `labs/saku/sync.js:47`, where no such
+  sentence occurs — and nothing on the page or in the suite distinguished it from the
+  genuine one. It now carries the source lines themselves, verbatim, with the elision
+  marked; this lab's description of them is printed separately, in this lab's own voice,
+  with no quotation marks around it; and each entry states which kind of thing it is
+  carrying. Both are checkable with one `sed` command, and those commands are in the table
+  above. What the suite can pin from inside a browser is the shape, not the characters —
+  nothing in this lab reads the site's own source at runtime — and it says so.
 
 ---
 
@@ -342,14 +489,17 @@ releases all of them at the same instant.
 
 ---
 
-## Why 174 properties and not 500
+## Why 187 properties and not 500
 
 Rombak reported 262 because it had 33 tables, 19 indexes, 9 migrations and 4 rebuild
 variants to be right about. This lab has **six mechanisms**: `IndexedDB` transaction
 scope, the await interleaving, the append-only fold, idempotency, Web Locks, and the two
 clone seams. Ninety to a hundred and forty is what honest work on six mechanisms looks
-like; 174 is where it landed once the mutation gate had asked for four more and a review
-pass had replaced an Atomics count that could not go red.
+like; 187 is where it landed once the mutation gate had asked for four more, a review
+pass had replaced an Atomics count that could not go red, a flake pass had added three
+that could not go red either, and an adversarial pass had added eight more for the same
+reason — the two-route agreement's own provenance, the egress fold across the realm
+boundary, and the shape of the two transcriptions.
 
 A count that grew to match a sibling would be a count built from loops, and on this topic
 the loops are unusually cheap:
@@ -369,8 +519,8 @@ the loops are unusually cheap:
   those are pinned — and the price is that they would go red if Chromium changed, which
   this lab pays knowingly rather than claiming a boundary it does not hold.
 
-**Properties and executions are reported separately and are never added together.** 174
-properties execute 532 times, because most of them legitimately run once per arm or once
+**Properties and executions are reported separately and are never added together.** 187
+properties execute 567 times, because most of them legitimately run once per arm or once
 per writer count. The badge in the page header shows **properties**. The labs index
 shows **executions**. They are different numbers on purpose.
 
@@ -390,6 +540,13 @@ Every worker here `importScripts('guard.js')` and posts its own total back to be
 into the page count before anything is reported. Two sibling labs already ship real
 workers under the same badge while making a weaker claim, and this page says so rather
 than quietly being the only correct one.
+
+**The fold is driven, not described.** One fabricated attempt is put through each of two
+worker realms' own guards during the run, and the page's counter has to move by exactly
+one per realm and then be taken back out by count and by target. Until that existed,
+deleting the line in the page's squad that performs the fold left every property in the
+suite green: everything asked a counter and nothing travelled the path between two of
+them.
 
 **No worker or page here ever attempts real egress to prove the counter works.** Each
 refusal the browser issues writes a console error, and the runner counts one console

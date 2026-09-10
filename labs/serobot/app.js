@@ -324,6 +324,27 @@
      worker halves are folded in by pantau.js through the guard's own
      noteExternal at the moment of the attempt, not by arithmetic here. */
   function paintNet() {
+    /* NOT WHILE THE SUITE IS RUNNING, and this is a measured defect rather than
+       a precaution. The suite exercises the counter's arithmetic through the
+       guard's own entry point — three fabricated notes in the page realm, and
+       one more per writer arriving from the worker realm so that the fold
+       between the two realms is executed rather than asserted about — and every
+       one of those fires this hook, because it is the same hook a real attempt
+       would fire. Sampled at every animation frame across three loads, the
+       header painted "network calls from this page: 2" in its RED state on a
+       real frame in one of them; before the notify at the far end of that probe
+       existed it stayed red and stale for the whole 1.8 s the suite runs, on
+       every load. Nothing left the tab in any of it: the runner's own
+       page.on('request') stayed empty and every target is the literal
+       FIKTIF-no-request-was-made, which is not an address.
+       The badge counts ATTEMPTS. Arithmetic through the counter is not an
+       attempt, so while the suite is manufacturing some the honest figure to
+       leave on screen is the last one that described the world. runTests paints
+       this again the moment the suite resolves and the counters are back, so a
+       real attempt during that window is late by the length of the suite and is
+       never lost — and `noise` on the Tests tab and CI's network listener both
+       see it whatever this badge says. */
+    if (state.testsBusy) return;
     var g = root.SEROBOT_GUARD;
     var n = g ? g.total() : 0;
     var el = $('netCount');
@@ -485,7 +506,12 @@
      route A below IDBObjectStore. Nothing in this function computes either
      column: `banding` arrives from saksi.js already paired, and the difference
      column is rendered even when it is zero, because a difference column that
-     only appears when it is non-zero is a column nobody checks. */
+     only appears when it is non-zero is a column nobody checks.
+
+     MEASURED, AND IT IS WHY ROUTE A COMES BACK FROZEN: filling two of route A's
+     figures out of the verdict, immediately after the call that produced them,
+     left every row of this table reading zero and the badge reading all green.
+     Two columns had become one number and nothing here could say so. */
   function witTable(banding, note) {
     var box = h('div');
     box.appendChild(h('div', { class: 'wit' },
@@ -1367,7 +1393,7 @@
     if (!state.audit) { c.appendChild(h('div', { class: 'empty', text: 'Building: ' + state.step })); return; }
     var A = state.audit;
 
-    c.appendChild(h('h4', { text: KUNCI.KUTIPAN.gudang.file + ':' + KUNCI.KUTIPAN.gudang.line }));
+    c.appendChild(h('h4', { text: KUNCI.KUTIPAN.gudang.file + ':' + KUNCI.KUTIPAN.gudang.line + ' — the comment, word for word' }));
     c.appendChild(h('blockquote', { class: 'callout exact' }, h('p', { text: '“' + KUNCI.KUTIPAN.gudang.text + '”' })));
     c.appendChild(h('p', { class: 'note', text:
       'A prose claim in a comment, load-bearing, never measured — and it holds, with one word of it left ' +
@@ -1390,8 +1416,16 @@
     c.appendChild(h('h5', { text: 'the shape, read back out of the running function' }));
     c.appendChild(srcbox(A.srcGudang));
 
-    c.appendChild(h('h4', { text: KUNCI.KUTIPAN.saku.file + ':' + KUNCI.KUTIPAN.saku.line }));
-    c.appendChild(h('blockquote', { class: 'callout short' }, h('p', { text: '“' + KUNCI.KUTIPAN.saku.text + '”' })));
+    /* THE LINES, NOT A SENTENCE ABOUT THE LINES. This slot used to hold a
+       sentence this lab had written about somebody else's code, set in
+       quotation marks under a file and a line where no such sentence exists,
+       and it looked exactly like the genuinely verbatim comment above it. The
+       source lines go here now; the description goes below, in this lab's own
+       voice, with no quotation marks around it. */
+    c.appendChild(h('h4', { text: KUNCI.KUTIPAN.saku.file + ':' + KUNCI.KUTIPAN.saku.line + ' — the code, word for word' }));
+    c.appendChild(srcbox(KUNCI.KUTIPAN.saku.text));
+    c.appendChild(h('p', { class: 'note', text: 'This lab\'s description of those lines, which is a description and not a quotation: ' +
+      KUNCI.KUTIPAN.saku.ringkas }));
     c.appendChild(h('p', { class: 'note', text:
       'A read in a readonly transaction, a decision, and a write in a LATER readwrite transaction — character ' +
       'for character the shape the centrepiece loses updates with. Under the rendezvous the duplicates are ' +
@@ -1707,28 +1741,15 @@
   /* ROUTE A. Every figure here came off db.js reading the stores back, and not
      one of them came out of the workers' summary message. Route B is built by
      saksi.js from an injected reader and never sees this object. */
+  /* Route A of the independence table. THE IMPLEMENTATION LIVES IN db.js, in
+     one place, because this file used to carry a second copy of it and no
+     assertion in the lab could see this one. Two figures filled from the
+     witness here left every row of the on-screen difference column reading
+     zero, with the badge green — measured on this page. The map db.js hands
+     back is frozen for that reason: an edit like that one now changes nothing
+     instead of hiding something. */
   function routeA(db, before, res) {
-    var m = { expected: res.W * res.n };
-    return DB.rowsVia(db, 'jurnal', 'objectStore', null).then(function (env) {
-      var deltas = [], i;
-      for (i = 0; i < env.rows.length; i++) deltas.push(env.rows[i].delta);
-      m['jurnal.rows'] = env.count;
-      m['jurnal.total'] = KODE.jumlah(deltas, 'the engine\'s own fold over the ledger');
-      return DB.read(db, 'akun', 'K-pisah');
-    }).then(function (v) {
-      m['K-pisah'] = v === null ? 0 : v;
-      m['delta.K-pisah'] = m['K-pisah'] - (before.akun['K-pisah'] | 0);
-      m['kurang.K-pisah'] = m.expected - m['delta.K-pisah'];
-      return DB.read(db, 'akun', 'K-satu');
-    }).then(function (v) {
-      m['K-satu'] = v === null ? 0 : v;
-      m['delta.K-satu'] = m['K-satu'] - (before.akun['K-satu'] | 0);
-      return DB.read(db, 'akun', 'K-kunci');
-    }).then(function (v) {
-      m['K-kunci'] = v === null ? 0 : v;
-      m['delta.K-kunci'] = m['K-kunci'] - (before.akun['K-kunci'] | 0);
-      return m;
-    });
+    return DB.ruteA(db, before, res.W, res.n);
   }
 
   function demoPusat() {

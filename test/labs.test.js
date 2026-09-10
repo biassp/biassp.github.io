@@ -40,6 +40,7 @@ const LABS = [
   { dir: 'harvest', call: 'HARVEST.runTests()' },
   { dir: 'rombak', call: 'ROMBAK_TESTS.run()' },
   { dir: 'sahih', call: 'SAHIH_TESTS.run()' },
+  { dir: 'serobot', call: 'SEROBOT_TESTS.run()' },
 ];
 
 const MIME = {

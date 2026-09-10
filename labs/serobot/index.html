@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<!--
+  Serobot — part of the biassp.github.io portfolio
+  Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+  Not open source. Readable for evaluation only — copying, modification,
+  re-branding or redistribution is not permitted. See /LICENSE.
+  https://biassp.github.io/
+-->
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; worker-src 'self' blob:; form-action 'none'; base-uri 'none'; object-src 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Serobot — the same money, once as a column and once as a ledger</title>
+    <meta name="description" content="Two writers race one balance in a real browser tab: a stored column loses updates in silence, an append-only ledger cannot, and a rendezvous turns the loss into an exact integer.">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2032%2032%22%3E%3Crect%20width=%2232%22%20height=%2232%22%20rx=%227%22%20fill=%22%236366f1%22/%3E%3Crect%20x=%227%22%20y=%229%22%20width=%227%22%20height=%2216%22%20rx=%221%22%20fill=%22%23fff%22/%3E%3Crect%20x=%2218%22%20y=%2218%22%20width=%227%22%20height=%227%22%20rx=%221%22%20fill=%22%23fff%22/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="app.css">
+    <script src="guard.js"></script>
+</head>
+
+<body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <!-- One polite live region for the whole page. Every panel here is torn down
+         and rebuilt on each state change, which announces nothing on its own:
+         the tab that was opened, the batch that finished, the refusal and the
+         code it refused under, and the assertion counts are all written here. -->
+    <div id="say" role="status" aria-live="polite" class="sr-only"></div>
+
+    <header class="top">
+        <div class="brand">
+            <span class="mark" aria-hidden="true">SRB</span>
+            <div>
+                <h1>Serobot</h1>
+                <p class="sub">The same money twice — once as a stored column, once as an append-only ledger — with
+                    two writers on both. Nothing leaves this tab.</p>
+            </div>
+        </div>
+        <div class="top-actions">
+            <button type="button" class="testbadge" id="testBadge" title="Open the assertion suite — it runs in this tab against a database created and destroyed by this run">
+                <span class="dot" aria-hidden="true"></span><span id="testText">tests: waiting…</span>
+            </button>
+            <span class="netbadge" id="netBadge" title="fetch / XMLHttpRequest / WebSocket / EventSource / sendBeacon attempts made by this page AND by every worker it spawned, folded together">
+                <span class="dot" aria-hidden="true"></span><span id="netCount">network calls from this page: 0</span>
+            </span>
+            <button type="button" id="themeBtn" class="btn ghost" title="Switch to the light theme">Light</button>
+            <a class="btn ghost" href="../../">CV</a>
+        </div>
+    </header>
+
+    <main id="main">
+
+        <!-- Above the fold, in <main>, not collapsible, and the first claim on
+             the page because it is the one a reader can check in three seconds
+             without trusting a word of the rest. Rombak, two labs over, has to
+             use this position to admit it ships 878 KB of somebody else's
+             SQLite. This lab ships real workers, a real database and a real lock
+             queue under the unmodified policy. -->
+        <section class="nodeps" aria-labelledby="nodeps-h">
+            <h2 id="nodeps-h">This page vendors nothing and relaxes nothing.</h2>
+            <p>
+                No framework, no bundler, no build step, no <code>vendor/</code> directory and nothing under a
+                foreign licence. Real dedicated Web Workers, a real <code>IndexedDB</code> database created and
+                destroyed by each run, and a real <code>navigator.locks</code> queue — under the same
+                Content-Security-Policy the seven strictest labs on this site ship, byte for byte, with no
+                <code>'wasm-unsafe-eval'</code> and no widened <code>connect-src</code>. One command checks it,
+                and it prints nothing when it passes:
+                <code>diff &lt;(sed -n 13p labs/harvest/index.html) &lt;(sed -n 13p labs/serobot/index.html)</code>.
+                <code>worker-src 'self' blob:</code> was already in that line before this lab existed, so
+                spawning workers cost the policy nothing.
+            </p>
+            <p>
+                What that policy does <b>not</b> do is reach a worker, and that is measured rather than assumed —
+                it is the first item under <a href="#notcovered-h">What is still not covered</a>, below, and the
+                reason every worker on this page loads the same <code>guard.js</code> the header badge reads.
+            </p>
+        </section>
+
+        <!-- The capability line is deliberately the first live thing on the page.
+             A senior reader types crossOriginIsolated into the console within
+             twenty seconds of arriving, and leading with the answer buys the rest
+             of the visit. app.js replaces the placeholder below; nothing in this
+             file transcribes a value. -->
+        <section class="mesin" id="mesin" aria-labelledby="mesin-h">
+            <h2 id="mesin-h">This machine, read at load</h2>
+            <p class="note">Every value in this block is read from your browser's runtime as this tab renders. None
+                of it is typed into this file, and none of it is asserted by the suite — a machine description is
+                an observation, and pinning one is how a suite goes red on somebody else's laptop.</p>
+            <div id="mesinBody">
+                <p class="empty">The capability probe runs in your browser, from this page's own JavaScript. While
+                    this line is here it has not finished loading — and if it stays, scripting is off, and the
+                    prose below the tab strip is the whole of what this page can show you.</p>
+            </div>
+        </section>
+
+        <!-- The paragraph that opens the page. It sits above the tab strip
+             because both badge words are defined in it, and every panel below
+             uses them. -->
+        <div class="lede">
+            <p>
+                Every figure on this page was produced by your browser just now. Two badges tell you which kind
+                each one is: <b>asserted</b> means the suite pins it and CI would go red if it moved;
+                <b>measured</b> means it is a real number from a real run and no assertion touches it, because it
+                is a race outcome or a stopwatch reading and pinning either is how a suite goes red on somebody
+                else's laptop.
+            </p>
+            <p>
+                Before anything else, what this browser will not do. <code>crossOriginIsolated</code> is
+                <b>false</b> and <code>SharedArrayBuffer</code> is <b>undefined</b> — printed above, live, not
+                transcribed. GitHub Pages cannot send the COOP and COEP headers that shared memory requires, and
+                it never will; that is a static-host limitation, permanent, and not a setting this repository can
+                change. So there is no spinlock here, no futex, no seqlock, no ring buffer, no memory model, no
+                fences, no false sharing, and nothing on this page is a simulation of one over
+                <code>postMessage</code> wearing its name. <b>The obvious primitive is unavailable, and every
+                mutual-exclusion mechanism on this page exists because of that.</b> That is the constraint, not an
+                apology for it.
+            </p>
+            <p>
+                One correction to the easy version of that paragraph, because a reader with a console will check.
+                <code>Atomics</code> is not inert. On a plain <code>Int32Array</code>, <code>Atomics.add</code>
+                returned 0, <code>Atomics.load</code> 5, <code>Atomics.compareExchange</code> 5,
+                <code>Atomics.store</code> 3, <code>Atomics.exchange</code> 3, <code>Atomics.notify</code> 0, and
+                <code>Atomics.isLockFree(4)</code> true — seven of the nine members this page probes returned
+                a value, out of the fourteen function members <code>Atomics</code> carries in this browser. Only
+                <code>wait</code> and <code>waitAsync</code> throw <code>TypeError</code>. Both of those counts
+                are counted at runtime and printed on the Limits tab rather than transcribed here. What
+                <code>Atomics</code> gives you here is a genuine compare-and-swap over memory no other thread can
+                reach, which is <code>x++</code> with ceremony.
+            </p>
+        </div>
+
+        <nav class="tabs" id="tabs" role="tablist" aria-label="Demonstrations">
+            <button type="button" role="tab" id="tab-ledgers" aria-controls="panel-ledgers" aria-selected="true" class="tab">Two ledgers</button>
+            <button type="button" role="tab" id="tab-thread" aria-controls="panel-thread" aria-selected="false" tabindex="-1" class="tab">One thread</button>
+            <button type="button" role="tab" id="tab-once" aria-controls="panel-once" aria-selected="false" tabindex="-1" class="tab">Exactly once</button>
+            <button type="button" role="tab" id="tab-queue" aria-controls="panel-queue" aria-selected="false" tabindex="-1" class="tab">The queue</button>
+            <button type="button" role="tab" id="tab-audit" aria-controls="panel-audit" aria-selected="false" tabindex="-1" class="tab">Audit</button>
+            <button type="button" role="tab" id="tab-limits" aria-controls="panel-limits" aria-selected="false" tabindex="-1" class="tab">Limits</button>
+            <button type="button" role="tab" id="tab-tests" aria-controls="panel-tests" aria-selected="false" tabindex="-1" class="tab">Tests</button>
+        </nav>
+
+        <!-- All seven panels are EMPTY here on purpose, and it is not laziness.
+             Every panel on this page prints function bodies read back with
+             Function.prototype.toString, a one-line diff between two of them,
+             error codes and raw row dumps. A shipped source line written into
+             this file with a raw `<` before a letter is an html-validate
+             no-raw-characters violation and a parse5
+             invalid-first-character-of-tag-name error at the same time, and a
+             literal script tag written in prose is additionally harvested by
+             test/syntax.test.js and handed to node --check. Rendered through
+             textContent from app.js, the same string cannot be markup at all —
+             which on a page whose whole argument is "what is on screen is what
+             ran" removes a class of bug rather than avoiding a lint. -->
+        <div class="panels">
+            <section id="panel-ledgers" role="tabpanel" aria-labelledby="tab-ledgers" tabindex="0" class="panel">
+                <!-- The one exception to the empty-panel rule above, and it is
+                     the same rule read honestly: prose, with no source line, no
+                     raw `<`, no code fragment and no script tag, so none of the
+                     three validators or test/syntax.test.js can see anything in
+                     it. app.js removes it on the first render. It is here
+                     because the tab strip is painted long before app.js exists —
+                     measured on a sibling page at 224 ms on a local load and
+                     6.4 s on a 400 kbit link — and an empty panel under a
+                     live-looking strip reads as a broken page rather than a
+                     loading one. -->
+                <p class="empty">The demonstrations are built in your browser, by this page's own JavaScript.
+                    While this line is here they have not finished loading — and if it stays, scripting is off,
+                    and the sections below the tab strip are the whole of what this page can show you.</p>
+            </section>
+            <section id="panel-thread" role="tabpanel" aria-labelledby="tab-thread" tabindex="0" class="panel" hidden></section>
+            <section id="panel-once" role="tabpanel" aria-labelledby="tab-once" tabindex="0" class="panel" hidden></section>
+            <section id="panel-queue" role="tabpanel" aria-labelledby="tab-queue" tabindex="0" class="panel" hidden></section>
+            <section id="panel-audit" role="tabpanel" aria-labelledby="tab-audit" tabindex="0" class="panel" hidden></section>
+            <section id="panel-limits" role="tabpanel" aria-labelledby="tab-limits" tabindex="0" class="panel" hidden></section>
+            <section id="panel-tests" role="tabpanel" aria-labelledby="tab-tests" tabindex="0" class="panel" hidden></section>
+        </div>
+
+        <!-- Outside the tab strip, so it cannot be the one tab nobody opens. -->
+        <section class="notproven" aria-labelledby="notbuilt-h">
+            <h2 id="notbuilt-h">Not built, stated plainly</h2>
+            <p class="note">Concurrency in a browser is mostly things you cannot do, so this list is longer than
+                the list of what is real. That asymmetry is the honest shape of the subject.</p>
+
+            <ol class="notbuilt">
+                <li><b>No shared memory, and therefore none of the textbook primitives.</b> Above, in its own
+                    paragraph, because it is the constraint the whole page is built inside.</li>
+                <li><b>No network, and therefore not the hard problem.</b> No partition, no packet loss, no
+                    reordering, no retry storm, no at-least-once delivery, no backpressure, no load shedding. The
+                    genuinely hard question — <em>did it fail, or is it just slow?</em> — cannot even be posed
+                    here, because there is no remote party whose silence is ambiguous. That is the difference
+                    between a concurrency lab and the other kind, and conflating the two is the field's most
+                    common tell.</li>
+                <li><b>No durability and no crash.</b> Nothing is killed mid-write, no tab is force-closed, no
+                    disk is pulled. Nothing here asserts what <code>IndexedDB</code> leaves behind after an
+                    abnormal termination. This is also why the split-transaction idempotency panel shows a
+                    <b>seam</b> rather than a lost credit: the failure it warns about needs a process to die, and
+                    this lab cannot kill one.</li>
+                <li><b>No second clock.</b> One wall clock for every worker on this page, so there is no skew to
+                    demonstrate and nothing here is ordered by time. One clock trap does exist and is named:
+                    <code>performance.now()</code> has a different time origin in a worker than on the page —
+                    measured 49&nbsp;ms apart in one run. <code>performance.timeOrigin</code> is exposed in both
+                    scopes so the two are reconcilable, but they are <b>not directly comparable</b>, and this
+                    page never compares them. Every ordering claim on this page runs on integer sequence numbers,
+                    and a guard refuses a timestamp handed in as an ordering key.</li>
+                <li><b>No consensus, replication or leader election.</b> The lease in <code>labs/gudang/</code> is
+                    not leader election: there is no failure detector, only a wall-clock TTL.</li>
+                <li><b>Nothing SQL-shaped.</b> No isolation levels, no MVCC, no snapshot isolation, no
+                    <code>SELECT … FOR UPDATE</code>, no advisory locks, no <code>BEGIN IMMEDIATE</code>, no WAL,
+                    no <code>busy_timeout</code>, no deadlock victim selection.</li>
+                <li><b>No online migration.</b> <a href="../rombak/">Rombak</a>'s hardest admitted item is not
+                    closed here either.</li>
+                <li><b>No <code>IndexedDB</code> starvation demo, because there is none to build.</b> Measured
+                    while this lab was built, and re-derived independently afterwards in a second harness that
+                    shares no code with it — <b>not</b> re-run on your visit, so this one is transcribed and
+                    says so. A <code>readwrite</code> transaction opened behind three self-perpetuating
+                    <code>readonly</code> chains — chains that kept creating <em>new</em> transactions after the
+                    writer was created — waited <b>1&nbsp;ms</b> every time, with anywhere from four hundred to
+                    six thousand <code>readonly</code> transactions already completed depending on how long the
+                    chains had been running. <code>IndexedDB</code> starts overlapping-scope transactions in
+                    creation order, so a transaction only ever waits on transactions created before it. The
+                    specification forbids the starvation and this build honours it. The page says that rather
+                    than staging one.</li>
+                <li><b>No <code>IndexedDB</code> transaction-timeout demo, because there is no timeout.</b>
+                    Measured while this lab was built and not re-run on your visit: a transaction held busy for
+                    two and a half seconds ran several thousand read-modify-writes and committed cleanly, with
+                    <code>onabort</code> never firing and <code>tx.error</code> null. The exact count moved
+                    between eight and ten thousand across machines and is <b>not</b> a figure this page claims —
+                    see the throughput item below. What did not move is that nothing timed the transaction
+                    out.</li>
+                <li><b>No cross-origin anything.</b> Web Locks, <code>IndexedDB</code> and
+                    <code>BroadcastChannel</code> are all origin-scoped. Every mechanism here protects one site
+                    from itself.</li>
+                <li><b>No scheduler control.</b> You cannot pin a worker to a core, set a priority, force a
+                    preemption point, or make an interleaving repeat. Chromium throttles workers and timers in
+                    hidden tabs; a background tab produces different results and this page cannot prevent it,
+                    which is why <code>visibilityState</code> is printed beside every batch.</li>
+                <li><b>No ordering guarantee between a <code>BroadcastChannel</code> message and the
+                    <code>IndexedDB</code> commit it announces.</b> A receiver that reads on notification can
+                    read stale. The page does not demonstrate it and therefore does not imply the ordering
+                    holds.</li>
+                <li><b>No fairness claim beyond printing the queue,</b> and no starvation demonstration for the
+                    optimistic path. A slow writer can lose a compare-and-set indefinitely; nothing here shows
+                    it, and the mandatory retry cap exists precisely because it cannot be ruled out.</li>
+                <li><b>No proof of absence.</b> Every green run is one sample of a nondeterministic space. A run
+                    in which nothing was lost is not a run in which nothing could be lost.</li>
+                <li><b>No cross-tab assertion.</b> <code>test/labs.test.js</code> opens one page and calls
+                    <code>page.evaluate</code> once, so nothing cross-tab is assertable here; the
+                    <code>storage</code> event never fires in the same document and does not exist in workers at
+                    all. The one cross-tab affordance on this page is labelled <b>unasserted</b>.</li>
+                <li><b>No throughput claim and no benchmark against anything.</b>
+                    <code>hardwareConcurrency</code> is 4 on the machine that runs CI. A browser is not a runtime
+                    you benchmark against.</li>
+                <li><b><code>app.js</code> has no automated control.</b> The suite asserts the engines; nothing
+                    asserts the renderers. Every number written into page <em>prose</em> is unasserted by
+                    construction — a sibling lab found this when a mutation restoring a wrong hardcoded year left
+                    all 419 assertions green.</li>
+                <li><b>No assertion here is a conformance test of the browser</b> — and the honest version of
+                    that sentence is narrower than the one this page used to carry. Nothing here sets out to
+                    prove that <code>postMessage</code> delivers or that <code>structuredClone</code> clones;
+                    those are Chromium's tests. But the suite <em>does</em> pin the exact strings the browser
+                    produced and this page prints — the lock ordering
+                    <code>a-in,a-out,b-in,b-out</code>, the shared-then-exclusive order
+                    <code>s1-in,s2-in,x1-in,s3-in</code>, the two keys <code>query()</code> returns and the
+                    three in every entry, what each <code>Atomics</code> member returned, the DOMException
+                    names. A printed ordering that nothing checks is prose. The price of pinning them is that
+                    they would go red if Chromium changed its behaviour, and this lab pays it knowingly rather
+                    than claiming a boundary it does not hold.</li>
+            </ol>
+
+            <h3 id="norefuse-h">The claims this page refuses to make</h3>
+            <ul class="refuses" aria-labelledby="norefuse-h">
+                <li><b>Not "there is no concurrency anywhere in this portfolio."</b>
+                    <code>labs/gudang/store.js:135-152</code> ships a cross-tab TTL write lock whose comment
+                    already asserts, in prose, the exact property this lab measures.
+                    <code>labs/siakad/solver.worker.js</code> and <code>labs/rombak/tests.worker.js</code> are
+                    real workers. <code>PROGRESS.md</code> records a shipped concurrency <b>bug</b> — ledger ids
+                    from a per-tab counter used as an <code>IndexedDB</code> key, one tab silently destroying
+                    another's entries, fixed by <code>put()</code> → <code>add()</code> — and gudang's own
+                    admitted residual sub-second race on a lapsed 9-second lease. Concurrency has appeared here
+                    three times — <b>once as a bug, once as a mitigation, once as an admitted gap</b> — and never
+                    as the subject. Gudang's lock comment is a load-bearing claim that has never been measured.
+                    This page measures it, and it is correct.</li>
+                <li><b>Not "this closes the gap rombak declared."</b> Rombak's "Not built" names five things:
+                    <code>BEGIN IMMEDIATE</code>, WAL mode, busy timeouts, lock contention, and a migration
+                    running while writes arrive. This lab closes <b>two</b> — lock contention and concurrent
+                    writers — in a different storage engine, and leaves the three SQLite-specific ones and the
+                    hard one, online migration, exactly where they were. A reader who follows
+                    <a href="../rombak/">the link</a> and re-reads that sentence should find the arithmetic
+                    already done for them.</li>
+                <li><b>Not "real OS-thread parallelism caused the lost update."</b> The cause is a read-set that
+                    spans a transaction boundary. The identical loss happens on one thread with nothing running
+                    in parallel at all — that is the panel one tab over, and it is exact where this one is not.
+                    <b>Parallelism makes the interleaving easy to hit; it is not what makes it possible.</b></li>
+                <li><b>Not "<code>IndexedDB</code> is ACID"</b>, and no isolation level is named. The defensible
+                    claim is narrow and is the one made: the specification requires read-write transactions with
+                    overlapping scope to start in creation order and not run concurrently, so a
+                    read-modify-write contained in one transaction cannot interleave with another — and that is
+                    what was measured.</li>
+                <li><b>Not "<code>navigator.locks</code> gives you mutual exclusion."</b> It serialises <b>the
+                    callers who ask</b>. It is advisory: code that never requests the lock walks straight past
+                    it, and a name cannot be made mandatory. It is origin- and agent-scoped. What it gives you
+                    that a TTL lease does not is release-on-death — so no expiry window for a <em>dead</em>
+                    agent. But a <b>frozen-but-alive</b> agent holds a Web Lock indefinitely with no timeout of
+                    any kind, where a lease at least lapses; and <code>steal: true</code>, demonstrated here,
+                    constructs exactly the two-parties-both-believe situation that fencing tokens exist for. It
+                    is a trade with two columns, not a fix.</li>
+                <li><b>Not "we proved the safe path is safe."</b> It lost nothing in the runs on this machine.
+                    That is evidence, not proof: a race that does not fire is indistinguishable from a race that
+                    cannot. The reason to believe the single-transaction path is safe is the specification; the
+                    runs are a check that this browser implements it.</li>
+                <li><b>Not "we fixed the race."</b> This shape of race is not reachable through this code path.
+                    Other shapes are not addressed and are not claimed.</li>
+                <li><b>Not "zero network calls, so nothing left the tab."</b> <code>connect-src 'none'</code> is a
+                    browser refusal, not a promise, and the counter above measures <b>attempts</b>, not outcomes —
+                    under that CSP <code>navigator.sendBeacon</code> still returns <code>true</code>.</li>
+                <li><b>Not one word of</b> <em>distributed, consensus, quorum, CAP, Raft, Paxos, two-phase
+                    commit, split brain, replication, eventual consistency, leader election, linearizable,
+                    lock-free, wait-free, ACID,</em> or any SQL isolation level — except in the list above, as
+                    things this lab does not do.</li>
+            </ul>
+
+            <h3 id="notcovered-h">What is still not covered</h3>
+            <ul class="refuses" aria-labelledby="notcovered-h">
+                <li><b>The network counter in this repository's lab headers only ever watched the main
+                    thread.</b> A <code>&lt;meta http-equiv&gt;</code> Content-Security-Policy applies to the
+                    <b>document</b>, not to a dedicated worker's global scope, and GitHub Pages sends no CSP
+                    header at all — so a worker has effectively no policy. Measured on this page's own CSP: a
+                    <code>fetch</code> from the page was refused and wrote two console errors; <b>the identical
+                    <code>fetch</code> from inside a same-origin worker resolved with the body</b>, silently,
+                    with nothing logged. <code>window.SEROBOT_GUARD.total()</code> — the exact expression CI
+                    evaluates — cannot see it. Every worker here <code>importScripts('guard.js')</code> and posts
+                    its own total back to be folded into the page count before anything is reported. <b>Two
+                    sibling labs already ship real workers under the same badge while making a weaker claim, and
+                    this page says so</b> rather than quietly being the only correct one.</li>
+                <li><b>No worker or page here ever attempts real egress to prove the counter works.</b> Each
+                    refusal the browser issues writes a console error, and CI counts one console error as a
+                    broken page. The counter's arithmetic is asserted instead, against a throwaway clone.</li>
+                <li><b>A finding about this repository's own shipped code, and this lab does not fix it.</b>
+                    <code>labs/saku/sync.js:47</code> <code>peerApplyOne</code> reads through
+                    <code>peerGet</code> (a <code>readonly</code> transaction), decides whether the idempotency
+                    key was already seen, and writes through <code>peerPut</code> (a later
+                    <code>readwrite</code> transaction) — character for character the shape the centrepiece loses
+                    updates with. A second, separate finding in the same function: <code>rec.seen</code> is
+                    truncated to the last 50 entries, so a key returning after 50 other operations is accepted
+                    again — a bounded replay window. <code>drain()</code> applies operations through a strictly
+                    sequential <code>reduce</code>, so within one drain these calls never overlap; two
+                    overlapping drains would reach it. <b>This lab reproduces the shape and shows what it costs.
+                    It does not claim saku loses data today, and no live path that does was found.</b>
+                    <code>labs/saku/README.md</code> carries both findings.</li>
+                <li><b>The firewall's limit, as a number rather than a hedge.</b> Both routes on this page bottom
+                    out in the same <code>IDBObjectStore</code> and the same scheduler.</li>
+                <li><b><code>app.js</code> has no automated control</b>, above.</li>
+            </ul>
+
+            <h3 id="repbout-h">The RepBout bridge</h3>
+            <div class="bridge">
+                <p>
+                    A <a href="../../case/repbout/">case study on this site</a> lists four paths by which a
+                    balance can be created from nothing. The fourth, in its own words, is <em>"two requests
+                    arriving at once and both reading the old balance before either one writes."</em> <b>This lab
+                    is the fourth one, reproduced in a browser tab, with a fabricated unit and no money in
+                    it.</b>
+                </p>
+                <p>
+                    What this lab cannot tell you about a real system: there is no second server here, no
+                    database row lock, no <code>SELECT … FOR UPDATE</code>, no unique constraint on a server-side
+                    idempotency table, and no transaction manager below the application. Real ledgers are
+                    protected <em>below</em> the application. This lab is what the problem looks like when they
+                    are not — which is exactly the situation you are in whenever a database is used as a
+                    key-value store, and exactly the situation <code>IndexedDB</code> puts you in permanently.
+                </p>
+                <p class="small">
+                    No table names, no endpoints, no key format, no webhook provider, no amounts, no claim that
+                    system is free of this bug, and no statement or implication that a real user's balance was
+                    ever wrong. <b>And nothing that says its gems balance is derived</b> — that page states
+                    plainly that the gems column is still a stored number and that the migration is the intended
+                    next step; contradicting a published page one click away, in the exact place it went out of
+                    its way to be honest, would cost more than this whole lab gains.
+                </p>
+            </div>
+
+            <h3 id="staged-h">How a nondeterministic result is presented without looking staged</h3>
+            <p class="note">The free-mode panel, in order, top to bottom:</p>
+            <ol class="notbuilt" aria-labelledby="staged-h">
+                <li><b>The batch size, printed before the batch starts.</b> There is no retry policy on this page
+                    and the suite asserts <code>roundsExecuted === roundsRequested</code>. Nothing loops until it
+                    sees a loss.</li>
+                <li><b>Every sample, as a strip.</b> <code>21, 22, 20, 23, 22, 24, 21, 25, 22</code> — not a
+                    summary. That is what a real race looks like and what a fabricated one does not.</li>
+                <li><b>Min / median / max, and the count of runs that lost nothing</b>, printed whether it is 0
+                    or the whole batch. Never hidden, never a fallback branch.</li>
+                <li><b>The machine beside it</b> — <code>hardwareConcurrency</code>, <code>deviceMemory</code>,
+                    <code>visibilityState</code>, the user agent, all read at runtime. A race result without a
+                    machine is not a result, and this also pre-empts "it didn't reproduce for me": of course it
+                    didn't, and the page said which machine.</li>
+                <li><b>"No loss observed on this machine today"</b>, in the slot the shortfall would have
+                    occupied, if that is what happened. The prose is generated from the batch, so the page cannot
+                    claim a shortfall the batch did not find. That behaviour is the difference between a demo and
+                    an instrument, and it is the first thing a hostile reader tries.</li>
+                <li><b>The control, in the same batch, in the same seconds, with the same parameters.</b> Safe and
+                    unsafe alternating, never safe-then-unsafe.</li>
+                <li><b>The one-line diff, from the live functions</b>, with the marked line, plus
+                    <code>artificialDelayMs: 0</code> printed per arm and a one-command grep that finds no
+                    timer.</li>
+                <li><b>The barrier column beside it</b>, where the number does not move — and the sentence that
+                    the barrier forces the worst case every time, runs in all four arms, and three of them lose
+                    nothing.</li>
+            </ol>
+        </section>
+
+        <footer class="foot">
+            <p>
+                <b>Why this page ships a broken path at all.</b> The losing column is the interesting result, so
+                it is never coloured as an alarm: the verdict family here is indigo, amber, sky and grey, because
+                a red-and-green matrix on this page would train a reader backwards inside two cards and no glyph
+                beside it undoes a colour learned that fast. The word and the error code carry the verdict, and
+                every cell stays legible in monochrome.
+            </p>
+            <p>
+                <b>The barrier is a message count, not a delay.</b> There is no <code>setTimeout</code>, no busy
+                loop and no <code>Atomics.wait</code> anywhere in the write paths — there is no
+                <code>SharedArrayBuffer</code> to wait on, and a delay would make the loss a property of the
+                delay rather than of the code. One command checks it:
+                <code>grep -n 'setTimeout\|setInterval' labs/serobot/arms.js</code> prints nothing, and the suite
+                re-checks the shipped function bodies at runtime.
+            </p>
+            <p class="small">
+                No framework, no bundler, no build step, no vendored code and no change to the
+                Content-Security-Policy the sibling labs ship: <code>guard.js</code>, <code>kode.js</code>,
+                <code>db.js</code>, <code>arms.js</code>, <code>utas.js</code>, <code>idem.js</code>,
+                <code>kunci.js</code>, <code>pantau.js</code>, <code>saksi.js</code>,
+                <code>kerja.worker.js</code>, <code>tests.js</code>, <code>app.js</code> and
+                <code>app.css</code>. The sibling lab that ships a cross-tab TTL lease whose comment this page
+                measures is <a href="../gudang/">Gudang</a>; the one that vendors SQLite and says so on its own
+                front page is <a href="../rombak/">Rombak</a>.
+                <a href="README.md">README</a>
+            </p>
+        </footer>
+    </main>
+
+    <script src="kode.js"></script>
+    <script src="db.js"></script>
+    <script src="arms.js"></script>
+    <script src="utas.js"></script>
+    <script src="idem.js"></script>
+    <script src="kunci.js"></script>
+    <script src="pantau.js"></script>
+    <script src="saksi.js"></script>
+    <script src="tests.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

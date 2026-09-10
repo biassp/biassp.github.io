@@ -936,8 +936,21 @@
        in a comment — and proved able to fail against a planted body, because a
        scanner that has never refused anything is a scanner nobody has run. */
     t.prop('the shipped arms insert no delay of any kind');
-    t.eq(F.lengan.noTimer.ok, true, 'the audit found nothing');
-    t.deep(F.lengan.noTimer.hits, [], 'and named nothing');
+    t.eq(F.lengan.noTimer.ok, true, 'the audit found no delay call');
+    t.deep(F.lengan.noTimer.hits, [], 'and named none');
+
+    /* A DEADLINE is not a delay, and this lab used to pass over the difference
+       in silence: the audit reported "nothing found" while the kunci body it
+       had just scanned armed AbortSignal.timeout(2000), printed on screen two
+       inches above the sentence. It is now enumerated, and the exact list is
+       pinned — so a SECOND deadline appearing on a write path is a red line
+       here rather than a claim quietly going stale on the page. */
+    t.prop('and the one deadline that does exist on a write path is named rather than passed over');
+    t.deep(F.lengan.noTimer.tenggat, ['AbortSignal.timeout'], 'exactly one kind, in the lock request');
+    t.ok(ARMS.source('kunci').indexOf('AbortSignal.timeout') >= 0, 'and the body the page prints is where it is');
+    t.eq(ARMS.assertNoTimer(ARMS.source('pisah')).tenggat.length, 0, 'the three arms that take no lock arm none');
+    t.eq(ARMS.assertNoTimer(ARMS.source('satu')).tenggat.length, 0, 'neither the one-transaction arm');
+    t.eq(ARMS.assertNoTimer(ARMS.source('jurnal')).tenggat.length, 0, 'nor the append-only one');
 
     t.neg('and the audit refuses a body that does insert one');
     t.refusedWith(F.lengan.noTimerTanam.ok === false, F.lengan.noTimerTanam.hits.join(','),
@@ -1355,6 +1368,32 @@
     t.eq(F.pusat.hadang.banding.sharedBottom, 'IDBObjectStore', 'the comparison carries it too');
     t.eq(F.pusat.hadang.banding.differs, 0, 'nothing differs');
     t.gte(F.pusat.hadang.banding.rows.length, 6, 'across at least six labels');
+
+    /* A comparison that has never been seen to disagree is not a comparison,
+       and this one was resting on a number nothing in the suite could move.
+       Measured: rewrite the comparison so that it copies the engine's own
+       figure into the witness's column — the exact vice this whole file exists
+       to refuse, both operands from one message — and every property in this
+       suite stays green, the three lines above included, because a difference
+       count that is never incremented reads the same as a difference count that
+       is zero. Two separate mutations that corrupt only the engine's route
+       turn four properties red THROUGH this comparison, so it is the only thing
+       carrying that route at all. So it is made to disagree here, on purpose,
+       and required to name the label, the direction and the size of the gap. */
+    t.neg('and the comparison is proved able to disagree, on a figure deliberately moved');
+    var palsu = {}, kk, uji, baris = null, bi;
+    for (kk in F.pusat.hadang.mesin) {
+      if (Object.prototype.hasOwnProperty.call(F.pusat.hadang.mesin, kk)) palsu[kk] = F.pusat.hadang.mesin[kk];
+    }
+    palsu['jurnal.total'] = palsu['jurnal.total'] + 7;
+    uji = SAKSI.banding(palsu, v);
+    for (bi = 0; bi < uji.rows.length; bi++) if (uji.rows[bi].label === 'jurnal.total') baris = uji.rows[bi];
+    t.refusedWith(uji.ok === false && uji.differs === 1 && !!baris && baris.differs === true,
+      baris ? 'jurnal.total off by ' + baris.d : 'the label was never compared',
+      /^jurnal\.total off by 7$/, 'one engine figure moved by seven, and the gap is reported as seven');
+    t.refusedWith(uji.ok === false && uji.rows.length === F.pusat.hadang.banding.rows.length,
+      uji.ok === false ? 'E_NONE' : 'E_TIDAK_BEDA',
+      /E_NONE/, 'and the other labels were still compared, so one moved figure is one difference');
 
     t.prop('and its own adder is checked against fixed vectors rather than against the engine\'s');
     t.eq(SAKSI.SENDIRI.batasOk, true, 'including one that runs up against the safe integer boundary');

@@ -63,10 +63,20 @@
   NS.NAMES = ['polos', 'noio', 'mutex', 'cas', 'tambah'];
   NS.CAP = 1000;
 
-  /* The await under test. A microtask would not do: measured elsewhere in this
-     lab, an IndexedDB transaction survives a hundred thousand chained microtasks
-     and dies the instant control reaches the task queue, and the same boundary is
-     what lets a second writer run between this writer's read and its write. */
+  /* The await under test, and the reason it is a TASK is narrower than the
+     reason this comment used to give. It used to say a microtask "would not do"
+     for the interleave. That is false and it was measured false: with a
+     microtask yield in this exact position, every (W, n) pair still ends at n,
+     because all W writers are STARTED in one turn and a microtask is enough of a
+     boundary for the next one to read before this one writes. The read-set
+     spanning ANY await is the bug, which is the whole of the correction the
+     centrepiece panel makes about parallelism, applied to itself.
+
+     A task boundary is used anyway, for a different and real reason: it is the
+     one boundary that also kills an IndexedDB transaction (a hundred thousand
+     chained microtasks do not), so the single-thread panel and the
+     transaction-death panel one card below are separated by exactly one variable
+     instead of two. */
   function tugas() {
     return new Promise(function (res) { root.setTimeout(res, 0); });
   }

@@ -135,6 +135,59 @@ Last updated: 2026-09-10.
   zero-console-error check cannot be controlled without removing the handlers that make it pass.
 - Spec at scratchpad/skema-spec.md (2,333 lines + Appendix F). Not committed — session-scratch.
 
+## Sahih — the token lab (added 2026-09-10)
+- `labs/sahih/`. "Sahih" = valid/authentic. Five JWTs through a naive verifier and a strict one,
+  on the same bytes. Every token is valid in the only sense cryptography offers — the signature
+  checks out — and four of the five are forgeries anyway. 12 files, 508KB, **ZERO vendored bytes
+  and ZERO CSP relaxation** (unlike rombak). Everything is crypto.subtle, which the browser has.
+- 150 distinct properties, 76 negative, 419 executions, 12 groups. Site total 5,090 / 8 labs.
+- Built by two workflows (18 design agents, 10 build agents), ~5.2M subagent tokens.
+- THE `wrongClaims` JUDGE FIELD PAID FOR ITSELF: judges flagged 68 claims as wrong or overstated
+  across the three candidate designs; the spec agent retested every one and wrote **27 verified
+  corrections** before any code existed. Keep that field in every future design workflow.
+- CORRECTIONS WORTH REMEMBERING BEYOND THIS LAB:
+  * page.evaluate does NOT throw on unclonable values — it CORRUPTS SILENTLY. CryptoKey -> {},
+    ArrayBuffer -> {}, Error -> {name:"Error"}. A suite carrying a key reaches CI as {} with
+    everything green. Hence group G0, which walks the whole result recursively. THIS AFFECTS
+    EVERY LAB, not just this one.
+  * Under connect-src 'none', navigator.sendBeacon still returns TRUE. Instrument the CALL,
+    never the outcome. And never make a page attempt egress to "prove" its counter — every
+    blocked attempt logs a console error and CI counts one console error as a broken page.
+  * Never assert on Chromium error message TEXT; assert error names and the lab's own codes.
+  * I told the owner the RFC 6238 T=59 vector was 287082. WRONG: the RFC prints 94287082
+    (eight digits); 287082 is its six-digit truncation and does not appear in the RFC. All 18
+    Appendix B rows verified at 8 digits.
+- FOUND BY THE VERIFIERS: two assertions were TAUTOLOGIES — each gated on the very flag it
+  claimed to test (`if (v.naiveAccepted) t.ok(v.naiveAccepted)`). Also §2.6's discrimination set
+  refused by accident rather than by the claimed mechanism. Both fixed.
+- FOUND BY ME, after the verifiers: the CV-facing footer said keys were "generated in your tab".
+  Only the HMAC key is; RSA and ECDSA are imported from RFC 7515 A.2/A.3. The code was already
+  honest (every key carries a `provenance` field) — only the prose overclaimed. Fixed.
+- MEASURED MYSELF, not taken from handoff: verifiers reported 13/419 red when crypto.subtle
+  .verify is stubbed to always return true; my own run gives **16/419** (G5 9, G6 6, G9 1). The
+  tree moved under them. ALWAYS re-measure before writing a number into a README.
+- Main-thread blocking was a hard requirement in the build brief this time, after rombak froze
+  for 23.6s and all four of its verifiers missed it. Result: 58-141ms across four independent
+  measurements. The lesson transferred.
+- periksa.js is the firewall and is STRICTER than rombak's census.js: it knows exactly ONE name,
+  its own. `grep -o 'SAHIH_[A-Z]*' labs/sahih/periksa.js | sort -u` must print one line. It pays
+  for that with its own base64url decoder, its own P-256 curve-order literal and its own
+  byte-wise adder.
+- HONEST LIMIT, stated on the page: both verification routes ultimately call crypto.subtle. The
+  separation catches a mistake in the lab's logic; it cannot catch a lie told by the browser.
+- STILL OPEN, in the lab README rather than hidden: app.js has no automated control (a mutation
+  restoring a wrong year in page prose left all 419 green — page text is unasserted by
+  construction); one stochastic credential-shape sweep with a ~1-in-23,000 false positive;
+  SAHIH_STORE.keyRoundTrip is dead code.
+
+## i18n drift — a bug I shipped and then caught (2026-09-10)
+- When integrating rombak I changed the labs-index markup and did NOT change the dictionary. The
+  page read correctly in English and silently reverted to the OLD wording on the language toggle.
+  test/i18n.test.js only checked that keys EXIST, so it passed.
+- Fixed by extending test:i18n to compare the English markup against the dictionary's `en` for
+  every key. It immediately caught a SECOND stale entry (`eng.p`) that I had also missed.
+- The check has never needed a synthetic red proof: it went red twice on real drift.
+
 ## Standing rules (decided 2026-09-08 — apply without asking again)
 - COPYRIGHT: the repo ships an all-rights-reserved LICENSE and every lab source file carries a
   copyright header. This is NOT open source and must not be relicensed. Keep the headers when

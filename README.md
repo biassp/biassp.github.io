@@ -19,7 +19,7 @@ nothing — `labs/sahih/` does real RSA, ECDSA and HMAC on the browser's own
 |---|---|
 | `index.html` | The CV itself, one file, including the live GitHub repositories feed |
 | `labs/` | Nine demo applications that run entirely inside a browser tab, with no server |
-| `case/` | Case studies: BioAge, Radar Duit, Cek Aman, RepBout |
+| `case/` | Case studies: BioAge, Radar Duit, Cek Aman, RepBout, Selingkuh Detector |
 | `test/` | Tests. Never served to a visitor. |
 
 ## Running the tests

@@ -590,21 +590,43 @@
 
   /* labs/gudang/store.js:135-139, verbatim, and it is a prose claim that has
      never been measured anywhere in this repository until this lab: */
+  /* THE TWO TRANSCRIPTIONS, AND WHAT KIND OF THING EACH ONE IS.
+     `bentuk` is not decoration. One of these is a COMMENT quoted word for word;
+     the other was, until this was written, a SENTENCE THIS LAB WROTE ABOUT
+     somebody else's code, printed inside quotation marks under a file and a
+     line where no such sentence exists. Nobody reading the page could tell the
+     two apart, and a lab whose subject is a proof that agrees with itself
+     cannot afford a quotation that agrees with itself either. So the second
+     one now carries the source lines it is about, verbatim, and the sentence
+     that describes them is carried separately in `ringkas` and is printed as
+     what it is. `text` is always something somebody else wrote. */
   NS.KUTIPAN = {
     gudang: {
       file: 'labs/gudang/store.js',
       line: '135-139',
+      bentuk: 'komentar',
       text: 'The lock is a single record read and written inside ONE readwrite transaction, ' +
         'and IndexedDB serialises overlapping readwrite transactions on the same store, ' +
-        'so the read-modify-write is atomic across tabs.'
+        'so the read-modify-write is atomic across tabs.',
+      ringkas: 'A prose claim in a comment, load-bearing, and never measured anywhere in this ' +
+        'repository until this page measured it.'
     },
     saku: {
       file: 'labs/saku/sync.js',
-      line: '47',
-      text: 'peerApplyOne reads the peer record through peerGet (a readonly transaction), ' +
-        'decides whether the idempotency key was already seen, and writes the updated ' +
-        'record back through peerPut (a later readwrite transaction). rec.seen is ' +
-        'truncated to the last 50 entries.'
+      line: '47-52, 68',
+      bentuk: 'kode',
+      text: 'function peerApplyOne(op) {\n' +
+        '  return S.peerGet(op.entryId).then(function (rec) {\n' +
+        '    rec = rec || { entryId: op.entryId, fields: {}, fc: {}, clock: 0, seen: [], updatedAt: 0 };\n' +
+        '    if (rec.seen.indexOf(op.idem) >= 0) {\n' +
+        '      return { entryId: op.entryId, status: \'duplicate-absorbed\', peerClock: rec.clock, conflicts: [] };\n' +
+        '    }\n' +
+        '    \u2026 lines 53 to 67, the field-by-field clock comparison, elided \u2026\n' +
+        '    if (rec.seen.length > 50) rec.seen = rec.seen.slice(-50);',
+      ringkas: 'peerGet is a readonly transaction (labs/saku/store.js:459) and peerPut is a later ' +
+        'readwrite one (:467), so the check and the write are in two transactions with a ' +
+        'reachable point between them. rec.seen is a replay window of the last 50 keys. ' +
+        'That sentence is this lab\'s description of the lines above, not a quotation from them.'
     }
   };
 

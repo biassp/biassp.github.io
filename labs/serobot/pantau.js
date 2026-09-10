@@ -420,7 +420,11 @@
           barrier: mode === 'hadang',
           db: String(o.db || ''),
           lockPrefix: String(o.lockPrefix || ''),
-          runId: String(o.runId || '')
+          runId: String(o.runId || ''),
+          /* Asks each worker to put ONE fabricated attempt through its own
+             guard, so that the fold below is exercised rather than described.
+             No request is made by it. Only the suite ever sets this. */
+          uji: !!o.uji
         });
       }
 

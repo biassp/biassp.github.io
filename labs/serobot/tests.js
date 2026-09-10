@@ -408,6 +408,55 @@
     t.eq(free.delta['K-pisah'], 22, 'a pinned race outcome');
   }
 
+  /* ================= the static route-provenance tripwire =============== */
+
+  /* The oldest bug in this repository, one level above the one the brand
+     catches and the one the scanner above catches: a page that reports two
+     routes agreeing when the two routes are one number. MEASURED on the shipped
+     files, twice — fill the engine's own map out of the witness's verdict in
+     this file, and all of these stay green: the three properties that say the
+     engine and the witness disagree about nothing, the one in G6 that says the
+     fold agrees with the number the engine reported, and every row of the
+     on-screen difference column, which went on reading zero on the real page.
+     A comparison cannot see that its two operands came from one place.
+     Route A now lives in exactly one function, in db.js, and this reads that
+     function back through Function.prototype.toString and refuses any line in
+     it that fills the map from a verdict. The second half of the defence is
+     that the map comes back frozen, so the collapse cannot be done by the
+     caller either — that half is proved, on the real map, in G4. */
+  /* The names that can only have come from the other route. Deliberately not
+     `expected`, `delta` or `kurang`: route A has figures of its own by those
+     names, and a tripwire that fires on a file's own vocabulary is a tripwire
+     somebody switches off. The gap that leaves — a smuggled `hasil.expected` —
+     is closed from the other side, by pinning how many arguments route A takes:
+     the only way to get a verdict into its scope is to hand it one. */
+  var SAKSI_TANDA = ['verdict', 'buku', 'saldo', 'alasan', 'sharedBottom', 'worklist',
+    'toko', 'adder', 'diabaikan', 'hasil', 'SAK' + 'SI'];
+
+  function rute(src) {
+    var out = { baris: 0, hits: [] }, baris = String(src).split('\n'), i, s, j;
+    for (i = 0; i < baris.length; i++) {
+      s = baris[i];
+      /* Only lines that fill the map are in scope. A comment that mentions the
+         other route is prose, and prose is not a data path. */
+      if (!/(^|[^\w$])m\s*(\[[^\]]*\]|\.[A-Za-z_$][\w$]*)\s*=[^=]/.test(s)) continue;
+      out.baris++;
+      for (j = 0; j < SAKSI_TANDA.length; j++) {
+        if (s.indexOf(SAKSI_TANDA[j]) >= 0) {
+          out.hits.push('a route A figure was filled from the witness: ' + s.replace(/^\s+/, ''));
+          break;
+        }
+      }
+    }
+    return out;
+  }
+
+  /* The planted body the provenance scanner is proved against. It is called by
+     nothing and reached by nothing; it exists to be read back as a string. */
+  function rutePalsu(m, hasil) {
+    m['jurnal.total'] = hasil.buku.jurnal.total;
+  }
+
   function keysOf(o) {
     var out = [], k;
     for (k in o) if (Object.prototype.hasOwnProperty.call(o, k)) out.push(k);
@@ -546,6 +595,19 @@
     t.prop('and it finds nothing in the free-mode group this file actually ships');
     t.deep(scanLomba(sumberBebas()), [], 'the free-mode group touches the race outcome twice, both times as a bound');
     t.gt(sumberBebas().length, 100, 'and there is a free-mode group for it to have scanned');
+
+    /* Tripwire 4. The brand catches a race outcome used as an operand; the
+       scanner above catches a race outcome pinned as a literal; this catches
+       the case where the two operands of an agreement were never two. */
+    t.neg('the provenance scanner refuses a route A figure filled from the witness');
+    var tanamRute = rute(String(rutePalsu));
+    t.refusedWith(tanamRute.hits.length === 1, tanamRute.hits.join(' \u00b7 '),
+      /filled from the witness/, 'the planted line is caught and quoted back');
+
+    t.prop('and the engine\'s own route, which is one function and not two, mentions no verdict');
+    t.deep(rute(String(DB.ruteA)).hits, [], 'no line that fills the map names the other route');
+    t.eq(DB.ruteA.length, 4, 'and it takes four arguments, so no verdict can be handed to it at all');
+    t.gt(rute(String(DB.ruteA)).baris, 3, rute(String(DB.ruteA)).baris + ' lines filling the map were read, so the scan had something to read');
 
     /* The latch. Measured before it existed: two runs on one page sharing a
        database name destroyed each other, and the destruction arrived as a page
@@ -815,6 +877,36 @@
     t.prop('reads minus writes is the retry count the engine counted separately');
     for (i = 0; i < r.length; i++) t.ok(r[i].audit.retriesAgree, r[i].res.strategy + ' W=' + r[i].res.W);
 
+    /* An audit that has never been seen to say no is not an audit. Measured:
+       rewrite audit() so that every boolean it returns is the literal true, and
+       the five properties above stay green across all eleven runs — fifty-five
+       executions of nothing, over eight hundred log entries. So the same
+       function is driven against logs that are wrong on purpose, and it has to
+       name what is wrong with them. */
+    t.neg('and the audit is proved able to say no about the sequence itself');
+    var kacau = UTAS.audit({
+      log: [{ s: 1, w: 0, act: 'read', v: 0 }, { s: 1, w: 0, act: 'write', v: 1 },
+        { s: 100000000000, w: 0, act: 'write', v: 2 }],
+      reads: 1, writes: 2, retries: 0, final: 2, foldKind: 'last', dropped: 0
+    });
+    t.refusedWith(!kacau.ordered && !kacau.unique && !kacau.gapless && !kacau.clockFree,
+      'ordered ' + kacau.ordered + ', unique ' + kacau.unique + ', gapless ' + kacau.gapless +
+      ', clockFree ' + kacau.clockFree,
+      /^ordered false, unique false, gapless false, clockFree false$/,
+      'a repeated sequence number, a hole, and a reading large enough to be a clock');
+
+    t.neg('and about a write with no read standing behind it, and a fold that misses');
+    var yatim = UTAS.audit({
+      log: [{ s: 1, w: 0, act: 'read', v: 0 }, { s: 2, w: 0, act: 'write', v: 1 },
+        { s: 3, w: 0, act: 'write', v: 2 }],
+      reads: 1, writes: 5, retries: 1, final: 99, foldKind: 'last', dropped: 0
+    });
+    t.refusedWith(!yatim.paired && !yatim.foldMatchesFinal && !yatim.countsAgree,
+      'paired ' + yatim.paired + ', foldMatchesFinal ' + yatim.foldMatchesFinal +
+      ', countsAgree ' + yatim.countsAgree,
+      /^paired false, foldMatchesFinal false, countsAgree false$/,
+      'the second write has no read behind it, the log folds to two, and the engine claimed ninety-nine');
+
     /* Two awaits are the entire bug, and the smallest case that shows it is two
        writers doing one increment each. */
     t.prop('the minimal case is two writers, one increment each, and one survivor');
@@ -880,6 +972,24 @@
     t.eq(F.pusat.hadang.banding.differs, 0, 'every compared label matched');
     t.gt(F.pusat.hadang.banding.rows.length, 0, 'and there were labels to compare');
     t.eq(F.pusat.hadang.banding.ok, true, 'the comparison itself passed');
+
+    /* The other half of the provenance defence, on the real map rather than on
+       a fixture. Route A's figures come back frozen, so the one edit that makes
+       this whole table agree with itself — patching one of them into agreement
+       right after the call — does nothing at all. Without the freeze that edit
+       was measured to leave all of this green and every on-screen difference at
+       zero. Here it is attempted, on the real map, and required to fail. */
+    t.prop('the engine\'s figures cannot be patched into agreement after the fact');
+    var beku = F.pusat.hadang.mesin, semula = beku['jurnal.total'];
+    t.eq(Object.isFrozen(beku), true, 'the map route A handed over is frozen');
+    try { beku['jurnal.total'] = semula + 7; } catch (eBeku) { /* strict callers throw instead */ }
+    t.eq(beku['jurnal.total'], semula, 'and an attempt to move one figure changed nothing');
+    try { beku.diselundupkan = 1; } catch (eBeku2) { /* same */ }
+    t.eq(typeof beku.diselundupkan, 'undefined', 'nor could a new figure be smuggled into it');
+
+    t.neg('and route A refuses to be handed anything but two integers, as the other route does');
+    t.throwsWith(function () { return DB.ruteA(null, {}, 2.5, 1); }, /E_BUKAN_BULAT/, 'a fractional writer count');
+    t.throwsWith(function () { return DB.ruteA(null, {}, 4, 0); }, /E_BUKAN_BULAT/, 'a round count of zero');
 
     t.prop('the witness certifies the run and has nothing to report');
     t.eq(v.ok, true, 'the verdict is clean');
@@ -1395,6 +1505,21 @@
       uji.ok === false ? 'E_NONE' : 'E_TIDAK_BEDA',
       /E_NONE/, 'and the other labels were still compared, so one moved figure is one difference');
 
+    /* And the same argument one level up. A verdict that has never been seen to
+       withhold certification is not a verdict: force ok to true and empty the
+       reasons, and every property in this suite stays green — including the two
+       in the centrepiece group that read exactly those two fields. So the
+       witness is shown an append-only ledger holding fewer rows than the
+       snapshot it was handed recorded, which is the one thing such a store may
+       never do, and it has to refuse to certify it and say why. */
+    t.neg('and the verdict is proved able to withhold certification, on a store that shrank');
+    var susut = SAKSI.periksa(
+      { jurnal: { store: 'jurnal', via: 'objectStore', count: 1,
+        rows: [{ id: 'J-FIKTIF-x', akun: DB.AKUN, delta: 1, idem: 'IDEM-FIKTIF-9001', at: 1 }] } },
+      { jurnal: 2 }, 1, 1, []);
+    t.refusedWith(susut.ok === false && susut.alasan.length === 1, susut.alasan.join(' · '),
+      /fewer rows than the snapshot recorded/, 'a row left an append-only store and the witness will not certify it');
+
     t.prop('and its own adder is checked against fixed vectors rather than against the engine\'s');
     t.eq(SAKSI.SENDIRI.batasOk, true, 'including one that runs up against the safe integer boundary');
     t.eq(SAKSI.SENDIRI.kosongDitolak, true, 'an empty fold with no explicit zero is refused');
@@ -1509,6 +1634,33 @@
     t.eq(probe.kembali, 0, 'the total is zero again');
     t.eq(probe.logKembali, 0, 'the log is empty again');
     t.eq(g.total(), 0, 'and it is still zero now, at the end of the run');
+
+    /* THE FOLD ITSELF, driven end to end rather than asked about. Everything
+       above this line reads a counter; this is the only property in the lab
+       that exercises the path between two of them. Two worker realms were each
+       asked for one fabricated attempt through their own guard — no request is
+       made by it, and the runner's network listener is the independent check on
+       that — and the page's counter had to move by exactly one per realm.
+       Measured before it existed: deleting the folding line in the squad left
+       every property in this file green. */
+    var lip = F.guard.lipat;
+    t.prop('an attempt made inside a worker realm reaches the page\'s count through the fold');
+    t.eq(lip.why, 'ok', 'the probe squad finished on its own');
+    t.eq(lip.sebelum, 0, 'the page counter was at zero when it started');
+    t.eq(lip.pekerja, 2, 'two worker realms were asked for one attempt each');
+    t.eq(lip.sesudah, lip.pekerja, 'and the page counter rose by exactly one per realm');
+    t.eq(lip.asal, 'worker', 'the page\'s own log records the realm it was folded in from');
+    t.eq(lip.target, 'FIKTIF-no-request-was-made', 'and a target that says no request was made');
+
+    t.prop('and each of those realms counted its own attempt as well, which is the second route');
+    t.eq(lip.egress, lip.pekerja, 'the squad\'s own total is the same number by the other route');
+
+    /* Taken back out by count and by target rather than by zeroing, because a
+       line that zeroes this counter is a line that can hide a real attempt. */
+    t.prop('and the probe was taken back out, which is asserted rather than assumed');
+    t.eq(lip.kembali, lip.sebelum, 'the page total is exactly what it was before the probe');
+    t.eq(lip.kembali, 0, 'which was zero');
+    t.eq(lip.logKembali, 0, 'and the log holds nothing the probe put there');
 
     t.prop('the five network entry points are wrapped rather than described');
     t.eq(F.guard.fetchNative, false, 'fetch is not the function the browser shipped');
@@ -1666,12 +1818,32 @@
     t.eq(s4.absorbed, 0, 'nor at four');
     t.eq(s2.intended, 1, 'and one was intended in both');
 
-    t.prop('both shapes are quoted with the file and line they were transcribed from');
+    /* A QUOTATION MARK IS A CLAIM. One of these two is a comment quoted word
+       for word; the other was a sentence THIS LAB WROTE ABOUT somebody else's
+       code, printed inside quotation marks under a file and a line where no
+       such sentence occurs — and nothing on the page or in this file could tell
+       the two apart, in a lab whose whole subject is a proof that agrees with
+       itself. What the suite can check from inside a browser is the shape: each
+       entry names a file, names lines, says WHICH KIND of thing it carries, and
+       carries this lab's own description in a different field from the thing it
+       is describing. What it cannot check is that the characters match the file
+       — nothing in this lab may read the site's own source at runtime — so the
+       file and the lines are printed beside the quote for a reader to check
+       with one command, and the README ships that command. */
+    t.prop('both shapes are quoted with the file and the lines they were transcribed from');
     t.eq(KUNCI.KUTIPAN.gudang.file, 'labs/gudang/store.js', 'the lock record');
-    t.eq(KUNCI.KUTIPAN.gudang.line, '135-139', 'at its line');
+    t.eq(KUNCI.KUTIPAN.gudang.line, '135-139', 'at its lines');
     t.eq(KUNCI.KUTIPAN.saku.file, 'labs/saku/sync.js', 'the replay window');
-    t.eq(KUNCI.KUTIPAN.saku.line, '47', 'at its line');
+    t.eq(KUNCI.KUTIPAN.saku.line, '47-52, 68', 'at its lines');
     t.gt(KUNCI.KUTIPAN.gudang.text.length, 100, 'and the quote is carried in full');
+
+    t.prop('and each one says what kind of thing it is quoting, so a description cannot pass as a quotation');
+    t.eq(KUNCI.KUTIPAN.gudang.bentuk, 'komentar', 'the first is a comment');
+    t.eq(KUNCI.KUTIPAN.saku.bentuk, 'kode', 'the second is source, and is carried as source');
+    t.match(KUNCI.KUTIPAN.saku.text, /function peerApplyOne\(op\) \{/, 'the transcription opens on the function it names');
+    t.match(KUNCI.KUTIPAN.saku.text, /rec\.seen\.length > 50/, 'and carries the line the replay window is');
+    t.gt(KUNCI.KUTIPAN.saku.ringkas.length, 100, 'this lab\'s own description is carried separately');
+    t.eq(KUNCI.KUTIPAN.saku.ringkas.indexOf('function peerApplyOne'), -1, 'and is not the same string as the quotation');
 
     t.prop('the printed shape is the live function, because there is no build step in this repository');
     t.match(KUNCI.sumberAudit('gudang'), /readwrite/, 'the lease shape opens one readwrite transaction');
@@ -1864,13 +2036,47 @@
     g.noteExternal('kind-this-guard-never-heard-of', 'FIKTIF-no-request-was-made', 'worker');
     out.tak = g.total();
     out.takKunci = Object.prototype.hasOwnProperty.call(g.counts, 'kind-this-guard-never-heard-of');
-    /* Put it back, exactly, and delete the counter the unknown kind created.
-       This is the only write to the live counter anywhere in this lab. */
-    g.counts.fetch = 0; g.counts.xhr = 0; g.counts.websocket = 0;
-    try { delete g.counts['kind-this-guard-never-heard-of']; } catch (e) { g.counts['kind-this-guard-never-heard-of'] = 0; }
+    /* PUT IT BACK BY SUBTRACTION, NOT BY ZEROING — the same rule the worker-fold
+       probe further down already states and follows, and this probe used to
+       break. Zeroing is not "putting it back": it is setting the counter to a
+       value it may never have held. Measured against the shipped file before
+       this change: an attempt noted through the guard at page-init or at t+60 ms
+       — earlier than this probe, which runs at suite start — came out of a
+       settled load with total 0, an EMPTY log and a green header badge. The
+       property above catches the arithmetic (`mulai` would no longer be 0 and
+       CI goes red), but the evidence is gone and the page reports zero, and this
+       lab's whole claim is that counter. From t+150 ms the same attempt survived
+       intact, so the hole was the load window, not the whole run.
+       Only the fabricated notes are taken back out, by count and by target, and
+       the unknown-kind counter is removed only if this probe is what created
+       it. */
+    var awalF = g.counts.fetch, awalX = g.counts.xhr, awalW = g.counts.websocket;
+    g.counts.fetch = awalF - 1; g.counts.xhr = awalX - 1; g.counts.websocket = awalW - 1;
+    if (out.takKunci && g.counts['kind-this-guard-never-heard-of'] === 1) {
+      try { delete g.counts['kind-this-guard-never-heard-of']; } catch (e) { g.counts['kind-this-guard-never-heard-of'] = 0; }
+    } else if (g.counts['kind-this-guard-never-heard-of']) {
+      g.counts['kind-this-guard-never-heard-of'] = g.counts['kind-this-guard-never-heard-of'] - 1;
+    }
+    var sisa = [], li;
+    for (li = 0; li < g.log.length; li++) {
+      if (String(g.log[li].target) !== 'FIKTIF-no-request-was-made') sisa.push(g.log[li]);
+    }
     g.log.length = 0;
+    for (li = 0; li < sisa.length; li++) g.log.push(sisa[li]);
     out.kembali = g.total();
     out.logKembali = g.log.length;
+    /* And tell whoever is listening that it moved back. noteExternal fires the
+       change hook on the way UP; nothing fires it on the way down, because the
+       restore above writes `counts` directly. Without this line the header badge
+       — whose listener is that hook — was left reading "network calls from this
+       page: 4" in its red state for the whole 1.8 s the suite runs, on every
+       load, while the counter it claims to show was already back at zero.
+       Measured, and it is the page's most load-bearing claim, so the symmetry is
+       not optional. The hook is the app's, so it is called exactly as the guard
+       calls it: by name, and inside a catch. */
+    if (typeof g.onchange === 'function') {
+      try { g.onchange(); } catch (e) { /* a renderer's problem is not the suite's */ }
+    }
     return out;
   }
 
@@ -1887,6 +2093,7 @@
     var namaBebas = DB.nameFor(runId + '-b');
     var namaProbe = DB.nameFor(runId + '-p');
     var namaAudit = DB.nameFor(runId + '-a');
+    var namaLipat = DB.nameFor(runId + '-g');
     var prefix = DB.lockPrefix(runId);
     /* The raw core count comes off the capability probe rather than off
        navigator, so this file reads no platform object of its own — and no
@@ -1902,7 +2109,7 @@
     var f = {
       runId: String(runId), lockPrefix: String(prefix), clampW: W, hc: hc,
       mesin: m, atomik: PANTAU.atomik(),
-      guard: { probe: probeGuard(), fetchNative: false, xhrNative: false, wsNative: false, terpisah: true, total: 0, pekerja: 0, jaga: 0, lapor: 0 },
+      guard: { probe: probeGuard(), lipat: null, fetchNative: false, xhrNative: false, wsNative: false, terpisah: true, total: 0, pekerja: 0, jaga: 0, lapor: 0 },
       utas: { baris: [], kecil: null, langkah: '', casCap: {}, modeAsing: {} },
       batas: {}, batasAsing: {}, urut: {}, urutAsing: {},
       idem: { mode: {}, pasangan: null, jendelaKecil: null, jendelaBesar: null, modeAsing: {} },
@@ -2058,28 +2265,15 @@
            could not open one if it wanted to. */
         return SAKSI.fold(DB.reader(db), before, res.W, res.n, ['led_n', 'led_u']);
       }).then(function (v) {
-        /* Route A. Every figure below came off db.js, which is the engine's own
-           reader, and none of it came out of the workers' summary message. */
-        return DB.rowsVia(db, 'jurnal', 'objectStore', null).then(function (env) {
-          var deltas = [], i;
-          for (i = 0; i < env.rows.length; i++) deltas.push(env.rows[i].delta);
-          var mesin = { expected: sesudah.W * sesudah.n };
-          mesin['jurnal.rows'] = env.count;
-          mesin['jurnal.total'] = KODE.jumlah(deltas, 'the engine\'s own fold over the ledger');
-          return DB.read(db, 'akun', 'K-pisah').then(function (a) {
-            mesin['K-pisah'] = a === null ? 0 : a;
-            mesin['delta.K-pisah'] = mesin['K-pisah'] - (before.akun['K-pisah'] | 0);
-            mesin['kurang.K-pisah'] = mesin.expected - mesin['delta.K-pisah'];
-            return DB.read(db, 'akun', 'K-satu');
-          }).then(function (b) {
-            mesin['K-satu'] = b === null ? 0 : b;
-            return DB.read(db, 'akun', 'K-kunci');
-          }).then(function (c) {
-            mesin['K-kunci'] = c === null ? 0 : c;
-            f.pusat.hadang = { res: sesudah, verdict: v, banding: SAKSI.banding(mesin, v), mesin: mesin, before: before };
-            f.saksi.handle = db;
-            return null;
-          });
+        /* Route A. Every figure below came off db.js — its own cursor, its own
+           adder — and none of it came out of the workers' summary message or
+           out of the witness. The map arrives FROZEN, so this file cannot
+           quietly patch one figure into agreement after the fact either; that
+           edit was measured to leave every property in this suite green. */
+        return DB.ruteA(db, before, sesudah.W, sesudah.n).then(function (mesin) {
+          f.pusat.hadang = { res: sesudah, verdict: v, banding: SAKSI.banding(mesin, v), mesin: mesin, before: before };
+          f.saksi.handle = db;
+          return null;
         });
       }).then(function () {
         /* The planted wrong reader. An index-backed read with a range sees a
@@ -2173,6 +2367,64 @@
         f.kunci.saku4 = r;
         return tutupHapus(db, namaAudit);
       });
+    });
+
+    /* ---- the fold across the realm boundary, DRIVEN rather than described.
+       The page's counter cannot see inside a worker — that is the entire reason
+       §4.1 requires a fold at all — so until now nothing in this suite touched
+       the path between the two. Measured: delete the line in the page's squad
+       that folds a worker's report into the page counter, and every property in
+       this file stayed green, three runs, because the counters are asked and
+       the path between them is not. So one fabricated attempt is put through
+       each worker's own guard, and the page counter is required to move by
+       exactly one per realm and then be put back. NO REQUEST IS MADE: the
+       target is not an address and says so, and the runner's own network
+       listener is what proves that independently of anything claimed here. */
+    chain = chain.then(function () { return bikinDb(namaLipat); }).then(function (db) {
+      var g = root.SEROBOT_GUARD;
+      var lip = { sebelum: g ? g.total() : -1, pekerja: 0, sesudah: -1, egress: -1,
+        asal: '', target: '', kembali: -1, logKembali: -1, why: '' };
+      return PANTAU.regu({
+        url: 'kerja.worker.js', W: 2, n: 1, arms: [], mode: 'lepas',
+        db: namaLipat, lockPrefix: prefix, runId: runId, uji: true,
+        budget: 30000, timer: function (cb, ms) { return root.setTimeout(cb, ms); },
+        untimer: function (id) { return root.clearTimeout(id); }
+      }).then(function (r) {
+        lip.pekerja = r.spawned;
+        lip.egress = r.egress;
+        lip.why = r.why;
+        lip.sesudah = g ? g.total() : -1;
+        if (g && g.log.length) {
+          lip.asal = String(g.log[g.log.length - 1].asal);
+          lip.target = String(g.log[g.log.length - 1].target);
+        }
+        /* PUT IT BACK BY SUBTRACTION, NOT BY ZEROING. Zeroing here would erase a
+           real attempt made by anything else in the page realm while the probe
+           was in flight, which would make this the one line in the lab capable
+           of hiding the thing the lab is about. Only the fabricated attempts
+           are taken back out, by count and by target. */
+        if (g) {
+          var sisa = [], li, ketemu = 0;
+          for (li = 0; li < g.log.length; li++) {
+            if (String(g.log[li].target) !== 'FIKTIF-no-request-was-made') sisa.push(g.log[li]);
+            else ketemu++;
+          }
+          /* Exactly as many as were found, never as many as were asked for: if
+             the fold is broken the counter must stay where it was and the
+             property above must go red, not go negative. */
+          g.counts.fetch = g.counts.fetch - ketemu;
+          g.log.length = 0;
+          for (li = 0; li < sisa.length; li++) g.log.push(sisa[li]);
+          lip.kembali = g.total();
+          lip.logKembali = g.log.length;
+        }
+        f.guard.lipat = lip;
+        return null;
+      }, function (e) {
+        lip.why = String(KODE.nameOf(e));
+        f.guard.lipat = lip;
+        return null;
+      }).then(function () { return tutupHapus(db, namaLipat); });
     });
 
     return chain.then(function () {

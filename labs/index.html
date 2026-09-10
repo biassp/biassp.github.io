@@ -12,7 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Labs — demos you can open and test yourself</title>
     <meta name="description"
-        content="Nine working demo apps that run entirely in a tab: five information systems (clinic, school, warehouse, payroll, accounting) and four engineering demos. The code is readable, assertions run on the page, and no data is sent anywhere.">
+        content="Ten working demo apps that run entirely in a tab: five information systems (clinic, school, warehouse, payroll, accounting) and five engineering demos. The code is readable, assertions run on the page, and no data is sent anywhere.">
     <meta name="author" content="Bias Satrio Putra">
     <meta name="copyright" content="Copyright (c) 2026 Bias Satrio Putra. All rights reserved.">
     <link rel="icon"
@@ -372,8 +372,8 @@
     <main class="wrap">
         <div class="hero">
             <h1 data-i18n-html="hero.title">Demos you can <span class="grad">open and test yourself</span></h1>
-            <p class="lede" data-i18n="hero.lede">Nine applications that run entirely inside a single browser tab. No server
-                and no build step, and eight of the nine have no dependencies either — just plain HTML, CSS and
+            <p class="lede" data-i18n="hero.lede">Ten applications that run entirely inside a single browser tab. No server
+                and no build step, and nine of the ten have no dependencies either — just plain HTML, CSS and
                 JavaScript. Rombak is the exception: it vendors SQLite, and says so on its own front page. The code is readable, and every
                 page runs its own assertions the moment it opens, so the claims are yours to verify, not merely to
                 trust. The same assertions are re-run automatically in CI on every change to the repository, in
@@ -388,15 +388,15 @@
 
             <div class="stats">
                 <div class="stat">
-                    <div class="num">9</div>
+                    <div class="num">10</div>
                     <div class="lbl" data-i18n="stat.apps.lbl">applications</div>
                 </div>
                 <div class="stat">
-                    <div class="num" data-i18n="stat.assert.num">5,090</div>
+                    <div class="num" data-i18n="stat.assert.num">5,657</div>
                     <div class="lbl" data-i18n="stat.assert.lbl">assertions run on the page</div>
                 </div>
                 <div class="stat">
-                    <div class="num">8/9</div>
+                    <div class="num">9/10</div>
                     <div class="lbl" data-i18n="stat.deps.lbl">labs with zero dependencies</div>
                 </div>
                 <div class="stat">
@@ -493,13 +493,29 @@
         <section>
             <div class="sec-head">
                 <h2 data-i18n="eng.h2">Engineering demos</h2>
-                <p data-i18n="eng.p">Four that aren't information systems. They target things that are hard to prove in a
+                <p data-i18n="eng.p">Five that aren't information systems. They target things that are hard to prove in a
                     line on a CV: a grasp of HTTP, what the web platform can do on a phone, what happens when a
-                    schema has to change while the rows are already in it, and why a valid signature is not the
-                    same thing as a token you should accept.</p>
+                    schema has to change while the rows are already in it, why a valid signature is not the same
+                    thing as a token you should accept, and what two writers do to one balance.</p>
             </div>
 
             <div class="grid">
+                <a class="lab" href="./serobot/">
+                    <div class="lab-head">
+                        <h3>Serobot</h3><span class="uji" data-i18n="serobot.assert">187 properties</span>
+                    </div>
+                    <p data-i18n-html="serobot.desc">Two writers race one balance, in real workers on real
+                        IndexedDB. A stored column loses updates in silence; an append-only ledger cannot. A
+                        rendezvous turns the race into an exact integer, which is what makes any of it assertable
+                        at all.</p>
+                    <div class="hard" data-i18n-html="serobot.hard"><b>The hardest part</b>Not the threads. The
+                        same loss happens on one event loop with no workers at all, and there it is exact — ten
+                        writers doing ten increments each produce ten, not a hundred. The cause is a read that
+                        spans an <code>await</code>; parallelism only makes it easy to hit.</div>
+                    <div class="tags"><span data-i18n="serobot.tag.races">Race conditions</span><span>IndexedDB</span><span>Web Locks</span><span data-i18n="serobot.tag.idem">Idempotency</span></div>
+                    <span class="go" data-i18n="serobot.go">Open Serobot →</span>
+                </a>
+
                 <a class="lab" href="./sahih/">
                     <div class="lab-head">
                         <h3>Sahih</h3><span class="uji" data-i18n="sahih.assert">150 properties</span>
@@ -587,8 +603,8 @@
                     "id": "Labs — demo yang bisa kamu buka dan uji sendiri"
                 },
                 "meta_desc": {
-                    "en": "Nine working demo apps that run entirely in a tab: five information systems (clinic, school, warehouse, payroll, accounting) and four engineering demos. The code is readable, assertions run on the page, and no data is sent anywhere.",
-                    "id": "Sembilan aplikasi demo yang berjalan penuh di dalam tab: lima sistem informasi (klinik, sekolah, gudang, penggajian, akuntansi) dan empat demo rekayasa. Kode terbaca, asersi berjalan di halaman, tidak ada data yang dikirim ke mana pun."
+                    "en": "Ten working demo apps that run entirely in a tab: five information systems (clinic, school, warehouse, payroll, accounting) and five engineering demos. The code is readable, assertions run on the page, and no data is sent anywhere.",
+                    "id": "Sepuluh aplikasi demo yang berjalan penuh di dalam tab: lima sistem informasi (klinik, sekolah, gudang, penggajian, akuntansi) dan lima demo rekayasa. Kode terbaca, asersi berjalan di halaman, tidak ada data yang dikirim ke mana pun."
                 },
                 "nav.back": {
                     "en": "← Back to CV",
@@ -607,8 +623,8 @@
                     "id": "Demo yang bisa kamu <span class=\"grad\">buka dan uji sendiri</span>"
                 },
                 "hero.lede": {
-                    "en": "Nine applications that run entirely inside a single browser tab. No server and no build step, and eight of the nine have no dependencies either — just plain HTML, CSS and JavaScript. Rombak is the exception: it vendors SQLite, and says so on its own front page. The code is readable, and every page runs its own assertions the moment it opens, so the claims are yours to verify, not merely to trust. The same assertions are re-run automatically in CI on every change to the repository, in real Chromium, against the very page you are looking at.",
-                    "id": "Sembilan aplikasi yang berjalan penuh di dalam satu tab browser. Tanpa server dan tanpa langkah build, dan delapan dari sembilan juga tanpa dependensi — HTML, CSS dan JavaScript biasa. Rombak pengecualiannya: dia memuat SQLite, dan mengatakannya sendiri di halaman depannya. Kodenya bisa dibaca, dan setiap halaman menjalankan asersinya sendiri saat dibuka, jadi klaimnya bisa kamu periksa, bukan cuma dipercaya. Asersi yang sama dijalankan ulang otomatis di CI setiap kali repositorinya berubah, di Chromium sungguhan, terhadap halaman yang persis sama dengan yang kamu buka sekarang."
+                    "en": "Ten applications that run entirely inside a single browser tab. No server and no build step, and nine of the ten have no dependencies either — just plain HTML, CSS and JavaScript. Rombak is the exception: it vendors SQLite, and says so on its own front page. The code is readable, and every page runs its own assertions the moment it opens, so the claims are yours to verify, not merely to trust. The same assertions are re-run automatically in CI on every change to the repository, in real Chromium, against the very page you are looking at.",
+                    "id": "Sepuluh aplikasi yang berjalan penuh di dalam satu tab browser. Tanpa server dan tanpa langkah build, dan sembilan dari sepuluh juga tanpa dependensi — HTML, CSS dan JavaScript biasa. Rombak pengecualiannya: dia memuat SQLite, dan mengatakannya sendiri di halaman depannya. Kodenya bisa dibaca, dan setiap halaman menjalankan asersinya sendiri saat dibuka, jadi klaimnya bisa kamu periksa, bukan cuma dipercaya. Asersi yang sama dijalankan ulang otomatis di CI setiap kali repositorinya berubah, di Chromium sungguhan, terhadap halaman yang persis sama dengan yang kamu buka sekarang."
                 },
                 "hero.note": {
                     "en": "<b>Every piece of data here is fabricated.</b> No real patients, students, employees, suppliers or companies — all of it is generated from seed numbers inside the code. No valid national ID, tax, student or social-security numbers. Not a single page sends data anywhere; each one shows a network-call counter that stays pinned at zero.",
@@ -619,8 +635,8 @@
                     "id": "aplikasi"
                 },
                 "stat.assert.num": {
-                    "en": "5,090",
-                    "id": "5.090"
+                    "en": "5,657",
+                    "id": "5.657"
                 },
                 "stat.assert.lbl": {
                     "en": "assertions run on the page",
@@ -747,8 +763,32 @@
                     "id": "Demo rekayasa"
                 },
                 "eng.p": {
-                    "en": "Four that aren't information systems. They target things that are hard to prove in a line on a CV: a grasp of HTTP, what the web platform can do on a phone, what happens when a schema has to change while the rows are already in it, and why a valid signature is not the same thing as a token you should accept.",
-                    "id": "Empat yang bukan sistem informasi. Keempatnya menyasar hal yang sulit dibuktikan lewat kalimat di CV: pemahaman HTTP, kemampuan platform web di ponsel, apa yang terjadi ketika skema harus berubah sementara barisnya sudah ada di dalamnya, dan kenapa tanda tangan yang sah bukan hal yang sama dengan token yang layak kamu terima."
+                    "en": "Five that aren't information systems. They target things that are hard to prove in a line on a CV: a grasp of HTTP, what the web platform can do on a phone, what happens when a schema has to change while the rows are already in it, why a valid signature is not the same thing as a token you should accept, and what two writers do to one balance.",
+                    "id": "Lima yang bukan sistem informasi. Kelimanya menyasar hal yang sulit dibuktikan lewat kalimat di CV: pemahaman HTTP, kemampuan platform web di ponsel, apa yang terjadi ketika skema harus berubah sementara barisnya sudah ada di dalamnya, kenapa tanda tangan yang sah bukan hal yang sama dengan token yang layak kamu terima, dan apa yang dilakukan dua penulis terhadap satu saldo."
+                },
+                "serobot.assert": {
+                    "en": "187 properties",
+                    "id": "187 properti"
+                },
+                "serobot.desc": {
+                    "en": "Two writers race one balance, in real workers on real IndexedDB. A stored column loses updates in silence; an append-only ledger cannot. A rendezvous turns the race into an exact integer, which is what makes any of it assertable at all.",
+                    "id": "Dua penulis berebut satu saldo, di worker sungguhan dan IndexedDB sungguhan. Kolom saldo tersimpan kehilangan update tanpa suara; ledger append-only tidak bisa. Sebuah titik temu mengubah balapannya jadi bilangan bulat yang eksak — dan justru itu yang membuat semuanya bisa di-assert."
+                },
+                "serobot.hard": {
+                    "en": "<b>The hardest part</b>Not the threads. The same loss happens on one event loop with no workers at all, and there it is exact — ten writers doing ten increments each produce ten, not a hundred. The cause is a read that spans an <code>await</code>; parallelism only makes it easy to hit.",
+                    "id": "<b>Bagian tersulitnya</b>Bukan thread-nya. Kehilangan yang sama terjadi di satu event loop tanpa worker sama sekali, dan di sana justru eksak — sepuluh penulis yang masing-masing menambah sepuluh menghasilkan sepuluh, bukan seratus. Penyebabnya adalah pembacaan yang membentang melewati sebuah <code>await</code>; paralelisme hanya membuatnya mudah kena."
+                },
+                "serobot.tag.races": {
+                    "en": "Race conditions",
+                    "id": "Race condition"
+                },
+                "serobot.tag.idem": {
+                    "en": "Idempotency",
+                    "id": "Idempotensi"
+                },
+                "serobot.go": {
+                    "en": "Open Serobot →",
+                    "id": "Buka Serobot →"
                 },
                 "sahih.assert": {
                     "en": "150 properties",

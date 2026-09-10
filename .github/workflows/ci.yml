@@ -23,7 +23,7 @@
 #   repos     14 jsdom tests over the live GitHub feed in index.html, including
 #             the fallback path: when the API returns 403 the hardcoded cards
 #             must come back. That path is the one nobody would notice failing.
-#   labs      The 5,090 assertions that ship inside the eight engine labs, run
+#   labs      The 5,657 assertions that ship inside the nine engine labs, run
 #             in real Chromium against the real pages. This also proves each
 #             page boots: right script order, no CSP violation, no console
 #             error — and that every page really did make zero network calls,

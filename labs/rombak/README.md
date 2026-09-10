@@ -118,7 +118,10 @@ that is asserted.
 - **No concurrency.** One in-memory database, one writer. Nothing here says
   anything about `BEGIN IMMEDIATE`, WAL mode, busy timeouts, lock contention or
   a migration running while writes arrive. That last one is the hard part of
-  real migrations and this lab does not claim it.
+  real migrations and this lab does not claim it. A sibling lab now picks up
+  part of what this paragraph declined —
+  [`labs/serobot/`](../serobot/) races two writers at one balance — but not the
+  migration-under-load case, which stays unclaimed here and there.
 - **No durability.** No disk, no `fsync`, no crash recovery, no corruption
   repair.
 - **Not Postgres.** No `ALTER TABLE … ADD CONSTRAINT`, no transactional DDL in
@@ -306,7 +309,7 @@ reach `1012/1012` — the second by deleting `window.Worker` before load.
 This lab checks a WebAssembly build of SQLite into the repository. The suite index
 said `0 dependencies`; that sentence was false, not nuanced, and it has been
 corrected everywhere it appeared rather than reworded into something technically
-defensible. The index now reads **7 of 8 labs with zero dependencies**.
+defensible. The index now reads **9 of 10 labs with zero dependencies**.
 
 `vendor/sqlite-wasm-base64.js` is the file, and about a fifth of it is pure
 base64 overhead over the 658,410-byte binary, paid by every visitor before any of

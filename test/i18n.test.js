@@ -13,11 +13,17 @@
  * suite covers it, and the English reader — which includes whoever is editing the
  * page — never sees it. It is found by a stranger, in the other language.
  *
- * So this checks four things per page:
+ * So this checks five things per page:
  *   - every key used in the markup exists in the dictionary
  *   - every dictionary entry has a non-empty `en` AND a non-empty `id`
  *   - `data-i18n-html` and `data-i18n` keys do not overlap, since one is
  *     interpolated as markup and the other as text
+ *   - the English in the markup MATCHES the dictionary's `en` for the same key.
+ *     This is the sneakier version of the same bug and it has already happened here:
+ *     the markup was reworded and the dictionary was not, so the page read correctly
+ *     in English until someone pressed the language button, at which point it
+ *     silently reverted to the previous wording — a stale claim, restored by a
+ *     toggle, in the language the author does not read back.
  *   - dictionary entries that nothing references are reported, because a stale
  *     key is usually the fossil of markup that was reworded on one side only
  *
@@ -31,6 +37,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const parse5 = require('parse5');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -109,6 +116,35 @@ for (const page of PAGES) {
   for (const key of textKeys) {
     if (htmlKeys.has(key)) problems.push('"' + key + '" is used as both data-i18n and data-i18n-html; one is interpolated as markup and the other as text');
   }
+
+  /* The markup IS the English source, so if it disagrees with the dictionary's en,
+     one of the two is stale — and the toggle will serve the stale one. Whitespace
+     is normalised because the markup wraps and the dictionary does not. */
+  const norm = (t) => t.replace(/\s+/g, ' ').trim();
+  const doc = parse5.parse(src);
+  const walk = (node, fn) => { fn(node); for (const c of node.childNodes || []) walk(c, fn); };
+  walk(doc, (el) => {
+    if (!el.attrs) return;
+    const get = (n) => { const a = el.attrs.find((x) => x.name === n); return a ? a.value : null; };
+    const textKey = get('data-i18n');
+    const htmlKey = get('data-i18n-html');
+    const key = textKey || htmlKey;
+    if (!key || !dict[key] || typeof dict[key].en !== 'string') return;
+
+    let rendered;
+    if (htmlKey) {
+      rendered = (el.childNodes || []).map((c) => parse5.serialize({ childNodes: [c] })).join('');
+    } else {
+      let acc = '';
+      walk(el, (n) => { if (n.nodeName === '#text') acc += n.value; });
+      rendered = acc;
+    }
+    if (norm(rendered) !== norm(dict[key].en)) {
+      problems.push('"' + key + '" markup and dictionary en disagree — the toggle would serve the stale one' +
+        '\n        markup: ' + norm(rendered).slice(0, 100) +
+        '\n        dict  : ' + norm(dict[key].en).slice(0, 100));
+    }
+  });
 
   /* Some keys are never stamped on an element — the toggle reads them by name,
      and it does so through expressions a narrow pattern would miss, such as

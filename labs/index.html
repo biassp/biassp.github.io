@@ -12,7 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Labs — demos you can open and test yourself</title>
     <meta name="description"
-        content="Eight working demo apps that run entirely in a tab: five information systems (clinic, school, warehouse, payroll, accounting) and three engineering demos. The code is readable, assertions run on the page, and no data is sent anywhere.">
+        content="Nine working demo apps that run entirely in a tab: five information systems (clinic, school, warehouse, payroll, accounting) and four engineering demos. The code is readable, assertions run on the page, and no data is sent anywhere.">
     <meta name="author" content="Bias Satrio Putra">
     <meta name="copyright" content="Copyright (c) 2026 Bias Satrio Putra. All rights reserved.">
     <link rel="icon"
@@ -372,9 +372,9 @@
     <main class="wrap">
         <div class="hero">
             <h1 data-i18n-html="hero.title">Demos you can <span class="grad">open and test yourself</span></h1>
-            <p class="lede" data-i18n="hero.lede">Eight applications that run entirely inside a single browser tab. No server
-                and no build step, and seven of the eight have no dependencies either — just plain HTML, CSS and
-                JavaScript. The eighth vendors SQLite, and says so on its own front page. The code is readable, and every
+            <p class="lede" data-i18n="hero.lede">Nine applications that run entirely inside a single browser tab. No server
+                and no build step, and eight of the nine have no dependencies either — just plain HTML, CSS and
+                JavaScript. Rombak is the exception: it vendors SQLite, and says so on its own front page. The code is readable, and every
                 page runs its own assertions the moment it opens, so the claims are yours to verify, not merely to
                 trust. The same assertions are re-run automatically in CI on every change to the repository, in
                 real Chromium, against the very page you are looking at.</p>
@@ -388,15 +388,15 @@
 
             <div class="stats">
                 <div class="stat">
-                    <div class="num">8</div>
+                    <div class="num">9</div>
                     <div class="lbl" data-i18n="stat.apps.lbl">applications</div>
                 </div>
                 <div class="stat">
-                    <div class="num" data-i18n="stat.assert.num">4,671</div>
+                    <div class="num" data-i18n="stat.assert.num">5,090</div>
                     <div class="lbl" data-i18n="stat.assert.lbl">assertions run on the page</div>
                 </div>
                 <div class="stat">
-                    <div class="num">7/8</div>
+                    <div class="num">8/9</div>
                     <div class="lbl" data-i18n="stat.deps.lbl">labs with zero dependencies</div>
                 </div>
                 <div class="stat">
@@ -493,12 +493,29 @@
         <section>
             <div class="sec-head">
                 <h2 data-i18n="eng.h2">Engineering demos</h2>
-                <p data-i18n="eng.p">Three that aren't information systems. They target things that are hard to prove in a
-                    line on a CV: a grasp of HTTP, what the web platform can do on a phone, and what happens when a
-                    schema has to change while the rows are already in it.</p>
+                <p data-i18n="eng.p">Four that aren't information systems. They target things that are hard to prove in a
+                    line on a CV: a grasp of HTTP, what the web platform can do on a phone, what happens when a
+                    schema has to change while the rows are already in it, and why a valid signature is not the
+                    same thing as a token you should accept.</p>
             </div>
 
             <div class="grid">
+                <a class="lab" href="./sahih/">
+                    <div class="lab-head">
+                        <h3>Sahih</h3><span class="uji" data-i18n="sahih.assert">150 properties</span>
+                    </div>
+                    <p data-i18n-html="sahih.desc">Five JSON Web Tokens through a naive verifier and a strict one,
+                        on the same bytes. Real RSA-2048, real P-256 ECDSA, real HMAC — all on
+                        <code>crypto.subtle</code>, nothing vendored, and the published RFC test vectors checked
+                        against the values the RFC prints.</p>
+                    <div class="hard" data-i18n-html="sahih.hard"><b>The hardest part</b>Every token here is valid in
+                        the only sense cryptography can offer — the signature checks out — and four of the five are
+                        forgeries anyway. The signature is the easy part; everything that decides what a token
+                        <em>means</em> sits outside it.</div>
+                    <div class="tags"><span>JOSE / JWT</span><span>WebCrypto</span><span data-i18n="sahih.tag.vectors">RFC vectors</span><span data-i18n="sahih.tag.defensive">Defensive</span></div>
+                    <span class="go" data-i18n="sahih.go">Open Sahih →</span>
+                </a>
+
                 <a class="lab" href="./rombak/">
                     <div class="lab-head">
                         <h3>Rombak</h3><span class="uji" data-i18n="rombak.assert">262 properties</span>
@@ -570,8 +587,8 @@
                     "id": "Labs — demo yang bisa kamu buka dan uji sendiri"
                 },
                 "meta_desc": {
-                    "en": "Eight working demo apps that run entirely in a tab: five information systems (clinic, school, warehouse, payroll, accounting) and three engineering demos. The code is readable, assertions run on the page, and no data is sent anywhere.",
-                    "id": "Delapan aplikasi demo yang berjalan penuh di dalam tab: lima sistem informasi (klinik, sekolah, gudang, penggajian, akuntansi) dan tiga demo rekayasa. Kode terbaca, asersi berjalan di halaman, tidak ada data yang dikirim ke mana pun."
+                    "en": "Nine working demo apps that run entirely in a tab: five information systems (clinic, school, warehouse, payroll, accounting) and four engineering demos. The code is readable, assertions run on the page, and no data is sent anywhere.",
+                    "id": "Sembilan aplikasi demo yang berjalan penuh di dalam tab: lima sistem informasi (klinik, sekolah, gudang, penggajian, akuntansi) dan empat demo rekayasa. Kode terbaca, asersi berjalan di halaman, tidak ada data yang dikirim ke mana pun."
                 },
                 "nav.back": {
                     "en": "← Back to CV",
@@ -590,8 +607,8 @@
                     "id": "Demo yang bisa kamu <span class=\"grad\">buka dan uji sendiri</span>"
                 },
                 "hero.lede": {
-                    "en": "Seven applications that run entirely inside a single browser tab. No server, no dependencies, no build step — just plain HTML, CSS and JavaScript. The code is readable, and every page runs its own assertions the moment it opens, so the claims are yours to verify, not merely to trust. The same assertions are re-run automatically in CI on every change to the repository, in real Chromium, against the very page you are looking at.",
-                    "id": "Tujuh aplikasi yang berjalan penuh di dalam satu tab browser. Tanpa server, tanpa dependensi, tanpa langkah build — HTML, CSS dan JavaScript biasa. Kodenya bisa dibaca, dan setiap halaman menjalankan asersinya sendiri saat dibuka, jadi klaimnya bisa kamu periksa, bukan cuma dipercaya. Asersi yang sama dijalankan ulang otomatis di CI setiap kali repositorinya berubah, di Chromium sungguhan, terhadap halaman yang persis sama dengan yang kamu buka sekarang."
+                    "en": "Nine applications that run entirely inside a single browser tab. No server and no build step, and eight of the nine have no dependencies either — just plain HTML, CSS and JavaScript. Rombak is the exception: it vendors SQLite, and says so on its own front page. The code is readable, and every page runs its own assertions the moment it opens, so the claims are yours to verify, not merely to trust. The same assertions are re-run automatically in CI on every change to the repository, in real Chromium, against the very page you are looking at.",
+                    "id": "Sembilan aplikasi yang berjalan penuh di dalam satu tab browser. Tanpa server dan tanpa langkah build, dan delapan dari sembilan juga tanpa dependensi — HTML, CSS dan JavaScript biasa. Rombak pengecualiannya: dia memuat SQLite, dan mengatakannya sendiri di halaman depannya. Kodenya bisa dibaca, dan setiap halaman menjalankan asersinya sendiri saat dibuka, jadi klaimnya bisa kamu periksa, bukan cuma dipercaya. Asersi yang sama dijalankan ulang otomatis di CI setiap kali repositorinya berubah, di Chromium sungguhan, terhadap halaman yang persis sama dengan yang kamu buka sekarang."
                 },
                 "hero.note": {
                     "en": "<b>Every piece of data here is fabricated.</b> No real patients, students, employees, suppliers or companies — all of it is generated from seed numbers inside the code. No valid national ID, tax, student or social-security numbers. Not a single page sends data anywhere; each one shows a network-call counter that stays pinned at zero.",
@@ -602,8 +619,8 @@
                     "id": "aplikasi"
                 },
                 "stat.assert.num": {
-                    "en": "4,671",
-                    "id": "4.671"
+                    "en": "5,090",
+                    "id": "5.090"
                 },
                 "stat.assert.lbl": {
                     "en": "assertions run on the page",
@@ -730,8 +747,32 @@
                     "id": "Demo rekayasa"
                 },
                 "eng.p": {
-                    "en": "Three that aren't information systems. They target things that are hard to prove in a line on a CV: a grasp of HTTP, what the web platform can do on a phone, and what happens when a schema has to change while the rows are already in it.",
-                    "id": "Tiga yang bukan sistem informasi. Ketiganya menyasar hal yang sulit dibuktikan lewat kalimat di CV: pemahaman HTTP, kemampuan platform web di ponsel, dan apa yang terjadi ketika skema harus berubah sementara barisnya sudah ada di dalamnya."
+                    "en": "Four that aren't information systems. They target things that are hard to prove in a line on a CV: a grasp of HTTP, what the web platform can do on a phone, what happens when a schema has to change while the rows are already in it, and why a valid signature is not the same thing as a token you should accept.",
+                    "id": "Empat yang bukan sistem informasi. Keempatnya menyasar hal yang sulit dibuktikan lewat kalimat di CV: pemahaman HTTP, kemampuan platform web di ponsel, apa yang terjadi ketika skema harus berubah sementara barisnya sudah ada di dalamnya, dan kenapa tanda tangan yang sah bukan hal yang sama dengan token yang layak kamu terima."
+                },
+                "sahih.assert": {
+                    "en": "150 properties",
+                    "id": "150 properti"
+                },
+                "sahih.desc": {
+                    "en": "Five JSON Web Tokens through a naive verifier and a strict one, on the same bytes. Real RSA-2048, real P-256 ECDSA, real HMAC — all on <code>crypto.subtle</code>, nothing vendored, and the published RFC test vectors checked against the values the RFC prints.",
+                    "id": "Lima JSON Web Token melewati satu verifier naif dan satu verifier ketat, di atas byte yang sama. RSA-2048 sungguhan, ECDSA P-256 sungguhan, HMAC sungguhan — semuanya di atas <code>crypto.subtle</code>, tanpa satu pun kode pihak ketiga, dan vektor uji RFC yang diterbitkan diperiksa terhadap nilai yang dicetak RFC-nya."
+                },
+                "sahih.hard": {
+                    "en": "<b>The hardest part</b>Every token here is valid in the only sense cryptography can offer — the signature checks out — and four of the five are forgeries anyway. The signature is the easy part; everything that decides what a token <em>means</em> sits outside it.",
+                    "id": "<b>Bagian tersulitnya</b>Setiap token di sini sahih dalam satu-satunya arti yang bisa diberikan kriptografi — tanda tangannya benar — dan empat dari lima tetap palsu. Tanda tangan adalah bagian yang mudah; segala hal yang menentukan <em>arti</em> sebuah token berada di luarnya."
+                },
+                "sahih.tag.vectors": {
+                    "en": "RFC vectors",
+                    "id": "Vektor RFC"
+                },
+                "sahih.tag.defensive": {
+                    "en": "Defensive",
+                    "id": "Defensif"
+                },
+                "sahih.go": {
+                    "en": "Open Sahih →",
+                    "id": "Buka Sahih →"
                 },
                 "rombak.assert": {
                     "en": "262 properties",

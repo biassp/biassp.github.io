@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<!--
+  Sahih — part of the biassp.github.io portfolio
+  Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+  Not open source. Readable for evaluation only — copying, modification,
+  re-branding or redistribution is not permitted. See /LICENSE.
+  https://biassp.github.io/
+-->
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; worker-src 'self' blob:; form-action 'none'; base-uri 'none'; object-src 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sahih — the signature verified, and the token was still a forgery</title>
+    <meta name="description" content="Five forged or malleated JSON Web Tokens run through a naive verifier and a strict one, side by side, on the same bytes. Real RSA, real ECDSA, real HMAC, zero vendored code.">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2032%2032%22%3E%3Crect%20width=%2232%22%20height=%2232%22%20rx=%227%22%20fill=%22%236366f1%22/%3E%3Ccircle%20cx=%2216%22%20cy=%2216%22%20r=%228%22%20fill=%22none%22%20stroke=%22%23fff%22%20stroke-width=%223%22/%3E%3Cpath%20d=%22M10%2022L22%2010%22%20stroke=%22%23fff%22%20stroke-width=%223%22%20stroke-linecap=%22round%22/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="app.css">
+    <script src="guard.js"></script>
+</head>
+
+<body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <!-- One polite live region for the whole app. Every panel is torn down and
+         rebuilt on each state change, which announces nothing on its own: the
+         token that was just issued, the check that refused and the code it
+         refused under, the clock the Klaim tab is being dragged through, and
+         the assertion counts are all written here. -->
+    <div id="say" role="status" aria-live="polite" class="sr-only"></div>
+
+    <header class="top">
+        <div class="brand">
+            <span class="mark" aria-hidden="true">SHH</span>
+            <div>
+                <h1>Sahih</h1>
+                <p class="sub">Five forgeries against two verifiers, on the same bytes. Nothing leaves this tab.</p>
+            </div>
+        </div>
+        <div class="top-actions">
+            <button type="button" class="testbadge" id="testBadge" title="Open the assertion suite — it runs against a fixture rebuilt from frozen RFC vectors and keys generated in this tab">
+                <span class="dot" aria-hidden="true"></span><span id="testText">tests: waiting…</span>
+            </button>
+            <span class="netbadge" id="netBadge" title="fetch / XMLHttpRequest / WebSocket / EventSource / sendBeacon attempts made by this page since load">
+                <span class="dot" aria-hidden="true"></span><span id="netCount">network calls from this page: 0</span>
+            </span>
+            <button type="button" id="themeBtn" class="btn ghost" title="Switch to the light theme">Light</button>
+            <a class="btn ghost" href="../../">CV</a>
+        </div>
+    </header>
+
+    <main id="main">
+        <p class="banner" id="fabricBanner">
+            <b>Every key, subject and issuer on this page is fabricated, and the issuer enforces it rather than
+            promising it:</b> <code>SAHIH_JOSE.issue</code> refuses to sign a payload whose <code>iss</code> does not
+            end in <code>.invalid</code> — RFC 2606's reserved top-level domain, so the issuer this page names is
+            structurally incapable of existing — or whose <code>sub</code> does not begin <code>u_FIKTIF_</code>.
+            Try it on the Terbit tab and read the refusal.
+        </p>
+
+        <!-- Above the fold, in <main>, immediately after the fabrication banner,
+             and not collapsible. It is the exact inverse of the correction the
+             lab next door has to print in this position, and a claim that is
+             true is worth as little as a claim that is false if the reader has
+             to open something to find it. -->
+        <section class="nodeps" aria-labelledby="nodeps-h">
+            <h2 id="nodeps-h">This page ships no third-party code at all.</h2>
+            <p>
+                Rombak, the lab next door, opens by admitting it ships 878&nbsp;KB of somebody else's SQLite and
+                that the admission made a claim on this site's own index false. This is the clean case. Real
+                RSA-2048, real P-256 ECDSA, real HMAC-SHA-256, real key import and export — under the same
+                Content Security Policy the six strictest labs ship, byte for byte, with no
+                <code>'wasm-unsafe-eval'</code>, no <code>vendor/</code> directory, nothing to regenerate and
+                nothing under a foreign licence. One command checks it:
+                <code>diff &lt;(sed -n 13p labs/harvest/index.html) &lt;(sed -n 13p labs/sahih/index.html)</code>.
+                The site's dependency count goes from seven of eight to eight of nine, and this is the one place
+                on this site where adding a lab improves a ratio.
+            </p>
+        </section>
+
+        <nav class="tabs" id="tabs" role="tablist" aria-label="Token views">
+            <button type="button" role="tab" id="tab-issue" aria-controls="panel-issue" aria-selected="true" class="tab">Terbit</button>
+            <button type="button" role="tab" id="tab-verify" aria-controls="panel-verify" aria-selected="false" tabindex="-1" class="tab">Periksa</button>
+            <button type="button" role="tab" id="tab-forge" aria-controls="panel-forge" aria-selected="false" tabindex="-1" class="tab">Palsu</button>
+            <button type="button" role="tab" id="tab-claims" aria-controls="panel-claims" aria-selected="false" tabindex="-1" class="tab">Klaim</button>
+            <button type="button" role="tab" id="tab-vectors" aria-controls="panel-vectors" aria-selected="false" tabindex="-1" class="tab">Rujukan</button>
+            <button type="button" role="tab" id="tab-tests" aria-controls="panel-tests" aria-selected="false" tabindex="-1" class="tab">Tests</button>
+        </nav>
+
+        <!-- All six panels are EMPTY here on purpose, and it is not laziness.
+             Every panel on this page prints JSON headers, base64url segments and
+             hex: one `{"alg":"none"}` is harmless, but the moment a header
+             fragment is written into this file with a raw `<` before a letter it
+             is an html-validate no-raw-characters violation and a parse5
+             invalid-first-character-of-tag-name error at the same time, and a
+             literal script tag written in prose is additionally harvested by
+             test/syntax.test.js and handed to node --check. Rendered through
+             textContent from app.js, the same string cannot be markup at all —
+             which on a page about defence removes a whole class of bug rather
+             than avoiding a lint. -->
+        <div class="panels">
+            <section id="panel-issue" role="tabpanel" aria-labelledby="tab-issue" tabindex="0" class="panel">
+                <!-- The one exception to the empty-panel rule above, and it is the
+                     same rule read honestly: this is prose, with no JSON, no raw
+                     `<`, no segment and no script tag, so none of the three
+                     validators or test/syntax.test.js can see anything in it.
+                     app.js's clear() removes it on the first render. It is here
+                     because the tab strip is painted long before app.js exists —
+                     measured at 224 ms on a local load and 6.4 s on a 400 kbit
+                     link — and an empty panel under a live-looking strip reads as
+                     a broken page rather than a loading one. -->
+                <p class="empty">The demonstrations are built in your browser, by this page's own
+                    JavaScript. While this line is here they have not finished loading — and if it
+                    stays, scripting is off, and the sections below the tab strip are the whole of
+                    what this page can show you.</p>
+            </section>
+            <section id="panel-verify" role="tabpanel" aria-labelledby="tab-verify" tabindex="0" class="panel" hidden></section>
+            <section id="panel-forge" role="tabpanel" aria-labelledby="tab-forge" tabindex="0" class="panel" hidden></section>
+            <section id="panel-claims" role="tabpanel" aria-labelledby="tab-claims" tabindex="0" class="panel" hidden></section>
+            <section id="panel-vectors" role="tabpanel" aria-labelledby="tab-vectors" tabindex="0" class="panel" hidden></section>
+            <section id="panel-tests" role="tabpanel" aria-labelledby="tab-tests" tabindex="0" class="panel" hidden></section>
+        </div>
+
+        <!-- Outside the tab strip, so it cannot be the one tab nobody opens. -->
+        <section class="notproven" id="notproven" aria-labelledby="notproven-h">
+            <h2 id="notproven-h">What this page does not prove</h2>
+            <p class="note">
+                Every limit below is a real one, and none of them is a limit this page could design away.
+            </p>
+            <p>
+                <b>There is no server, so there is no trust boundary.</b> The issuer, the verifier and the
+                attacker are three JavaScript objects in one tab with no isolation between them. Every sentence
+                here about what a server can see is a modelling choice, not a measurement.
+            </p>
+            <p>
+                <b>Authorization is the bigger bug class and it is not here at all.</b> This page is about
+                authentication — establishing <em>who</em>. Broken object-level authorization, the handler that
+                checks the token and never checks whether this actor owns this object, breaks more products than
+                every forgery on this page combined, and it is not modelled. The title says tokens for that
+                reason.
+            </p>
+            <p>
+                <b>No network, and therefore no cookies.</b> <code>HttpOnly</code>, <code>Secure</code>,
+                <code>SameSite</code>, cookie prefixes, CSRF, CORS, TLS, HSTS, pinning. A page cannot set an
+                <code>HttpOnly</code> cookie from JavaScript by definition — the write silently does nothing and
+                does not even throw — so the single most important session-storage control on the web is
+                structurally undemonstrable here. <a href="../harvest/">HARvest</a> audits cookie flags from a
+                real capture; that is where to look.
+            </p>
+            <p>
+                <b>No second origin, so no OAuth 2.0, no PKCE, no OIDC, no SAML, no SSO.</b> Every property
+                worth demonstrating in those is a redirect between origins.
+            </p>
+            <p>
+                <b>No sessions.</b> No fixation, no rotation, no idle-versus-absolute expiry, no refresh-token
+                family with reuse detection, no distributed sign-out. The revocation panel on the Claims tab is
+                one <code>Map</code> in one process, with no replication lag and no cache. The hard version — a
+                denylist read by twelve API instances behind a load balancer with a thirty-second cache TTL — is
+                where revocation actually fails, and it needs the thing this page does not have.
+            </p>
+            <p>
+                <b>No password storage.</b> No Argon2id, no scrypt, no bcrypt: <code>crypto.subtle</code> has
+                none of them. Measured on this page, and printed on the Verify tab as observed data —
+                <code>importKey(..., 'Argon2id', ...)</code> answers <code>NotSupportedError</code>, and so do
+                <code>scrypt</code>, <code>bcrypt</code>, <code>BLAKE2b</code>, <code>SHA3-256</code> and
+                <code>MD5</code>. Argon2 is defined over BLAKE2b, so building it here means hand-writing a hash
+                function, which is the last thing a security lab should model approvingly. PBKDF2 is what the
+                browser has, not what you would choose server-side in 2026 — the difference is memory-hardness,
+                and PBKDF2-SHA256 has the worst defender-to-attacker cost asymmetry of the modern
+                key-derivation functions because SHA-256 is cheap on a GPU. OWASP's current figure for
+                PBKDF2-SHA256 is 600,000 iterations; it was 310,000 before that and it will move again, which is
+                why a hardcoded recommendation rots into a wrong claim. <b>This page runs no PBKDF2 at all</b>,
+                has no cost curve, and ships no cracker. The one place a password touches a token here is an
+                HS256 secret, and every HS256 secret on this page is 256 bits from
+                <code>crypto.getRandomValues</code>.
+            </p>
+            <p>
+                <b>No WebAuthn.</b> <code>window.PublicKeyCredential</code> exists in this browser and there is
+                nothing behind it. The only WebAuthn call this page makes is
+                <code>isUserVerifyingPlatformAuthenticatorAvailable()</code>, which returns <code>false</code>,
+                and its result is printed as observed data and is not in the assertion count. How long it takes
+                is not stated here: measured on this machine the same call ran between 0.1&nbsp;ms and
+                51.8&nbsp;ms across eighteen samples, so any single figure in a paragraph would be a number
+                chosen rather than measured. The Verify tab prints the one your browser produced. Registration is not attempted: this repository's test harness serves from
+                <code>127.0.0.1</code>, an IP literal is not a registrable domain and cannot be a Relying Party
+                ID, and a virtual authenticator over CDP does not fix that. <code>localhost</code> <b>would</b>
+                work and I chose not to change the harness for one assertion. That is a scope decision, not a
+                law of the platform, and stating it the other way round would be the kind of confident wrongness
+                this page exists to avoid.
+            </p>
+            <p>
+                <b>No timing attack, and this page will not fake one.</b> Measured in <em>your</em> browser when
+                this tab rendered, and printed on the Verify tab: the number of samples, the number of distinct
+                values, the smallest non-zero step, and how many iterations a busy loop runs before the clock
+                moves. Those are your numbers, not mine, and they will differ from the ones in the README. A
+                better clock needs <code>crossOriginIsolated</code>, which needs COOP and COEP <b>response
+                headers</b>, and GitHub Pages cannot set response headers — so this page can never have one, no
+                matter what it does. A real measurement takes roughly a thousand batched repetitions per sample
+                and a rank test that handles heavy ties, and that is stated here rather than run.
+            </p>
+            <p>
+                <b>Nothing here is a constant-time comparison.</b> <code>crypto.subtle.verify</code> performs the
+                signature comparison and this page cannot inspect it. There is no
+                <code>crypto.subtle.timingSafeEqual</code> — it is absent from <code>SubtleCrypto.prototype</code>,
+                which this page prints — and there is no shipped proposal for one. A hand-written XOR-accumulate
+                loop is a good habit and a bad claim: the engine tiers it, deoptimises it, bounds-checks it, and
+                the garbage collector can pause anywhere inside it.
+            </p>
+            <p>
+                <b>No revocation infrastructure, no key rotation, no JWKS.</b> A <code>jku</code> header is
+                refused by name here, and the reason is structural rather than principled:
+                <code>connect-src 'none'</code> means this page could not fetch a key set if it wanted to. On a
+                real server that refusal is a decision somebody has to remember to make.
+            </p>
+            <p>
+                <b>A bearer token is a bearer token, and the fix is not on this page.</b> The last card proves
+                that a signature is not an identity. The 2026 answer to that class is a sender-constrained token
+                — DPoP (RFC 9449, 2023) or mutual-TLS-bound (RFC 8705, 2020) — which binds the token to a key
+                the holder must prove possession of on every request. Neither is demonstrable here: both need a
+                server and a second party.
+            </p>
+            <p>
+                <b>No memory hygiene, no side-channel resistance, no audit.</b> JavaScript cannot zero a key;
+                there is no <code>mlock</code>; the garbage collector copies strings freely. Nobody has reviewed
+                this code. The suite tests properties I chose, which is the weakest form of assurance there is,
+                and nothing here is a security review of anything.
+            </p>
+            <p>
+                <b>What this is for.</b> HARvest ships a JWT decoder carrying the comment <em>"This NEVER
+                verifies the signature: verification needs the signing key, which this page does not have and
+                will not ask for."</em> That is the correct posture for a page holding a stranger's capture, and
+                it leaves half a sentence open. This page closes it, because it made the keys milliseconds ago in
+                your own tab. That is the whole claim. This is a statement about what a browser can and cannot
+                show about token verification — not a maturity claim about any system I ship, and no product of
+                mine is named or modelled anywhere on this page or in its README.
+            </p>
+
+            <h3 id="norefuse-h">The claims this page refuses to make</h3>
+            <ul class="refuses" aria-labelledby="norefuse-h">
+                <li>never <b>"this is secure"</b>, <b>"unhackable"</b>, <b>"bank-level"</b>,
+                    <b>"military-grade"</b>;</li>
+                <li>never <b>"constant-time comparison"</b>;</li>
+                <li>never <b>"timing attack demonstrated"</b>;</li>
+                <li>never <b>"PBKDF2 with N iterations is safe"</b>, and never any GPU cracking rate as measured
+                    — a browser cannot produce one, so this page states none;</li>
+                <li>never <b>"salts are secret"</b>;</li>
+                <li>never <b>"TOTP is two-factor"</b> without adding that a shared secret in the same password
+                    manager is one factor with extra steps, that the server can generate your codes, and that it
+                    is phishable in real time;</li>
+                <li>never <b>"verified the JWT"</b> without naming the key: it verified <em>this</em> token
+                    against a key <em>this page generated</em>, and it will not ask you for one from anywhere
+                    else;</li>
+                <li>never <b>"zero dependencies means secure"</b> — it means one thing, that there is no
+                    third-party code in this lab's supply chain, and says nothing about the correctness of the
+                    code that is here;</li>
+                <li>never <b>"every lab on this site ships <code>connect-src 'none'</code>"</b> —
+                    <code>labs/saku/index.html</code> ships <code>connect-src 'self'</code> and is a PWA
+                    share-target demo;</li>
+                <li>never <b>"the whole attack surface of a bearer token"</b> — this page covers the attack
+                    surface of token <em>verification</em>, which is a much smaller thing, and the list above
+                    says what the rest of it is.</li>
+            </ul>
+        </section>
+
+        <footer class="foot">
+            <p>
+                <b>Why this page shows attacks at all.</b> Every forgery here exists to show the line that stops
+                it. The naive verifier is not a straw man — it refuses five bad tokens on the first card, before
+                it is shown taking the sixth — and the strict verifier's refusal is the last thing on every
+                panel. The tokens are this page's own, minted milliseconds ago
+                — the HMAC key from <code>crypto.subtle.generateKey</code> in your tab, the RSA and ECDSA keys
+                imported from the published RFC 7515 A.2 and A.3 test vectors, each labelled with its
+                provenance on the Terbit tab — and there is nowhere to paste one in from anywhere else. The page cannot reach the network:
+                <code>connect-src 'none'</code> is a browser refusal, not a promise, and the counter in the
+                header reads whatever the browser actually let through.
+            </p>
+            <p>
+                <b>The signature is the easy part.</b> That is the one sentence this page exists to make
+                runnable. Three of the five rungs above are stopped by a single line at the verifier, two of
+                them by the same line. The fourth is not a forgery at all — those tokens are correctly signed,
+                and refusing them takes six separate claim rules. The fifth is not a forgery either, and nothing
+                a verifier can do stops it: it is stopped by a decision made somewhere else entirely.
+            </p>
+            <p class="small">
+                No framework, no bundler, no build step, no vendored code and no change to the
+                Content-Security-Policy the sibling labs ship: <code>guard.js</code>, <code>bytes.js</code>,
+                <code>vectors.js</code>, <code>jose.js</code>, <code>palsu.js</code>, <code>periksa.js</code>,
+                <code>fixture.js</code>, <code>store.js</code>, <code>tests.js</code>, <code>app.js</code> and
+                <code>app.css</code>. The sibling lab that holds a stranger's capture and must not ask for the
+                key is <a href="../harvest/">HARvest</a>.
+                <a href="README.md">README</a>
+            </p>
+        </footer>
+    </main>
+
+    <script src="bytes.js"></script>
+    <script src="vectors.js"></script>
+    <script src="jose.js"></script>
+    <script src="palsu.js"></script>
+    <script src="periksa.js"></script>
+    <script src="fixture.js"></script>
+    <script src="store.js"></script>
+    <script src="tests.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

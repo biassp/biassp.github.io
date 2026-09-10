@@ -16,13 +16,14 @@
 #             every #fragment has an element with that id. A renamed folder
 #             breaks a portfolio link silently.
 #   i18n      Every data-i18n key on the two bilingual pages resolves in both
-#             languages. A missing key breaks nothing in English and blanks the
-#             element the moment a visitor presses the language button — so the
-#             person editing the page is the last to find out.
+#             languages, and the English markup still matches the dictionary. A
+#             missing key blanks the element the moment a visitor presses the
+#             language button; a drifted one silently restores older wording. Both
+#             are invisible to the English reader, who is usually the author.
 #   repos     14 jsdom tests over the live GitHub feed in index.html, including
 #             the fallback path: when the API returns 403 the hardcoded cards
 #             must come back. That path is the one nobody would notice failing.
-#   labs      The 4,671 assertions that ship inside the seven engine labs, run
+#   labs      The 5,090 assertions that ship inside the eight engine labs, run
 #             in real Chromium against the real pages. This also proves each
 #             page boots: right script order, no CSP violation, no console
 #             error — and that every page really did make zero network calls,

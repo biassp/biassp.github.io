@@ -1,7 +1,7 @@
 # PROGRESS — biassp.github.io (CV) & SkillPath
 
 Cross-device handoff. Read this first when resuming on any device.
-Last updated: 2026-09-08.
+Last updated: 2026-09-10.
 
 ## Live
 - CV:        https://biassp.github.io/   (repo: biassp/biassp.github.io, branch master)
@@ -224,6 +224,57 @@ just self-reported by the build agent):
   below AA. Check the light block overrides EVERY accent token before shipping.
 Every lab: synthetic seed data from a seeded PRNG, stated as fake in the UI; all storage in
 try/catch; zero network egress scoped to the lab page; copyright header in every file.
+
+## Sepakat — the replication lab (added 2026-09-10)
+- `labs/sepakat/`. Four phones share one field-service job board with NO server. Three merge
+  strategies run against the SAME plan — same user actions, same latencies, same duplicates,
+  same partition — so the difference between them is the only variable:
+  * `naive` op log applied on arrival. Diverges under duplicates ALONE (no partition, no skew).
+  * `lww`  state + wall-clock stamp. CONVERGES PERFECTLY and is still wrong: it drops writes.
+  * `crdt` OR-Set + PN-Counter + HLC-stamped register. Converges AND matches the oracle exactly.
+  The thesis is the gap between "converged" and "correct", which is why `lww` is the centrepiece
+  and not the strawman. 3,000 lines, zero dependencies, no build step.
+- 169 properties / 2,507 executions / 47 negative. Counts reported separately (a law over 40 seeds
+  is ONE property and 40 executions). Suite runs 174 ms, so it stays on the MAIN THREAD — no
+  worker. Rombak needed one at 23 s; copying that here would have been theatre.
+- THE SUITE FALSIFIED THREE OF MY OWN CLAIMS, all now fixed and all better than the originals:
+  * The crdt engine's counter deltas shipped `+3` where a state counter merges by MAX, so
+    merging 3 into a component already at 5 was a no-op. Every replica converged, on a total
+    that was too small. The join-irreducible delta is the replica's own CUMULATIVE component.
+  * The HLC never advanced on RECEIPT — only local events moved it — so a reply could still be
+    ordered before the message it answered, and `crdt` resolved the skew scenario exactly like
+    the wall clock did. hlcReceive on every delta stamp fixed it.
+  * "A register can only ever discard, so the total comes out LOW" — asserted, immediately false:
+    13 of 40 seeds came out HIGH. A register drops WRITES, not points, and dropping one that was
+    a deduction raises the total. The error has no sign. Reworded into two properties.
+- MUTATION-TESTED before being trusted, same discipline as the Rombak census: counter delta
+  reverted, observed-remove replaced, HLC receive removed, RGA delete flag dropped, key sorting
+  removed from canonicalJson, network pinned to constant latency, naive given a dedupe. Each was
+  seen to turn the suite RED, then reverted. TWO EARLY MUTATIONS SURVIVED and were real gaps:
+  * nothing asserted a closed job actually disappears (the counter oracle only looks at rows that
+    ARE on the board, so an extra row was invisible to it) — now its own property over 15 plans;
+  * nothing depended on out-of-order delivery, so pinning latency to a constant left the suite
+    fully green. Fixed by counting reorders in the simulator — and the count had to EXCLUDE
+    duplicates, because a retry trivially arrives below the watermark and was masking it.
+- `The checks can fail` group (18 assertions) feeds broken input to every judgement the rest of
+  the suite rests on: the serialiser, the convergence test, the counter oracle, and the merge-law
+  harness against three merges each broken in exactly ONE law. "Keep the left side" is the
+  instructive one — genuinely associative, idempotent and absorbing, it fails ONLY commutativity,
+  and my first draft expected two failures and was wrong.
+- Foils are load-bearing, not decoration: 2P-Set (a real CRDT that can never re-add) and naiveSet
+  (remove-as-absence, resurrected by one merge with any peer). Both are asserted to FAIL the thing
+  they fail, so a well-meaning edit that "fixed" one turns the suite red.
+- Stated limits, on the page and in the README, not buried: the crdt job title is STILL a register
+  (causality decides, not skew — but one edit still loses); RGA interleaves concurrent words; the
+  textarea diff is prefix/suffix, not minimal; no tombstone compaction; no Byzantine peers.
+- Light theme overrides EVERY accent token — the recurring bug from the two previous labs. Checked
+  in Chromium at 1280px and 390px, both themes.
+- Wired in: `test/labs.test.js` LABS list, labs/index.html card + 6 bilingual dict keys, the labs
+  stats strip (8→9 apps, 4,671→4,840 assertions, 7/8→8/9 zero-dep), a CV portfolio card with
+  en+id, and the root README counts. Full `npm test` green: syntax, parse5 + vnu + html-validate,
+  links, i18n, 14 repos tests, 4,840 lab assertions, egress 0.
+- ONE REAL FINDING FROM CI while wiring up: vnu rejected `aria-label` on a bare `<div>` with no
+  role. Fixed with `role="group"`. Exactly the class of thing the three-validator stack exists for.
 
 ## Next / ideas (not yet done)
 - Fill in the About + Topics fields of each repo on GitHub. The CV now reads them

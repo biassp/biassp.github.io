@@ -39,6 +39,7 @@ const LABS = [
   { dir: 'buku', call: 'BUKU_TESTS.run()' },
   { dir: 'harvest', call: 'HARVEST.runTests()' },
   { dir: 'rombak', call: 'ROMBAK_TESTS.run()' },
+  { dir: 'sepakat', call: 'SEPAKAT_TESTS.run()' },
 ];
 
 const MIME = {

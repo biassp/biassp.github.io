@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<!--
+  Case study: Selingkuh Detector (penyidik.co) — biassp.github.io
+  Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+  Not open source. Readable for evaluation only — copying, modification,
+  re-branding or redistribution is not permitted. See /LICENSE.
+-->
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selingkuh Detector — case study</title>
+    <meta name="description"
+        content="Case study of Selingkuh Detector (penyidik.co): reading device signals through an Android NotificationListenerService without owning the source apps, turning ambiguous data into honest observations instead of an accusation, and running a server-authoritative credit wallet and referral program that cannot be gamed.">
+    <meta name="author" content="Bias Satrio Putra">
+    <meta name="copyright" content="Copyright (c) 2026 Bias Satrio Putra. All rights reserved.">
+    <meta property="og:title" content="Selingkuh Detector — case study">
+    <meta property="og:description"
+        content="Case study of Selingkuh Detector (penyidik.co): reading device signals through an Android NotificationListenerService without owning the source apps, turning ambiguous data into honest observations instead of an accusation, and running a server-authoritative credit wallet and referral program that cannot be gamed.">
+    <link rel="stylesheet" href="../case.css">
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='7'%20fill='%23e11d48'/%3E%3Ccircle%20cx='14'%20cy='14'%20r='6.5'%20fill='none'%20stroke='%23fff'%20stroke-width='2'/%3E%3Cpath%20d='M18.8%2018.8l4.4%204.4'%20stroke='%23fff'%20stroke-width='2'%20stroke-linecap='round'/%3E%3C/svg%3E">
+</head>
+
+<body>
+    <header class="top">
+        <div class="top-in">
+            <span class="crumb" data-i18n-html="pn.nav.crumb"><a href="../../">CV</a> · Case studies</span>
+            <div class="tools">
+                <button class="btn" type="button" id="tema" aria-pressed="false">Light</button>
+                <button class="btn" type="button" id="langToggle" aria-label="Bahasa / Language">ID</button>
+                <a class="btn" href="../../#portfolio" data-i18n="pn.nav.portfolio">← Portfolio</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="wrap">
+        <div class="hero">
+            <span class="eyebrow" data-i18n="pn.hero.eyebrow">Case study</span>
+            <h1 data-i18n-html="pn.hero.title"><span class="grad">Selingkuh Detector</span> — observing, without accusing</h1>
+            <p class="lede" data-i18n="pn.hero.lede">A relationship digital-safety app for Indonesian users. It reads the notification activity on the phone it is installed on — through an Android NotificationListenerService — and turns that into a plain-language picture of when and how the device was used, rather than a verdict about a person. It ships with Google sign-in, a credit wallet and a referral program, delivered as an Android app with a web companion at penyidik.co.</p>
+
+            <div class="facts">
+                <div class="fact"><b data-i18n="pn.fact.role.k">Role</b><span data-i18n="pn.fact.role.v">Built solo, from backend to release</span></div>
+                <div class="fact"><b data-i18n="pn.fact.stack.k">Stack</b><span data-i18n="pn.fact.stack.v">Flutter · Node.js · Android native</span></div>
+                <div class="fact"><b data-i18n="pn.fact.status.k">Status</b><span data-i18n="pn.fact.status.v">Web live at penyidik.co · Android app in release</span></div>
+            </div>
+
+            <div class="tags">
+                <span data-i18n="pn.tag.1">Flutter</span><span data-i18n="pn.tag.2">Node.js</span><span data-i18n="pn.tag.3">Android native</span><span data-i18n="pn.tag.4">NotificationListener</span><span data-i18n="pn.tag.5">Credit wallet</span><span data-i18n="pn.tag.6">Referral</span><span data-i18n="pn.tag.7">Google login</span><span data-i18n="pn.tag.8">Privacy</span>
+            </div>
+        </div>
+
+        <h2 data-i18n="pn.sec.why.h2">Why it is built this way</h2>
+        <p class="muted" data-i18n="pn.sec.why.p">This app sits in an emotionally charged place, and the hard parts are not the UI. The only real view a normal app gets into activity it does not own is an unreliable one; the data it collects is ambiguous and easy to over-read; and the whole thing must monetise without becoming a tool that accuses a person or gets gamed for free credits. So the design is built around two disciplines: be honest about what can and cannot be known, and make every value-bearing action server-authoritative.</p>
+
+        <div class="prob">
+            <h3 data-i18n="pn.p1.h3">1. Reading signals the app does not own</h3>
+            <p data-i18n="pn.p1.lead">The core signal comes from an Android NotificationListenerService — the app watches the notifications other apps post, because that is the only window a normal app gets into activity outside itself.</p>
+            <div class="why" data-i18n-html="pn.p1.why1"><b>Why this is hard</b> A NotificationListenerService is a firehose of ephemeral, inconsistent payloads. Every messaging app formats its notifications differently and changes them between versions; one message can arrive as several updates to the same notification; group summaries collapse multiple chats into a single line; and the OS silently kills the listener under Doze or memory pressure and after a reboot. There is no stable schema and no guarantee you saw everything.</div>
+            <div class="solved" data-i18n-html="pn.p1.solved"><b>How this was handled</b> The listener is treated as an unreliable stream, not a database. Each posting is normalised to <code>(app, title, text, time, key)</code> and de-duplicated on the notification <code>key</code>, so an edited or re-posted notification does not double-count; group-summary lines are dropped in favour of the individual entries behind them. The service is registered to re-bind after it is killed and to restart on boot, and the app tells the user in plain terms that it can only capture what arrives while it is running. <span class="trade">Notification access is a permission the user must grant by hand in system settings and that the platform scrutinises heavily, and it can never produce a complete log. The honest posture is to present it as "what was seen, with gaps" — never as "everything that happened".</span></div>
+        </div>
+
+        <div class="prob">
+            <h3 data-i18n="pn.p2.h3">2. Observations, never an accusation</h3>
+            <p data-i18n="pn.p2.lead">It would be easy — and wrong — to turn a pile of notifications into a confident verdict about a person. The responsible product refuses to.</p>
+            <div class="why" data-i18n-html="pn.p2.why1"><b>Why this is hard</b> The same data has a dozen innocent explanations, and a tool that renders "guilty" from ambiguous signals does real harm: it can end a relationship over a misread, or become an instrument of control. The engineering temptation in this category is to score and rank "suspiciousness" and sell certainty — which is exactly the feature that should not exist.</div>
+            <div class="solved" data-i18n-html="pn.p2.solved"><b>How this was handled</b> The app summarises patterns and timelines — when activity happened, with which apps, how it clusters — and stops there. The optional AI summary runs on <strong>DeepSeek</strong> (a low-cost, OpenAI-compatible model, reusing a key already paid for by another product), pinned to describe what is observed in neutral language and never to conclude that a person is unfaithful. The framing throughout is consent- and reflection-oriented: a picture of a device's own activity, presented as observation, not proof. <span class="trade">This deliberately under-delivers on the sensational promise the category invites — and that is the point. For a tool in this space, the safe failure mode is to inform, not to accuse.</span></div>
+        </div>
+
+        <div class="prob">
+            <h3 data-i18n="pn.p3.h3">3. A credit wallet and referral system that can't be gamed</h3>
+            <p data-i18n="pn.p3.lead">The app is free to start, with paid credits for deeper features and a referral program that rewards both sides — which immediately invites abuse.</p>
+            <div class="why" data-i18n-html="pn.p3.why1"><b>Why this is hard</b> A referral bonus is free money to anyone who can fake the other end: self-referrals from a second account, farmed signups that never become real users, replaying a link to mint credits, or racing two redemptions at once. And a balance the client is trusted to report is a balance that gets edited.</div>
+            <div class="solved" data-i18n-html="pn.p3.solved"><b>How this was handled</b> The wallet is server-authoritative: the client never sets its own balance, and every debit and credit is a server transaction tied to a verified account through Google sign-in, so a tampered app cannot grant itself credits. Referral rewards are attributed once, on a qualifying event rather than on the click, with self-referral and duplicate attribution guarded server-side; the referral flow was regression-tested end to end before release. <span class="trade">Server-authoritative accounting means anything touching the balance needs connectivity, and the anti-abuse rules occasionally hold a legitimate reward until its qualifying event. Paying rewards slowly and correctly beats paying them instantly and being drained.</span></div>
+        </div>
+
+        <h2 data-i18n="pn.sec.cons.h2">Constraints that shaped it</h2>
+        <ul>
+            <li data-i18n-html="pn.cons.1"><b>A sensitive category, reviewed strictly.</b> The app lives in a space app stores scrutinise, which shaped the listing, the launcher name and a review-only demo account — decisions made before any feature, not after.</li>
+            <li data-i18n-html="pn.cons.2"><b>Free to start, cheap to run.</b> Casual users will not pay, so signal capture is on-device and the AI summary uses a low-cost model — paid credits buy depth, not the basics.</li>
+            <li data-i18n-html="pn.cons.3"><b>Incomplete data by design.</b> Notification access can only ever show a partial picture, so the product is built to be honest about gaps rather than imply a complete record.</li>
+            <li data-i18n-html="pn.cons.4"><b>It must never accuse.</b> The output is observation and reflection, not a verdict on a person — a line drawn before any feature, not after.</li>
+        </ul>
+
+        <div class="honest" data-i18n-html="pn.honest"><b>Limits of this page.</b> This describes the problems I chose to take on and why they were hard — it is not an implementation guide, and it carries no user or revenue numbers. If you are evaluating me for a role and want to know <em>how</em> each problem above was actually solved, get in touch.</div>
+
+        <div class="next">
+            <a class="btn" href="https://penyidik.co" target="_blank" rel="noopener" data-i18n="pn.next.open">Open the product →</a>
+            <a class="btn" href="../cek-aman/" data-i18n="pn.next.other">Another case study: Cek Aman</a>
+        </div>
+
+        <footer>
+            <p data-i18n-html="pn.footer">© 2026 Bias Satrio Putra. All rights reserved. Not open source — see
+                <a href="../../LICENSE">LICENSE</a>.</p>
+        </footer>
+    </main>
+
+    <script>
+        window.PAGE_I18N = {
+            "meta_title": { en: "Selingkuh Detector — case study", id: "Selingkuh Detector — studi kasus" },
+            "meta_desc": { en: "Case study of Selingkuh Detector (penyidik.co): reading device signals through an Android NotificationListenerService without owning the source apps, turning ambiguous data into honest observations instead of an accusation, and running a server-authoritative credit wallet and referral program that cannot be gamed.", id: "Studi kasus Selingkuh Detector (penyidik.co): membaca sinyal perangkat lewat Android NotificationListenerService tanpa memiliki aplikasi sumbernya, mengubah data ambigu menjadi observasi yang jujur alih-alih tuduhan, serta menjalankan dompet kredit dan program referral yang otoritatif di server dan tak bisa dicurangi." },
+            "meta_ogtitle": { en: "Selingkuh Detector — case study", id: "Selingkuh Detector — studi kasus" },
+            "meta_ogdesc": { en: "Case study of Selingkuh Detector (penyidik.co): reading device signals through an Android NotificationListenerService without owning the source apps, turning ambiguous data into honest observations instead of an accusation, and running a server-authoritative credit wallet and referral program that cannot be gamed.", id: "Studi kasus Selingkuh Detector (penyidik.co): membaca sinyal perangkat lewat Android NotificationListenerService tanpa memiliki aplikasi sumbernya, mengubah data ambigu menjadi observasi yang jujur alih-alih tuduhan, serta menjalankan dompet kredit dan program referral yang otoritatif di server dan tak bisa dicurangi." },
+
+            "pn.nav.crumb": { en: '<a href="../../">CV</a> · Case studies', id: '<a href="../../">CV</a> · Studi kasus' },
+            "pn.nav.portfolio": { en: "← Portfolio", id: "← Portfolio" },
+
+            "pn.hero.eyebrow": { en: "Case study", id: "Studi kasus" },
+            "pn.hero.title": { en: '<span class="grad">Selingkuh Detector</span> — observing, without accusing', id: '<span class="grad">Selingkuh Detector</span> — mengamati, tanpa menuduh' },
+            "pn.hero.lede": { en: "A relationship digital-safety app for Indonesian users. It reads the notification activity on the phone it is installed on — through an Android NotificationListenerService — and turns that into a plain-language picture of when and how the device was used, rather than a verdict about a person. It ships with Google sign-in, a credit wallet and a referral program, delivered as an Android app with a web companion at penyidik.co.", id: "Aplikasi keamanan digital hubungan untuk pengguna Indonesia. Ia membaca aktivitas notifikasi di ponsel tempat ia terpasang — lewat Android NotificationListenerService — lalu mengubahnya menjadi gambaran berbahasa sederhana tentang kapan dan bagaimana perangkat dipakai, bukan vonis atas seseorang. Dilengkapi login Google, dompet kredit, dan program referral, hadir sebagai aplikasi Android dengan pendamping web di penyidik.co." },
+
+            "pn.fact.role.k": { en: "Role", id: "Peran" },
+            "pn.fact.role.v": { en: "Built solo, from backend to release", id: "Dibangun sendiri, dari backend sampai rilis" },
+            "pn.fact.stack.k": { en: "Stack", id: "Stack" },
+            "pn.fact.stack.v": { en: "Flutter · Node.js · Android native", id: "Flutter · Node.js · Android native" },
+            "pn.fact.status.k": { en: "Status", id: "Status" },
+            "pn.fact.status.v": { en: "Web live at penyidik.co · Android app in release", id: "Web live di penyidik.co · aplikasi Android dalam tahap rilis" },
+
+            "pn.tag.1": { en: "Flutter", id: "Flutter" },
+            "pn.tag.2": { en: "Node.js", id: "Node.js" },
+            "pn.tag.3": { en: "Android native", id: "Android native" },
+            "pn.tag.4": { en: "NotificationListener", id: "NotificationListener" },
+            "pn.tag.5": { en: "Credit wallet", id: "Dompet kredit" },
+            "pn.tag.6": { en: "Referral", id: "Referral" },
+            "pn.tag.7": { en: "Google login", id: "Login Google" },
+            "pn.tag.8": { en: "Privacy", id: "Privasi" },
+
+            "pn.sec.why.h2": { en: "Why it is built this way", id: "Kenapa dibangun seperti ini" },
+            "pn.sec.why.p": { en: "This app sits in an emotionally charged place, and the hard parts are not the UI. The only real view a normal app gets into activity it does not own is an unreliable one; the data it collects is ambiguous and easy to over-read; and the whole thing must monetise without becoming a tool that accuses a person or gets gamed for free credits. So the design is built around two disciplines: be honest about what can and cannot be known, and make every value-bearing action server-authoritative.", id: "Aplikasi ini berada di ruang yang penuh emosi, dan bagian tersulitnya bukan UI. Satu-satunya cara aplikasi biasa mengintip aktivitas yang bukan miliknya adalah cara yang tak bisa diandalkan; data yang dikumpulkan bersifat ambigu dan mudah ditafsirkan berlebihan; dan semuanya harus menghasilkan uang tanpa menjadi alat yang menuduh seseorang atau dicurangi demi kredit gratis. Maka desainnya berdiri di atas dua disiplin: jujur tentang apa yang bisa dan tak bisa diketahui, dan membuat setiap tindakan bernilai menjadi otoritatif di server." },
+
+            "pn.p1.h3": { en: "1. Reading signals the app does not own", id: "1. Membaca sinyal yang bukan milik aplikasi" },
+            "pn.p1.lead": { en: "The core signal comes from an Android NotificationListenerService — the app watches the notifications other apps post, because that is the only window a normal app gets into activity outside itself.", id: "Sinyal utamanya berasal dari Android NotificationListenerService — aplikasi mengamati notifikasi yang dimunculkan aplikasi lain, karena itulah satu-satunya jendela yang dimiliki aplikasi biasa untuk melihat aktivitas di luar dirinya." },
+            "pn.p1.why1": { en: "<b>Why this is hard</b> A NotificationListenerService is a firehose of ephemeral, inconsistent payloads. Every messaging app formats its notifications differently and changes them between versions; one message can arrive as several updates to the same notification; group summaries collapse multiple chats into a single line; and the OS silently kills the listener under Doze or memory pressure and after a reboot. There is no stable schema and no guarantee you saw everything.", id: "<b>Kenapa ini sulit</b> NotificationListenerService adalah aliran deras berisi payload yang fana dan tak konsisten. Tiap aplikasi pesan memformat notifikasinya secara berbeda dan mengubahnya antar versi; satu pesan bisa tiba sebagai beberapa pembaruan atas notifikasi yang sama; ringkasan grup memampatkan banyak percakapan menjadi satu baris; dan OS diam-diam mematikan listener saat Doze atau tekanan memori dan setelah reboot. Tak ada skema yang stabil dan tak ada jaminan kamu melihat semuanya." },
+            "pn.p1.solved": { en: '<b>How this was handled</b> The listener is treated as an unreliable stream, not a database. Each posting is normalised to <code>(app, title, text, time, key)</code> and de-duplicated on the notification <code>key</code>, so an edited or re-posted notification does not double-count; group-summary lines are dropped in favour of the individual entries behind them. The service is registered to re-bind after it is killed and to restart on boot, and the app tells the user in plain terms that it can only capture what arrives while it is running. <span class="trade">Notification access is a permission the user must grant by hand in system settings and that the platform scrutinises heavily, and it can never produce a complete log. The honest posture is to present it as "what was seen, with gaps" — never as "everything that happened".</span>', id: '<b>Bagaimana ini ditangani</b> Listener diperlakukan sebagai aliran yang tak bisa diandalkan, bukan basis data. Tiap kemunculan dinormalkan menjadi <code>(app, title, text, time, key)</code> dan dide-duplikasi berdasarkan <code>key</code> notifikasi, sehingga notifikasi yang diedit atau dimunculkan ulang tak dihitung ganda; baris ringkasan grup dibuang demi entri-entri individual di baliknya. Service didaftarkan untuk mengikat ulang setelah dimatikan dan untuk hidup lagi saat boot, dan aplikasi memberi tahu pengguna dengan jelas bahwa ia hanya bisa menangkap apa yang datang selama ia berjalan. <span class="trade">Akses notifikasi adalah izin yang harus diberikan pengguna secara manual di pengaturan sistem dan yang diawasi ketat oleh platform, dan ia tak akan pernah menghasilkan log yang lengkap. Sikap yang jujur adalah menyajikannya sebagai "apa yang terlihat, dengan celah" — bukan "segala yang terjadi".</span>' },
+
+            "pn.p2.h3": { en: "2. Observations, never an accusation", id: "2. Observasi, bukan tuduhan" },
+            "pn.p2.lead": { en: "It would be easy — and wrong — to turn a pile of notifications into a confident verdict about a person. The responsible product refuses to.", id: "Sangat mudah — dan keliru — mengubah setumpuk notifikasi menjadi vonis yang meyakinkan atas seseorang. Produk yang bertanggung jawab menolak melakukannya." },
+            "pn.p2.why1": { en: '<b>Why this is hard</b> The same data has a dozen innocent explanations, and a tool that renders "guilty" from ambiguous signals does real harm: it can end a relationship over a misread, or become an instrument of control. The engineering temptation in this category is to score and rank "suspiciousness" and sell certainty — which is exactly the feature that should not exist.', id: '<b>Kenapa ini sulit</b> Data yang sama punya belasan penjelasan yang tak bersalah, dan alat yang memvonis "bersalah" dari sinyal ambigu menimbulkan bahaya nyata: ia bisa mengakhiri sebuah hubungan gara-gara salah baca, atau menjadi alat untuk mengontrol. Godaan teknisnya di kategori ini adalah memberi skor dan peringkat "kecurigaan" lalu menjual kepastian — dan justru itulah fitur yang seharusnya tak ada.' },
+            "pn.p2.solved": { en: '<b>How this was handled</b> The app summarises patterns and timelines — when activity happened, with which apps, how it clusters — and stops there. The optional AI summary runs on <strong>DeepSeek</strong> (a low-cost, OpenAI-compatible model, reusing a key already paid for by another product), pinned to describe what is observed in neutral language and never to conclude that a person is unfaithful. The framing throughout is consent- and reflection-oriented: a picture of a device\'s own activity, presented as observation, not proof. <span class="trade">This deliberately under-delivers on the sensational promise the category invites — and that is the point. For a tool in this space, the safe failure mode is to inform, not to accuse.</span>', id: '<b>Bagaimana ini ditangani</b> Aplikasi meringkas pola dan lini masa — kapan aktivitas terjadi, dengan aplikasi apa, bagaimana ia mengelompok — lalu berhenti di situ. Ringkasan AI opsionalnya berjalan di <strong>DeepSeek</strong> (model murah yang kompatibel dengan OpenAI, memakai ulang kunci yang sudah dibayar produk lain), dipaksa mendeskripsikan apa yang teramati dalam bahasa netral dan tak pernah menyimpulkan bahwa seseorang berselingkuh. Bingkainya sepanjang produk berorientasi persetujuan dan refleksi: gambaran aktivitas sebuah perangkat itu sendiri, disajikan sebagai observasi, bukan bukti. <span class="trade">Ini sengaja tidak memenuhi janji sensasional yang diundang kategori ini — dan itulah maksudnya. Untuk alat di ruang ini, mode gagal yang aman adalah memberi tahu, bukan menuduh.</span>' },
+
+            "pn.p3.h3": { en: "3. A credit wallet and referral system that can't be gamed", id: "3. Dompet kredit dan sistem referral yang tak bisa dicurangi" },
+            "pn.p3.lead": { en: "The app is free to start, with paid credits for deeper features and a referral program that rewards both sides — which immediately invites abuse.", id: "Aplikasi ini gratis untuk memulai, dengan kredit berbayar untuk fitur lebih dalam dan program referral yang memberi hadiah ke dua pihak — yang seketika mengundang penyalahgunaan." },
+            "pn.p3.why1": { en: "<b>Why this is hard</b> A referral bonus is free money to anyone who can fake the other end: self-referrals from a second account, farmed signups that never become real users, replaying a link to mint credits, or racing two redemptions at once. And a balance the client is trusted to report is a balance that gets edited.", id: "<b>Kenapa ini sulit</b> Bonus referral adalah uang gratis bagi siapa pun yang bisa memalsukan sisi lainnya: referral ke diri sendiri dari akun kedua, pendaftaran ternak yang tak pernah jadi pengguna nyata, memutar ulang tautan untuk mencetak kredit, atau membalapkan dua penukaran sekaligus. Dan saldo yang dipercayakan pada klien untuk dilaporkan adalah saldo yang akan diedit." },
+            "pn.p3.solved": { en: "<b>How this was handled</b> The wallet is server-authoritative: the client never sets its own balance, and every debit and credit is a server transaction tied to a verified account through Google sign-in, so a tampered app cannot grant itself credits. Referral rewards are attributed once, on a qualifying event rather than on the click, with self-referral and duplicate attribution guarded server-side; the referral flow was regression-tested end to end before release. <span class=\"trade\">Server-authoritative accounting means anything touching the balance needs connectivity, and the anti-abuse rules occasionally hold a legitimate reward until its qualifying event. Paying rewards slowly and correctly beats paying them instantly and being drained.</span>", id: "<b>Bagaimana ini ditangani</b> Dompetnya otoritatif di server: klien tak pernah menetapkan saldonya sendiri, dan tiap debit dan kredit adalah transaksi server yang terikat pada akun terverifikasi lewat login Google, sehingga aplikasi yang dioprek tak bisa memberi kredit ke dirinya sendiri. Hadiah referral diatribusikan sekali, pada peristiwa yang memenuhi syarat alih-alih pada klik, dengan referral ke diri sendiri dan atribusi ganda dijaga di sisi server; alur referral diuji regresi ujung ke ujung sebelum rilis. <span class=\"trade\">Akuntansi yang otoritatif di server berarti apa pun yang menyentuh saldo butuh koneksi, dan aturan anti-penyalahgunaan sesekali menahan hadiah yang sah sampai peristiwa syaratnya terjadi. Membayar hadiah secara pelan dan benar lebih baik daripada membayarnya seketika lalu dikuras.</span>" },
+
+            "pn.sec.cons.h2": { en: "Constraints that shaped it", id: "Batasan yang menentukan bentuknya" },
+            "pn.cons.1": { en: "<b>A sensitive category, reviewed strictly.</b> The app lives in a space app stores scrutinise, which shaped the listing, the launcher name and a review-only demo account — decisions made before any feature, not after.", id: "<b>Kategori sensitif, ditinjau ketat.</b> Aplikasi ini berada di ruang yang diawasi toko aplikasi, yang membentuk listing, nama launcher, dan akun demo khusus peninjau — keputusan yang dibuat sebelum fitur apa pun, bukan sesudahnya." },
+            "pn.cons.2": { en: "<b>Free to start, cheap to run.</b> Casual users will not pay, so signal capture is on-device and the AI summary uses a low-cost model — paid credits buy depth, not the basics.", id: "<b>Gratis untuk memulai, murah dijalankan.</b> Pengguna kasual tak akan membayar, jadi penangkapan sinyal dilakukan di perangkat dan ringkasan AI memakai model murah — kredit berbayar membeli kedalaman, bukan hal dasarnya." },
+            "pn.cons.3": { en: "<b>Incomplete data by design.</b> Notification access can only ever show a partial picture, so the product is built to be honest about gaps rather than imply a complete record.", id: "<b>Data tak lengkap secara desain.</b> Akses notifikasi hanya bisa menampilkan gambaran parsial, jadi produk dibangun untuk jujur tentang celahnya alih-alih menyiratkan catatan yang lengkap." },
+            "pn.cons.4": { en: "<b>It must never accuse.</b> The output is observation and reflection, not a verdict on a person — a line drawn before any feature, not after.", id: "<b>Ia tak boleh menuduh.</b> Keluarannya adalah observasi dan refleksi, bukan vonis atas seseorang — garis yang ditarik sebelum fitur apa pun, bukan sesudahnya." },
+
+            "pn.honest": { en: "<b>Limits of this page.</b> This describes the problems I chose to take on and why they were hard — it is not an implementation guide, and it carries no user or revenue numbers. If you are evaluating me for a role and want to know <em>how</em> each problem above was actually solved, get in touch.", id: "<b>Batas halaman ini.</b> Ini menjelaskan masalah yang saya pilih untuk dihadapi dan alasan sulitnya — bukan panduan implementasi, dan tidak memuat angka pengguna maupun pendapatan. Kalau kamu sedang menilai saya untuk sebuah pekerjaan dan ingin tahu <em>bagaimana</em> tiap masalah di atas benar-benar diselesaikan, hubungi saya." },
+
+            "pn.next.open": { en: "Open the product →", id: "Buka produknya →" },
+            "pn.next.other": { en: "Another case study: Cek Aman", id: "Studi kasus lain: Cek Aman" },
+
+            "pn.footer": { en: '© 2026 Bias Satrio Putra. All rights reserved. Not open source — see\n                <a href="../../LICENSE">LICENSE</a>.', id: '© 2026 Bias Satrio Putra. Seluruh hak dilindungi. Bukan open source — lihat\n                <a href="../../LICENSE">LICENSE</a>.' }
+        };
+    </script>
+    <script src="../case.js"></script>
+</body>
+
+</html>

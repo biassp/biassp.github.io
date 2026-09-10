@@ -1,0 +1,1374 @@
+/*!
+ * Serobot — part of the biassp.github.io portfolio
+ * Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+ * Not open source. Readable for evaluation only. See /LICENSE.
+ * https://biassp.github.io/
+ */
+/* Serobot — app.css
+ * Design tokens shared with the CV and with the sibling labs (buku, gudang,
+ * rekam, siakad, harvest, rombak, sahih) so this reads as part of the same
+ * site. Dark by default, html[data-theme="light"] overrides. No web fonts of
+ * any kind: a font request is a network request, and the counter in this page's
+ * header is an evidence claim rather than a decoration.
+ *
+ * THE LIGHT-THEME RULE, learned the hard way and shipped broken twice by
+ * sibling labs: EVERY token that carries TEXT is redefined in the light block,
+ * with the ratio it was measured at written beside it. The figures below were
+ * computed, not estimated — the checker is the WCAG 2.x relative-luminance
+ * formula, validated first against three published reference pairs (#767676 on
+ * white 4.54:1, #777777 on white 4.48:1, #0000ff on white 8.59:1) so that the
+ * numbers in these comments mean what they say.
+ *
+ * AND THE SECOND HALF OF THAT RULE, which is what a checker reading
+ * background-color alone gets wrong: body::before paints two translucent radial
+ * washes across the whole viewport at z-index -1, and everything that is not
+ * inside an opaque .card sits ON TOP of them — the tab labels, .sub, the lede,
+ * the whole honesty section, the footer. So the surface under those is not
+ * --bg, it is --bg with an rgba layer composited over it, and the ratio there
+ * is lower than the one a flat-surface check signs off. Every ratio in this
+ * file is therefore the WORST of EIGHT surfaces: --bg, --bg-soft, --card,
+ * --card-2, each wash alone over --bg, and both washes over each other in both
+ * paint orders. The double composite is not reachable on any viewport, because
+ * the two gradient centres are far apart and both have faded to near
+ * transparency where they meet; it is measured anyway, because "not reachable
+ * at the widths I checked" is not a contrast argument. In every case in this
+ * file the worst surface IS the double composite, which is why one number per
+ * token is enough.
+ *
+ * The wash alphas are inherited from sahih unchanged (0.12/0.08 dark,
+ * 0.06/0.04 light) precisely so that the ratios below are the same numbers that
+ * lab measured, rather than a fresh set nobody has checked. Raising either
+ * alpha silently lowers every figure in this file.
+ */
+
+:root {
+    --bg: #0b1020;
+    --bg-soft: #10162b;
+    --card: #141b33;
+    --card-2: #182142;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --text: #eaeefb;         /* 12.54:1 */
+    --muted: #9aa6c4;        /* 5.97:1 */
+    --faint: #949ebe;        /* 5.46:1 — rombak's #7f8aad measures 3.60:1 on the composite surface, a fail */
+
+    /* --accent is a BORDER-AND-RULE hue and is not allowed to carry text:
+       measured as text it is 3.25:1 at worst, under AA on every surface here.
+       Every rule below that colours text reaches for --accent-teks or --text. */
+    --accent: #6366f1;       /* 3.25:1 worst — NOT for text */
+    --accent-2: #22d3ee;     /* 8.04:1 */
+    --accent-3: #c084fc;     /* 5.50:1 */
+    /* Solid-fill buttons carry WHITE text, so the fill gets its own token:
+       white on --accent #6366f1 is 4.47:1, which misses AA in both themes.
+       White on #4f46e5 is 6.29:1. */
+    --accent-solid: #4f46e5; /* 2.31:1 as text — a FILL, never text; white on it is 6.29:1 */
+    --accent-solid-hover: #4338ca;  /* white on it is 7.90:1 */
+    --link: #22d3ee;         /* 8.04:1 */
+    --focus: #22d3ee;        /* 8.04:1 */
+    /* buku's answer, adopted verbatim: a text-safe indigo, so an arm name or a
+       refusal code can be indigo without being 3.3:1. */
+    --accent-teks: #a5b4fc;  /* 7.29:1 */
+
+    /* The mark chip's background, and it carries WHITE TEXT — so every colour
+       the gradient passes through has to hold white at AA. The three-stop
+       indigo→purple→cyan ramp two sibling labs shipped ended at #22d3ee, where
+       white measures 1.81:1. Measured on this two-stop ramp: white on #4f46e5
+       6.29:1, on the #653ad6 midpoint 6.71:1, on #7e22ce 6.98:1. */
+    --grad: linear-gradient(120deg, #4f46e5 0%, #7e22ce 100%);
+    --shadow: 0 18px 50px -24px rgba(0, 0, 0, 0.85);
+    --shadow-sm: 0 8px 24px -16px rgba(0, 0, 0, 0.8);
+    --radius: 16px;
+
+    /* These four are for the ASSERTION SUITE, where a failed assertion really is
+       unambiguously bad and red is the right word for it. They are deliberately
+       not the tokens the result cells use — see the verdict family below. */
+    --ok: #34d399;           /* 7.56:1 */
+    --warn: #eab308;         /* 7.58:1 */
+    --bad: #fb7185;          /* 5.40:1 */
+    --info: #38bdf8;         /* 6.79:1 */
+
+    /* ---- the verdict family: indigo, amber, sky, grey ----
+       Deliberately NOT green and red, and the reason is specific to this lab
+       rather than inherited style. The losing column is the INTERESTING result
+       here: the whole page exists to make a reader look hard at the arm that
+       came up short, and to notice that the arm which came out exact is the
+       boring one. A red/green matrix would train that reader backwards inside
+       two cards, and no amount of glyph beside it undoes a colour learned that
+       fast. Neither indigo nor amber reads as approval or alarm.
+
+       Every one of these sets a colour AND is accompanied in the markup by a
+       word — "exact", "short", "measured", "not run" — and, where the page made
+       a prediction, by a ✓/✗ glyph. Printed in monochrome, every cell still
+       says what happened.
+
+       --verdict-exact     an integer the suite pins, and it did not move
+       --verdict-short     the column came up short, or a helper refused
+       --verdict-measured  a real number from a real run, asserted by nothing
+       --verdict-none      a check that did not run, or a value not applicable */
+    --verdict-exact: #a5b4fc;      /* 7.29:1 */
+    --verdict-short: #eab308;      /* 7.58:1 */
+    --verdict-measured: #38bdf8;   /* 6.79:1 */
+    --verdict-none: #9aa6c4;       /* 5.97:1 */
+
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* Every token above that carries text is redefined here. The dark values
+   measure 1.8-2.7:1 on white — #22d3ee is 1.81:1, #34d399 1.92:1, #eab308
+   1.92:1, #38bdf8 2.14:1, #c084fc 2.64:1, #fb7185 2.69:1, #a5b4fc 1.99:1 — so
+   leaving any one of them in place is the regression, not a near-miss. All four
+   --verdict-* tokens are redefined, because a verdict colour that survives into
+   the light theme is exactly the bug three sibling labs shipped. */
+html[data-theme="light"] {
+    --bg: #f5f7fc;
+    --bg-soft: #eef1f9;
+    --card: #ffffff;
+    --card-2: #f4f6fd;
+    --border: rgba(15, 23, 42, 0.09);
+    --border-strong: rgba(15, 23, 42, 0.18);
+    --text: #131a2e;         /* 14.65:1 */
+    --muted: #55618a;        /* 5.14:1 */
+    --faint: #545e7d;        /* 5.43:1 — rombak's #5c6688 is 4.04:1 on the composite, a fail */
+
+    --accent: #4338ca;       /* 6.70:1 — text-safe here, unlike its dark value */
+    /* The dark theme's #22d3ee is 1.81:1 on white. This is the exact token that
+       got through on three sibling labs. #155e75 keeps the cyan family at
+       6.16:1. */
+    --accent-2: #155e75;     /* 6.16:1 */
+    --accent-3: #7e22ce;     /* 5.92:1 */
+    --accent-solid: #4338ca; /* a FILL; white on it is 7.90:1 */
+    --accent-solid-hover: #3730a3;  /* white on it is 9.93:1 */
+    --link: #0b5f78;         /* 6.09:1 — #0e7490 is 3.82:1 on the composite, a fail */
+    --focus: #045981;        /* 6.47:1 */
+    --accent-teks: #4338ca;  /* 6.70:1 — collapses onto --accent, which is already text-safe in this theme */
+    --shadow: 0 18px 50px -30px rgba(30, 41, 90, 0.35);
+    --shadow-sm: 0 10px 26px -20px rgba(30, 41, 90, 0.4);
+
+    --ok: #036249;           /* 6.25:1 */
+    --warn: #7a4a06;         /* 6.33:1 */
+    --bad: #a30f34;          /* 6.65:1 */
+    --info: #035683;         /* 6.68:1 */
+
+    --verdict-exact: #4338ca;      /* 6.70:1 */
+    --verdict-short: #7a4a06;      /* 6.33:1 */
+    --verdict-measured: #035683;   /* 6.68:1 */
+    --verdict-none: #55618a;       /* 5.14:1 */
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    font-size: 15px;
+}
+
+/* The two washes. Their alpha is a CONTRAST parameter, not a taste one: every
+   ratio in the token blocks above is the worst over the four flat surfaces and
+   the four composites these produce, so raising either number silently lowers
+   every figure in this file. */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(720px 420px at 12% -6%, rgba(99, 102, 241, 0.12), transparent 60%),
+        radial-gradient(640px 420px at 100% 0%, rgba(34, 211, 238, 0.08), transparent 55%);
+}
+
+html[data-theme="light"] body::before {
+    background:
+        radial-gradient(720px 420px at 12% -6%, rgba(99, 102, 241, 0.06), transparent 60%),
+        radial-gradient(640px 420px at 100% 0%, rgba(34, 211, 238, 0.04), transparent 55%);
+}
+
+h1, h2, h3, h4 {
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+}
+
+a { color: var(--link); }
+
+code, pre, .mono {
+    font-family: var(--mono);
+    font-size: 0.86em;
+}
+
+/* Prose on this page is full of unbreakable identifiers — `E_KUNCI_TANPA_BATAS`,
+   `TransactionInactiveError`, `navigator.locks.request`, `roundsExecuted ===
+   roundsRequested`. A phone viewport is 390px and one such token in an inline
+   <code> is enough to push the whole document sideways, which is how a sibling
+   lab shipped 846px of horizontal overflow. */
+code { overflow-wrap: anywhere; }
+
+/* Printed source, raw row dumps and step logs scroll in their own box instead.
+   These are the one place where breaking mid-line would change what the reader
+   thinks the code is. */
+pre {
+    overflow-x: auto;
+    white-space: pre;
+}
+
+:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.skip {
+    position: absolute;
+    left: -999px;
+    top: 8px;
+    background: var(--card);
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    z-index: 99;
+}
+
+.skip:focus { left: 8px; }
+
+/* The placeholder colour is set explicitly in BOTH themes, because the UA
+   default is roughly 2.9:1 on both field surfaces and no validator flags it.
+   opacity is pinned to 1: an opacity below 1 composites the colour back toward
+   the field and undoes whatever ratio was chosen. */
+input::placeholder,
+textarea::placeholder {
+    color: var(--muted);
+    opacity: 1;
+}
+
+/* ------------------------------------------------------------------ shell */
+
+main {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 18px 60px;
+}
+
+.top {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    /* The sub-line is a full sentence and the brand block is a flex item, whose
+       implied min-width:auto would otherwise refuse to shrink below the
+       sentence's min-content width. */
+    min-width: 0;
+}
+
+.brand > div { min-width: 0; }
+
+.mark {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: .04em;
+    padding: 9px 10px;
+    border-radius: 12px;
+    background: var(--grad);
+    color: #fff;
+    flex: none;
+}
+
+.brand h1 { font-size: 21px; }
+
+.sub {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.top-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 7px 13px;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .18s ease, border-color .18s ease;
+}
+
+.btn:hover {
+    background: var(--card-2);
+    border-color: var(--accent);
+}
+
+.btn.primary {
+    background: var(--accent-solid);
+    border-color: var(--accent-solid);
+    color: #fff;
+}
+
+.btn.primary:hover {
+    background: var(--accent-solid-hover);
+    border-color: var(--accent-solid-hover);
+}
+
+.btn.ghost { background: transparent; }
+
+.btn.small {
+    padding: 4px 9px;
+    font-size: 12px;
+}
+
+.btn.danger {
+    color: var(--bad);
+    border-color: currentColor;
+}
+
+/* The theme button labels the ACTION and carries no aria-pressed, so this rule
+   exists for the run/stop toggles the panels build, not for it. */
+.btn[aria-pressed="true"] {
+    background: var(--accent-solid);
+    border-color: var(--accent-solid);
+    color: #fff;
+}
+
+.btn:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------- badges */
+
+.netbadge, .testbadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    background: var(--card);
+    border-radius: 999px;
+    padding: 5px 12px;
+}
+
+.netbadge .dot, .testbadge .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, .18);
+    flex: none;
+}
+
+.netbadge.bad .dot, .testbadge.bad .dot {
+    background: var(--bad);
+    box-shadow: 0 0 0 3px rgba(251, 113, 133, .2);
+}
+
+.testbadge.busy .dot {
+    background: var(--warn);
+    box-shadow: 0 0 0 3px rgba(234, 179, 8, .2);
+}
+
+.testbadge {
+    background: none;
+    border-color: var(--border);
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    font-family: var(--mono);
+}
+
+/* ------------------------------------------------------------------ tabs */
+
+.tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+    scrollbar-width: thin;
+}
+
+.tab {
+    background: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 13.5px;
+    padding: 9px 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    border-radius: 8px 8px 0 0;
+}
+
+/* app.js adds `ready` to <html> the statement after it wires the strip. Until
+   then the seven buttons are painted and inert — measured on a sibling page at
+   224 ms on a local load and 6.4 s on a 400 kbit link — so the pointer would be
+   claiming a responsiveness the page does not yet have. guard.js remembers the
+   click either way; this only stops the cursor from lying about when it will be
+   answered. */
+html.js:not(.ready) .tab { cursor: progress; }
+
+.tab:hover {
+    color: var(--text);
+    background: var(--card);
+}
+
+/* The strip scrolls, and overflow-x:auto clips vertically too, so a ring drawn
+   2px OUTSIDE a tab is eaten by the strip — getComputedStyle still answers
+   "2px solid", which is why a checker that reads the style rather than the
+   pixels calls this a pass. The ring goes inside the tab instead. */
+.tab:focus-visible {
+    outline-offset: -3px;
+}
+
+/* --accent is 3.25:1 as text and is used here as a 2px RULE, which is not text
+   and is not the only signal: the label also goes to --text and to 600. */
+.tab[aria-selected="true"] {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+}
+
+.panel { min-height: 240px; }
+
+/* ----------------------------------------------------------------- cards */
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+}
+
+.card > h3 {
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.card > .note, .note {
+    color: var(--muted);
+    font-size: 12.5px;
+    margin-bottom: 12px;
+}
+
+.note b, .hint b { color: var(--text); }
+
+.hint {
+    color: var(--muted);
+    font-size: 12.5px;
+}
+
+/* Prose here carries API identifiers with no break opportunity in them —
+   `E_KUNCI_TANPA_BATAS` is 19 characters and `TransactionInactiveError` is 24 —
+   and a paragraph's min-content width is that word. `anywhere` rather than
+   `break-word` because only `anywhere` also shrinks the intrinsic width, which
+   is the half that stops the push. */
+.note, .hint, .card > p, .callout p { overflow-wrap: anywhere; }
+
+.small { font-size: 12px; }
+
+.row-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 12px;
+}
+
+.controls > * { min-width: 0; }
+
+.stack { display: flex; flex-direction: column; gap: 3px; }
+
+.callout {
+    font-size: 12.5px;
+    color: var(--text);
+    background: var(--card-2);
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 9px 12px;
+    margin-bottom: 12px;
+}
+
+.callout.warn { border-left-color: var(--warn); }
+.callout.bad { border-left-color: var(--bad); }
+.callout.ok { border-left-color: var(--ok); }
+.callout.exact { border-left-color: var(--verdict-exact); }
+.callout.short { border-left-color: var(--verdict-short); }
+.callout.measured { border-left-color: var(--verdict-measured); }
+
+.empty {
+    color: var(--muted);
+    font-size: 13.5px;
+    padding: 26px 16px;
+    text-align: center;
+    border: 1px dashed var(--border-strong);
+    border-radius: 12px;
+}
+
+.banner {
+    background: var(--card-2);
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid var(--warn);
+    border-radius: 10px;
+    padding: 9px 13px;
+    font-size: 12.5px;
+    margin-bottom: 14px;
+}
+
+.banner b { color: var(--warn); }
+
+/* -------------------------------------------------------------- form fields */
+
+input[type=text], input[type=number], input[type=search], input[type=range], select, textarea {
+    background: var(--bg-soft);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: 9px;
+    padding: 6px 10px;
+    font: inherit;
+    font-size: 13px;
+    max-width: 100%;
+}
+
+/* 28px, not the 18px the shared field rule leaves it at. Every writer-count and
+   round-count control on this page is a slider, and on a phone it is dragged
+   with a thumb: measured on a sibling page at 390px the track was 338x18, under
+   the 24px minimum. Height only — it still reads as the same field. */
+input[type=range] { padding: 0; height: 28px; accent-color: var(--accent-solid); }
+
+select { cursor: pointer; }
+
+textarea {
+    font-family: var(--mono);
+    font-size: 12px;
+    width: 100%;
+    resize: vertical;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    /* Flex items default to min-width:auto, so a <select> with long option text
+       refuses to shrink and pushes the whole document sideways on a phone. */
+    min-width: 0;
+    max-width: 100%;
+}
+
+.field > span {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--faint);
+}
+
+/* ------------------------------------------------------------------ stats */
+
+.summary {
+    display: grid;
+    /* min(100%, …) as the floor, because a grid ITEM has an implied
+       min-width:auto: an unbreakable figure wider than the track forces every
+       track to that width and the document overflows the viewport. */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+    gap: 10px;
+    margin: 0 0 16px;
+}
+
+.stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 11px 13px;
+    min-width: 0;
+}
+
+.stat .k {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--faint);
+}
+
+.stat .v {
+    font-size: 17px;
+    font-weight: 650;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
+.stat .n {
+    font-size: 11.5px;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+}
+
+/* A stat tile whose figure is pinned by the suite, and one whose figure is a
+   race outcome nothing asserts. The left rule is the only difference, and the
+   markup carries the word beside it as well — see .kind. */
+.stat.exact { border-left: 3px solid var(--verdict-exact); }
+.stat.measured { border-left: 3px solid var(--verdict-measured); }
+.stat.short { border-left: 3px solid var(--verdict-short); }
+
+/* ---------------------------------------------------------------- tables */
+
+.tbl-wrap { overflow-x: auto; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    min-width: 520px;
+}
+
+th, td {
+    text-align: left;
+    padding: 7px 9px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--faint);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    background: var(--card);
+    z-index: 1;
+}
+
+td.num, th.num {
+    text-align: right;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Most tables here are figures, and a figure must never wrap mid-number. A few
+   carry sentences instead — the refusal reasons, the lock/lease comparison, the
+   two-route difference column — and a sentence held on one line pushes the
+   interesting column off the right edge of the card. Those opt in. */
+.tbl-wrap.prose td { white-space: normal; overflow-wrap: anywhere; }
+.tbl-wrap.prose th { white-space: normal; }
+.tbl-wrap.prose td.num, .tbl-wrap.prose th.num { white-space: nowrap; }
+
+tbody tr:hover { background: var(--card-2); }
+
+tr.sel { background: var(--card-2); }
+
+.linkbtn {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--link);
+    font: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+
+.linkbtn:hover { text-decoration: underline; }
+
+/* ----------------------------------------------------------------- pills */
+
+.pill {
+    display: inline-block;
+    font-size: 10.5px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    color: var(--muted);
+    font-family: var(--mono);
+}
+
+.pill.ok { color: var(--ok); border-color: currentColor; }
+.pill.warn { color: var(--warn); border-color: currentColor; }
+.pill.bad { color: var(--bad); border-color: currentColor; }
+.pill.info { color: var(--info); border-color: currentColor; }
+
+.pillbig {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-strong);
+}
+
+.pillbig.pass { color: var(--ok); border-color: currentColor; }
+.pillbig.fail { color: var(--bad); border-color: currentColor; }
+
+/* ------------------------------------------------------------------ tests */
+
+.test-summary {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.test-summary > * { min-width: 0; overflow-wrap: anywhere; }
+
+.tgroup { margin-bottom: 12px; }
+
+.tgroup > h4 {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 4px;
+}
+
+.tcase {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 12.5px;
+    padding: 2px 0;
+    border-bottom: 1px dotted var(--border);
+    /* A property name here carries unbreakable tokens — a refusal code, a store
+       name, an arm name — and a flex item defaults to min-width:auto, so one of
+       them takes the whole document sideways on the Tests tab. */
+    min-width: 0;
+}
+
+.tcase > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.tcase .mk {
+    font-family: var(--mono);
+    font-weight: 700;
+    flex: none;
+    overflow-wrap: normal;
+}
+
+/* The assertion suite is the one place on this page where green and red are the
+   right words: an assertion that failed is unambiguously bad. Everywhere else,
+   see the verdict family. */
+.tcase.ok .mk { color: var(--ok); }
+.tcase.no .mk { color: var(--bad); }
+
+.tcase .msg {
+    color: var(--bad);
+    font-family: var(--mono);
+    font-size: 11px;
+}
+
+.tcase.ok .msg { color: var(--faint); }
+
+/* ------------------------------------------------------------------- misc */
+
+.grid2 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 14px;
+}
+
+.grid-side {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+    gap: 14px;
+    align-items: start;
+}
+
+.foot {
+    margin-top: 34px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12.5px;
+}
+
+.foot p + p { margin-top: 8px; }
+.foot code { color: var(--text); }
+.foot b { color: var(--text); }
+
+/* ------------------------------------------- serobot: the two badge words */
+
+/* Every figure this page prints is one of two kinds, and the words are defined
+   in the lede above the tab strip. The class is never the only carrier: the
+   markup writes the word itself inside the chip, so this survives monochrome,
+   a stylesheet that failed to load, and a reader with a colour deficiency. */
+.kind {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    padding: 1px 7px;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    vertical-align: 1px;
+}
+
+.kind.asserted { color: var(--verdict-exact); }
+.kind.measured { color: var(--verdict-measured); }
+/* `diukur` — measured and shown, deliberately NOT asserted because the
+   specification permits the outcome rather than requiring it. Two IndexedDB
+   overlap observations ship this way; both held 30/30 at 8x throttle and
+   neither is pinned. Same hue as `measured`, different word. */
+.kind.diukur { color: var(--verdict-measured); }
+.kind.none { color: var(--verdict-none); }
+
+/* ------------------------------------------------ serobot: the machine line */
+
+/* Above the fold and above the lede, because a senior reader types
+   crossOriginIsolated into a console within twenty seconds of arriving. */
+.mesin {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    font-size: 13px;
+}
+
+.mesin > h2 {
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.mesin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+    gap: 8px 14px;
+}
+
+.mesin-grid > div { min-width: 0; }
+
+.mesin-grid .k {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--faint);
+}
+
+.mesin-grid .v {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    overflow-wrap: anywhere;
+}
+
+/* The user-agent string is one unbreakable 120-character token and it is the
+   widest thing on the page. It gets the full row and its own scroll. */
+.mesin-ua {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 10px;
+    overflow-x: auto;
+    white-space: pre;
+}
+
+/* --------------------------------------------------- serobot: the lede block */
+
+/* Not a .card: it sits directly on the wash, which is why every token it uses
+   was signed off against the composite surfaces rather than against --card. */
+.lede {
+    font-size: 13.5px;
+    margin-bottom: 18px;
+}
+
+.lede p + p { margin-top: 10px; }
+.lede p { overflow-wrap: anywhere; }
+.lede b { color: var(--text); }
+
+/* ------------------------------------------------- serobot: printed source */
+
+/* Every arm body on this page is read back at runtime with
+   Function.prototype.toString and rendered through textContent. There is no
+   build step in this repository, so what is in this box is byte-for-byte what
+   ran — which is the whole reason the box exists rather than a transcription in
+   prose. It scrolls on its own axis and never wraps: a wrapped source line
+   changes what a reader believes the code is. */
+.srcbox {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 11px;
+    overflow-x: auto;
+    white-space: pre;
+    color: var(--text);
+    line-height: 1.5;
+    tab-size: 2;
+}
+
+/* A pre.srcbox inside a table cell reports its MAX-CONTENT width — one arm body
+   is 78 characters wide — and table layout believes it, starving every other
+   column and pushing the last one off the right edge. The box already scrolls
+   on its own axis; capping what it ASKS FOR is the whole fix. */
+td > .srcbox { max-width: 42ch; }
+
+@media (max-width: 760px) {
+    td > .srcbox { max-width: 26ch; }
+}
+
+/* The one-line diff between two arm bodies, computed by lineDiff from the live
+   functions and structurally asserted. The marked line gets a rule and a
+   prefix character in the text, never a colour alone — the claim is "these two
+   functions differ on ONE line", and a reader must be able to count it on
+   paper. */
+.difflines {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 0;
+    overflow-x: auto;
+    line-height: 1.55;
+}
+
+.difflines .dl {
+    display: block;
+    white-space: pre;
+    padding: 0 11px;
+    border-left: 3px solid transparent;
+}
+
+.difflines .dl.same { color: var(--muted); }
+.difflines .dl.a { color: var(--verdict-short); border-left-color: var(--verdict-short); background: var(--card-2); }
+.difflines .dl.b { color: var(--verdict-exact); border-left-color: var(--verdict-exact); background: var(--card-2); }
+
+/* ------------------------------------------------- serobot: the arm columns */
+
+/* Four arms, side by side, same workload, same seconds. They wrap to one column
+   on a phone rather than scrolling as a unit, because the interesting
+   comparison is between the columns and not inside one. */
+.arms {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.arm {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--border-strong);
+    border-radius: 12px;
+    padding: 12px 14px;
+    min-width: 0;
+}
+
+/* The rule colour says which kind of outcome this arm produced, and the arm's
+   own markup prints the word. `pisah` is the arm that comes up short; the other
+   three are exact. Naming the classes after the OUTCOME rather than after the
+   arm keeps app.js from having to hardcode which arm loses — the engine says. */
+.arm.exact { border-left-color: var(--verdict-exact); }
+.arm.short { border-left-color: var(--verdict-short); }
+.arm.measured { border-left-color: var(--verdict-measured); }
+
+.arm > h4 {
+    font-size: 13.5px;
+    font-family: var(--mono);
+    margin-bottom: 2px;
+}
+
+.arm .big {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 22px;
+    font-weight: 650;
+}
+
+.arm .sub-n {
+    font-size: 11.5px;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+}
+
+/* --------------------------------------------- serobot: the free-mode strip */
+
+/* Every sample in the batch, in order, never a summary. A histogram would hide
+   the run that reached the correct answer, and that run is the honest half of
+   the claim. */
+.strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 8px 0;
+}
+
+.strip .s {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    padding: 2px 7px;
+    border-radius: 7px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-soft);
+    color: var(--text);
+    flex: none;
+}
+
+/* A sample that reached the expected total. It is marked because it is the
+   interesting one, and it is marked with a rule and a title, never by hue
+   alone. */
+.strip .s.full {
+    border-color: var(--verdict-exact);
+    color: var(--verdict-exact);
+}
+
+/* The slot the shortfall sentence occupies when there was no shortfall. It is a
+   real branch with real prose, not a hidden element: the page cannot claim a
+   loss the batch did not find. */
+.noloss {
+    font-size: 12.5px;
+    color: var(--verdict-measured);
+    border: 1px dashed currentColor;
+    border-radius: 9px;
+    padding: 8px 11px;
+    margin: 8px 0;
+}
+
+/* ------------------------------------------------- serobot: the step log */
+
+/* Integer sequence numbers, never timestamps — a guard refuses a clock handed
+   in as an ordering key. The column is fixed-width so a reader can see at a
+   glance that the numbers are gapless, which is one of the properties asserted
+   over the whole log. */
+.steps {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 8px 0;
+    max-height: 300px;
+    overflow: auto;
+    line-height: 1.55;
+}
+
+.steps .st {
+    display: flex;
+    gap: 10px;
+    padding: 0 11px;
+    white-space: pre;
+}
+
+.steps .st .seq {
+    color: var(--faint);
+    flex: none;
+    min-width: 3.5ch;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.steps .st .who { color: var(--accent-teks); flex: none; min-width: 8ch; }
+.steps .st .op { color: var(--text); }
+.steps .st.read .op { color: var(--muted); }
+
+/* ------------------------------------------------ serobot: the lock queue */
+
+/* Rendered from navigator.locks.query() — the BROWSER's queue, not the lab's
+   register — so a visitor can paste `await navigator.locks.query()` into a
+   console mid-hold and get the same two arrays back. clientId is per-CLIENT and
+   not per-request, which is why each queued participant here is its own worker:
+   within one document the queue cannot be labelled by requester at all, and the
+   page says so rather than inventing a label. */
+.qrow {
+    display: flex;
+    gap: 9px;
+    align-items: baseline;
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 4px 0;
+    border-bottom: 1px dotted var(--border);
+    min-width: 0;
+}
+
+.qrow > * { min-width: 0; overflow-wrap: anywhere; }
+.qrow .mk { flex: none; font-weight: 700; }
+.qrow .nm { flex: 1 1 auto; }
+
+.qrow.held .mk { color: var(--verdict-exact); }
+.qrow.pending .mk { color: var(--verdict-short); }
+.qrow.pending .nm { color: var(--muted); }
+
+/* --------------------------------------------- serobot: the two-route rows */
+
+/* The independence table. Every number on this page appears twice, from two
+   routes that share no code, with their difference beside them — and the
+   difference column is rendered even when it is zero, because a difference
+   column that only appears when it is non-zero is a column nobody checks. */
+.wit {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px 10px;
+    font-size: 12.5px;
+    align-items: baseline;
+    padding: 5px 0;
+    border-bottom: 1px dotted var(--border);
+}
+
+.wit > * { min-width: 0; overflow-wrap: anywhere; }
+.wit .a, .wit .b, .wit .d {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+}
+
+.wit .d { color: var(--verdict-exact); }
+.wit.differs .d { color: var(--bad); font-weight: 700; }
+
+/* The shared bottom, printed BESIDE the agreement and not underneath it. Both
+   routes end in the same IDBObjectStore and the same scheduler; there is no
+   second storage engine in a browser and this lab is not one. */
+.sharedbottom {
+    font-size: 12px;
+    color: var(--verdict-none);
+    font-family: var(--mono);
+    margin-top: 8px;
+}
+
+/* ---------------------------------------------- serobot: the honesty copy */
+
+/* Above the fold, in <main>, not collapsible, and not a warning box: this is the
+   claim that is TRUE, in the position rombak has to use for the claim that was
+   false. Same geometry as sahih's, so the labs read as one family holding
+   themselves to one standard. */
+.nodeps {
+    background: var(--card);
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    font-size: 13px;
+}
+
+.nodeps h2 {
+    font-size: 16px;
+    color: var(--accent-teks);
+    margin-bottom: 8px;
+}
+
+.nodeps p + p { margin-top: 9px; }
+
+.notproven {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-top: 18px;
+    font-size: 13px;
+}
+
+.notproven > h2 {
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.notproven > h3 {
+    font-size: 14px;
+    margin-top: 18px;
+    margin-bottom: 6px;
+}
+
+.notproven > .note { margin-bottom: 12px; }
+.notproven p + p { margin-top: 10px; }
+/* Each paragraph opens with its own claim in bold, and that lead is the index
+   into the list — so it gets the text colour rather than being one shade of
+   muted among the rest. */
+.notproven p > b:first-child { color: var(--text); }
+
+.refuses, .notbuilt {
+    margin: 0;
+    padding-left: 22px;
+    color: var(--muted);
+}
+
+.refuses li, .notbuilt li { margin-bottom: 7px; }
+.refuses b, .notbuilt b { color: var(--text); }
+.refuses li, .notbuilt li { overflow-wrap: anywhere; }
+
+/* The numbered list is eighteen items long and the numbers are referred to in
+   the README, so they are not decoration. */
+.notbuilt {
+    list-style: decimal;
+}
+
+/* The one-sentence bridge to the case study, set apart because it is the only
+   place on the page that names anything outside this repository, and because
+   the paragraph after it is the list of what it does NOT claim. */
+.bridge {
+    border-left: 3px solid var(--verdict-measured);
+    padding-left: 13px;
+    margin-top: 4px;
+}
+
+.bridge p + p { margin-top: 10px; }
+.bridge p { overflow-wrap: anywhere; }
+.bridge b { color: var(--text); }
+
+/* ------------------------------------------------------------------- print */
+
+@media print {
+    /* .top stays. A printed sheet with the header stripped carries no title, no
+       author and no "Nothing leaves this tab" — which on a page whose subject
+       is money going missing is the one context a page must not shed when it is
+       detached from its URL and passed around on paper. The two badges stay
+       with it: the assertion count and the network count are the sheet's own
+       evidence, and a reader holding paper cannot press anything to recover
+       them. Only the theme toggle and the skip link go, because neither is a
+       fact — they are controls, and paper has none. */
+    .tabs, .no-print, .skip, #themeBtn { display: none !important; }
+    .top { padding: 0 0 10px; border-bottom: 1px solid #b9bfcf; margin-bottom: 12px; }
+    /* The chip is white text on --grad, and --grad is none on paper — which
+       printed the mark as white on white and lost it entirely. Ink, not a
+       gradient. */
+    .mark { background: none !important; color: #2f2a8f !important; border: 1px solid #8b93a6; }
+
+    /* Redefine the PALETTE, not just body. Printing from the default dark theme
+       otherwise puts --verdict-short #eab308 straight onto white paper at
+       1.9:1, which makes the arm that came up short the faintest thing on the
+       sheet — on a page whose whole argument is that arm. All three selectors
+       are listed so it does not matter which theme the reader printed from, or
+       whether they ever chose one. */
+    :root,
+    html[data-theme="dark"],
+    html[data-theme="light"] {
+        --bg: #fff;
+        --bg-soft: #fff;
+        --card: #fff;
+        --card-2: #fff;
+        --border: #b9bfcf;
+        --border-strong: #8b93a6;
+        --text: #000;
+        --muted: #333;
+        --faint: #444;
+        --link: #0b4f73;
+        --accent: #2f2a8f;
+        --accent-teks: #2f2a8f;
+        --accent-2: #0b4f73;
+        --accent-3: #5b21b6;
+        --accent-solid: #2f2a8f;
+        --ok: #065f46;
+        --warn: #7a4a00;
+        --bad: #8b1030;
+        --info: #0b4f73;
+        --verdict-exact: #2f2a8f;
+        --verdict-short: #7a4a00;
+        --verdict-measured: #0b4f73;
+        --verdict-none: #444;
+        --grad: none;
+        --shadow: none;
+        --shadow-sm: none;
+    }
+
+    body { background: #fff; color: #000; font-size: 11px; }
+    body::before { display: none; }
+    main { padding: 0; max-width: none; }
+    .card, .nodeps, .notproven, .mesin { border: 0; box-shadow: none; padding: 0; margin-bottom: 12px; }
+    .banner, .callout { border: 1px solid #8b93a6; }
+
+    /* A4 is 794 CSS px. Tables carry a min-width for the screen, and inside
+       overflow-x:auto there is no scrollbar on paper — the overflowing columns
+       are simply cut off the sheet. Let them reflow instead, and lift the
+       white-space:nowrap that is set on every cell for the screen. */
+    .tbl-wrap { overflow: visible !important; }
+    table { min-width: 0 !important; width: 100% !important; font-size: 9.5px; table-layout: auto; }
+    th, td { padding: 3px 4px !important; white-space: normal !important; overflow-wrap: anywhere; }
+    td.num, th.num, .mono { white-space: nowrap !important; }
+
+    /* A shipped source line must NOT be cut off on paper, and there is no
+       scrollbar to reach the rest — so it wraps, and the wrap is visible as an
+       indent rather than silent. A truncated arm body on paper is a document
+       that cannot be checked, and this page's central claim is that the reader
+       can check it. */
+    .srcbox, .difflines, .steps {
+        overflow: visible !important;
+        max-height: none !important;
+        white-space: pre-wrap !important;
+        overflow-wrap: anywhere;
+        border: 1px solid #b9bfcf;
+    }
+
+    .steps .st, .difflines .dl { white-space: pre-wrap !important; }
+    .mesin-ua { overflow: visible !important; white-space: pre-wrap !important; }
+
+    .card, .arm, .tgroup { break-inside: avoid; }
+    .card > h3, .notproven > h2, .nodeps h2, .mesin > h2 { break-inside: avoid; break-after: avoid; }
+}
+
+/* -------------------------------------------------------------- responsive */
+
+@media (max-width: 900px) {
+    .grid2, .grid-side { grid-template-columns: minmax(0, 1fr); }
+    /* Four columns of numbers do not fit, and a horizontal scrollbar on the
+       independence table would hide the difference column — which is the
+       column the whole table exists for. Two rows of two instead. */
+    .wit { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+
+@media (max-width: 560px) {
+    body { font-size: 14px; }
+    .top { padding: 14px 12px; }
+    main { padding: 0 12px 48px; }
+    .brand h1 { font-size: 18px; }
+    .sub { font-size: 12.5px; }
+    .card, .nodeps, .notproven, .mesin { padding: 13px; }
+    .summary { grid-template-columns: repeat(auto-fit, minmax(min(100%, 148px), 1fr)); }
+    .stat .v { font-size: 16px; }
+    .field > span { font-size: 10px; }
+    .refuses, .notbuilt { padding-left: 20px; }
+    .bridge { padding-left: 10px; }
+    .arm .big { font-size: 19px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+        animation: none !important;
+        scroll-behavior: auto !important;
+    }
+}

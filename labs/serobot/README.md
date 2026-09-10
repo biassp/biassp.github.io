@@ -242,14 +242,29 @@ and not underneath it.
 | Claim | Command | What it prints |
 |---|---|---|
 | Only one file asks for a lock | `grep -ln 'locks\.request' labs/serobot/*.js` | `labs/serobot/kunci.js` |
-| No artificial delay in any arm | `grep -n 'setTimeout\|setInterval' labs/serobot/arms.js` | nothing |
+| No delay-scheduling call in `arms.js` | `grep -n 'setTimeout\|setInterval' labs/serobot/arms.js` | nothing |
 | No worker writes to the error console | `grep -rn 'console\.error' labs/serobot/` | nothing |
-| The printed arm bodies are live | `grep -n 'String(credit)' labs/serobot/arms.js` | the one line that produces all four |
+| The printed arm bodies are live | `grep -n 'String(credit)' labs/serobot/arms.js` | two lines, 255 and 267 |
 
-The last one is worth a sentence. The obvious grep is `toString()`, and it prints
-nothing — the live read is spelled `String(credit)`, which is the same call. A README
-that shipped the obvious grep would ship a check that prints nothing and looks like it
-passed.
+Two of those are worth a sentence each.
+
+The **arm-body** grep: the obvious one is `toString()`, and it prints nothing — the live
+read is spelled `String(credit)`, which is the same call. A README that shipped the
+obvious grep would ship a check that prints nothing and looks like it passed. It prints
+two lines, not one: the per-arm slice the source boxes use, and the whole-switch read the
+diff runs on.
+
+The **delay** grep says what its row now says and nothing more: it is a fact about one
+file. Two deadlines are reachable from those arm bodies and that grep sees neither — the
+lock request's `AbortSignal.timeout`, which is printed inside the `kunci` body on the
+page, and the barrier's per-phase deadline, which arrives as a timer function the worker
+injects. Neither delays anything; both only fire on a path that has already failed. An
+earlier revision of this lab let the grep stand as "no artificial delay in any arm" and
+printed "scanned for a timer call and none was found" directly underneath a source box
+containing `AbortSignal.timeout(K.BUDGET)`. `ARMS.assertNoTimer` now separates the two
+kinds — `hits` for anything that makes work happen later, `tenggat` for a deadline — and
+the suite pins the exact deadline list, so a second one cannot appear on a write path
+without a red line.
 
 ---
 
@@ -282,8 +297,10 @@ restored byte for byte. Baseline 532 / 0.
 A review pass afterwards found a check that had never been able to go red and could
 not have been: the count of `Atomics` members that work was a literal `6` assigned inside
 the probe, asserted against the literal `6` in the suite, printed as "six of eight" beside
-a table with nine rows in it, and wrong in both figures — twelve of the fourteen function
-members this Chromium's `Atomics` carries return a value on a buffer that is not shared.
+a table with nine rows in it, and wrong in both figures — of the fourteen function members
+this Chromium's `Atomics` carries, **twelve do not throw** on a buffer that is not shared
+and **eleven of those return a value** (`Atomics.pause` returns `undefined`). Only `wait`
+and `waitAsync` refuse.
 Worse, the probe wrapped nothing, so a member that began refusing took the whole
 capability line down with an uncaught throw instead of being reported as refusing, which
 is the one thing that probe exists to report. It is now counted, wrapped, and cross-checked
@@ -429,9 +446,15 @@ none asked "can a human use this while it runs". A lab that spawns workers has n
 excuse.
 
 The monitor here is `requestAnimationFrame`-based and forces a microtask yield before
-reading the clock, and that is not a style preference: a `setInterval` gap detector
-reports **0 ms** for a real 788 ms block, because the callback cannot fire during the
-block and clearing the timer in the same synchronous turn discards the late tick.
+reading the clock, and that is not a style preference — but the reason is narrower than
+the one this README carried first, which was simply wrong. A `setInterval` gap detector
+**that keeps running does see a block**: measured, one reported **789 ms** for a real
+788 ms busy loop, as clearly as rAF's 710. What it cannot see is the same block when the
+interval is **cleared in the same synchronous turn the block ends** — that reports
+**16 ms**, one tick interval, because the late tick is discarded before anything reads
+it. That is precisely how a boot-time monitor gets written, so the failure mode is not
+exotic; and rAF measures when the page could paint again, which is the thing a visitor
+actually feels.
 
 Measured on the machine that runs CI (`hardwareConcurrency` 4), across the whole boot —
 the suite, all eight demonstrations and the renders between them: **longest gap 31–49

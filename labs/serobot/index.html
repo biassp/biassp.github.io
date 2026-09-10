@@ -121,10 +121,12 @@
                 <code>Atomics</code> is not inert. On a plain <code>Int32Array</code>, <code>Atomics.add</code>
                 returned 0, <code>Atomics.load</code> 5, <code>Atomics.compareExchange</code> 5,
                 <code>Atomics.store</code> 3, <code>Atomics.exchange</code> 3, <code>Atomics.notify</code> 0, and
-                <code>Atomics.isLockFree(4)</code> true — seven of the nine members this page probes returned
-                a value, out of the fourteen function members <code>Atomics</code> carries in this browser. Only
-                <code>wait</code> and <code>waitAsync</code> throw <code>TypeError</code>. Both of those counts
-                are counted at runtime and printed on the Limits tab rather than transcribed here. What
+                <code>Atomics.isLockFree(4)</code> true. Only <code>wait</code> and <code>waitAsync</code> throw
+                <code>TypeError</code>. How many members were probed, how many returned a value, and how many
+                function members this browser's <code>Atomics</code> carries at all are three counts derived at
+                runtime and printed on the Limits tab — deliberately not written into this paragraph, because
+                the last of them changes the day Chromium ships a new member and a sentence here would go stale
+                with nothing able to see it. What
                 <code>Atomics</code> gives you here is a genuine compare-and-swap over memory no other thread can
                 reach, which is <code>x++</code> with ceremony.
             </p>
@@ -215,9 +217,9 @@
                     shares no code with it — <b>not</b> re-run on your visit, so this one is transcribed and
                     says so. A <code>readwrite</code> transaction opened behind three self-perpetuating
                     <code>readonly</code> chains — chains that kept creating <em>new</em> transactions after the
-                    writer was created — waited <b>1&nbsp;ms</b> every time, with anywhere from four hundred to
-                    six thousand <code>readonly</code> transactions already completed depending on how long the
-                    chains had been running. <code>IndexedDB</code> starts overlapping-scope transactions in
+                    writer was created — waited between <b>1 and 5&nbsp;ms</b>, with anywhere from three hundred
+                    to six thousand <code>readonly</code> transactions already completed depending on how long
+                    the chains had been running and how hard the CPU was throttled. <code>IndexedDB</code> starts overlapping-scope transactions in
                     creation order, so a transaction only ever waits on transactions created before it. The
                     specification forbids the starvation and this build honours it. The page says that rather
                     than staging one.</li>
@@ -418,12 +420,17 @@
                 every cell stays legible in monochrome.
             </p>
             <p>
-                <b>The barrier is a message count, not a delay.</b> There is no <code>setTimeout</code>, no busy
-                loop and no <code>Atomics.wait</code> anywhere in the write paths — there is no
-                <code>SharedArrayBuffer</code> to wait on, and a delay would make the loss a property of the
-                delay rather than of the code. One command checks it:
-                <code>grep -n 'setTimeout\|setInterval' labs/serobot/arms.js</code> prints nothing, and the suite
-                re-checks the shipped function bodies at runtime.
+                <b>The barrier is a message count, not a delay.</b> Nothing on a write path waits for a clock:
+                no busy loop, no <code>Atomics.wait</code> — there is no <code>SharedArrayBuffer</code> to wait
+                on — and no call that makes anything happen later, because a delay would make the loss a
+                property of the delay rather than of the code. Two <em>deadlines</em> do exist and are named
+                rather than swept under that sentence: the lock request's <code>AbortSignal.timeout</code>,
+                printed in the arm body itself, and the barrier's per-phase deadline, which is a timer function
+                the worker passes in. Neither fires on a path that succeeds. One command shows where the
+                timers are not: <code>grep -n 'setTimeout\|setInterval' labs/serobot/arms.js</code> prints
+                nothing — which is a fact about that one file, not a proof about the whole path, and the suite
+                is what pins the rest, re-scanning the shipped function bodies at runtime and pinning the exact
+                list of deadlines they arm.
             </p>
             <p class="small">
                 No framework, no bundler, no build step, no vendored code and no change to the

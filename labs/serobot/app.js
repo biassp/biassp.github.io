@@ -66,10 +66,14 @@
  *     laptop six months later.
  *
  *  7. THE MAIN THREAD STAYS FREE, AND IT IS MEASURED WITH requestAnimationFrame.
- *     A setInterval gap detector reports 0 ms for a real 788 ms block, because
- *     the callback cannot fire during the block and clearing the timer in the
- *     same turn discards the late tick — the lab two doors down froze for 23.6
- *     seconds and four separate reviews passed it. The monitor here is pantau's,
+ *     Stated at the size it was measured at, because the wider version was here
+ *     first and was wrong: a setInterval gap detector that KEEPS RUNNING sees a
+ *     block perfectly well — 789 ms for a real 788 ms busy loop. What it cannot
+ *     see is the same block when the interval is cleared in the same synchronous
+ *     turn the block ends, which reports 16 ms, one tick, because the late tick
+ *     is discarded before anything reads it. That is the arrangement a boot-time
+ *     monitor is naturally written in, and it fails silently — the lab two doors
+ *     down froze for 23.6 seconds and four separate reviews passed it. The monitor here is pantau's,
  *     it forces a microtask yield before reading the clock, it runs across the
  *     whole boot, and the longest gap is printed on the Limits tab as an
  *     observation. It is never asserted: a threshold is a timing pin.
@@ -625,7 +629,9 @@
     c.appendChild(h('p', { class: 'note' },
       'Route A is db.js reading the stores back. Route B is saksi.js, handed a reader function, the "before" ' +
       'snapshot as a value, and W and n as two separate integers it multiplies itself — it never receives a ' +
-      'database, a transaction, a lock, a worker or a port, and it could not open one if it wanted to. ',
+      'database, a transaction, a lock, a worker or a port. It is not sandboxed and this page will not say it ' +
+      'is: it runs in the same realm as everything else here and every global is in its reach. What holds it ' +
+      'to the rule is that the rule is checked, by a grep a stranger can run without trusting a word of this. ',
       h('code', { text: "grep -o 'SEROBOT_[A-Z]*' labs/serobot/saksi.js | sort -u" }),
       ' prints one line.'));
     c.appendChild(witTable(P.banding,
@@ -648,10 +654,14 @@
      panel that assumed a shortfall would print an empty one on a fast box, and
      the first thing a hostile reader does is look for exactly that. */
   function renderBebas() {
-    var c = card('The same four arms with nothing synchronising them — measured, and pinned by nothing',
+    var c = card('The same four arms with nothing synchronising them — the losing column pinned by nothing',
       'Identical code, identical workload, identical seconds. The only difference is that no rendezvous holds ' +
-      'anyone: the writers interleave however this machine happens to schedule them. Nothing below is asserted ' +
-      'anywhere, and the suite would not notice if every figure changed.');
+      'anyone: the writers interleave however this machine happens to schedule them. The pisah column below is ' +
+      'asserted NOWHERE — the suite would not notice if every one of those samples changed, and that is the ' +
+      'point of the panel. The safe columns are not in the same position, and pretending otherwise would be ' +
+      'this page misusing its own badge: the suite runs its own free batch and does pin that satu ends at ' +
+      'W \u00d7 n there and that the ledger holds one row per write, because those hold whatever the scheduler ' +
+      'does. What nothing pins anywhere is the number this panel exists to show.');
 
     var B = state.bebas;
 
@@ -788,7 +798,7 @@
   /* --------------------------------------- 7. the diff, from live functions */
 
   function renderSumber() {
-    var c = card('The three write shapes, read back out of the running functions',
+    var c = card('The four write shapes, read back out of the running functions',
       'There is no build step in this repository, so the bodies below are byte-for-byte what ran. They are ' +
       'read at runtime with Function.prototype.toString and put on screen through textContent.');
     var S = state.src;
@@ -815,13 +825,21 @@
     c.appendChild(dl);
 
     c.appendChild(callout(S.timer.ok ? 'exact' : 'bad',
-      'artificialDelayMs: 0, in every arm.',
-      'The shipped bodies were scanned at runtime for a timer call and ' +
+      'artificialDelayMs: 0, in every arm — and what that scan does not mean.',
+      'The shipped bodies were scanned at runtime for a call that makes something happen LATER, and ' +
       (S.timer.ok ? 'none was found' : 'the following were found: ' + S.timer.hits.join(', ')) +
-      '. The same claim by a route that needs no trust: '));
+      '. A deadline is a different thing and this page will not let the scan imply otherwise: ' +
+      (S.timer.tenggat && S.timer.tenggat.length
+        ? S.timer.tenggat.join(', ') + ' is armed in the kunci arm and you can see it in the box above'
+        : 'none is armed on any write path') +
+      '. It bounds a lock request that is already failing, it changes nothing on the path that succeeds, and ' +
+      'the suite pins that list so a second one cannot appear here in silence.'));
     c.appendChild(h('p', { class: 'small' }, h('code', { text: "grep -n 'setTimeout\\|setInterval' labs/serobot/arms.js" }),
-      ' prints nothing. The rendezvous is a message count; the barrier phase deadline is a timer function passed ' +
-      'in from the worker, because a file that named one could not make that grep quiet.'));
+      ' prints nothing — over THIS FILE, which is the whole of what it checks. Two clocks are reachable from ' +
+      'these bodies and neither is in it: the lock deadline above, and the barrier\'s per-phase deadline, which ' +
+      'is a timer function passed in from the worker. The rendezvous itself is a message count with no clock in ' +
+      'it at all. A file that named a timer could not make that grep quiet, so the grep is evidence about where ' +
+      'the timers are, not evidence that there are none.'));
     /* The second route for "what is on screen is what ran" is a grep a stranger
        can run in three seconds. It is NOT `toString()`: the live read is
        String(credit), which is the same call spelled the shorter way, and a
@@ -830,7 +848,8 @@
     c.appendChild(h('p', { class: 'small' },
       'And the boxes above are read live rather than transcribed: ',
       h('code', { text: "grep -n 'String(credit)' labs/serobot/arms.js" }),
-      ' prints the one line that produces every one of them.'));
+      ' prints two lines — the per-arm slice above, and the whole-switch read the diff runs on. Between them ' +
+      'they produce every box on this card.'));
     return c;
   }
 
@@ -1351,15 +1370,23 @@
     c.appendChild(h('h4', { text: KUNCI.KUTIPAN.gudang.file + ':' + KUNCI.KUTIPAN.gudang.line }));
     c.appendChild(h('blockquote', { class: 'callout exact' }, h('p', { text: '“' + KUNCI.KUTIPAN.gudang.text + '”' })));
     c.appendChild(h('p', { class: 'note', text:
-      'A prose claim in a comment, load-bearing, never measured. It is correct. Under the rendezvous, with ' +
-      'every contender released at the same instant, exactly one of them takes the lease:' }));
+      'A prose claim in a comment, load-bearing, never measured — and it holds, with one word of it left ' +
+      'standing on the specification rather than on this run. Under the rendezvous, with every contender ' +
+      'released at the same instant, exactly one of them takes the lease:' }));
     c.appendChild(tableOf([{ label: 'contenders, W', num: true }, { label: 'winners', num: true }, 'holder', { label: 'fencing token', num: true }, 'verdict'], [
       auditRow(A.gudang2), auditRow(A.gudang4)
     ], { minWidth: '520px' }));
     c.appendChild(h('p', { class: 'small' }, kind('asserted'), ' ',
       'One holder across every contender, at both writer counts. The read, the decision and the write are in ' +
       'ONE readwrite transaction, and IndexedDB will not start a second overlapping readwrite transaction ' +
-      'until it finishes — that is the property, and it is the specification\'s, not this lab\'s.'));
+      'until it finishes — that is the property, and it is the specification\'s, not this lab\'s. ',
+      h('b', { text: 'The contenders above are all in one document.' }),
+      ' The quoted comment says ACROSS TABS, and this page cannot open a second tab: the runner opens one ' +
+      'page and calls into it once, so nothing cross-tab is assertable here and none of it is asserted. The ' +
+      'reason the wider claim holds anyway is that IndexedDB scopes a transaction to the database, not to the ' +
+      'agent that opened it — which is again the specification, read rather than measured. What this run ' +
+      'settles is that the mechanism does what the comment says it does; what it does not settle is the ' +
+      'preposition.'));
     c.appendChild(h('h5', { text: 'the shape, read back out of the running function' }));
     c.appendChild(srcbox(A.srcGudang));
 
@@ -1463,10 +1490,14 @@
     }
 
     var c3 = card('The main thread, measured with requestAnimationFrame',
-      'A lab that spawns workers has no excuse for freezing the tab, and a setInterval gap detector cannot see ' +
-      'a freeze at all — the callback cannot fire during the block and clearing the timer in the same turn ' +
-      'discards the late tick. This monitor is rAF-based and forces a microtask yield before reading the clock, ' +
-      'so what it reports is when the page actually got back to work.');
+      'A lab that spawns workers has no excuse for freezing the tab. This monitor is rAF-based and forces a ' +
+      'microtask yield before reading the clock, so what it reports is when the page actually got back to ' +
+      'PAINTING rather than when a timer next fired. The narrower reason for that choice, measured here and ' +
+      'stated no wider: a setInterval gap detector that keeps running does see a block — one reported 789 ms ' +
+      'for a real 788 ms busy loop — but the same detector CLEARED IN THE SAME SYNCHRONOUS TURN the block ends ' +
+      'reported 16 ms, one tick interval, because the late tick is discarded before it can be read. That is a ' +
+      'detector that fails silently in exactly the arrangement a boot-time monitor is written in, which is why ' +
+      'this one is not built that way.');
     p.appendChild(c3);
     var r = state.raf;
     if (!r) { c3.appendChild(h('div', { class: 'empty', text: 'Still measuring: ' + state.step })); }
@@ -2264,10 +2295,12 @@
     else renderPanel('ledgers');
 
     /* The monitor starts here and runs across everything: the suite, all eight
-       demonstrations, and the renders between them. It is rAF-based because a
-       setInterval gap detector reports 0 ms for a real block — the callback
-       cannot fire during it and clearing the timer in the same turn discards the
-       late tick. */
+       demonstrations, and the renders between them. It is rAF-based because rAF
+       measures when the page could paint again, which is the thing a visitor
+       feels. The timer alternative is not merely worse, it is silently worse in
+       this exact shape: a setInterval detector cleared in the same synchronous
+       turn a block ends reports one tick interval for it (measured: 16 ms for a
+       788 ms block), while the same detector left running reports 789. */
     try { state.rafH = PANTAU.rafMulai(); } catch (e4) { state.rafH = null; }
 
     /* A yielded frame before any of it: the page is scrollable and clickable

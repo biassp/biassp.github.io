@@ -266,9 +266,22 @@
 
   NS.sourceAll = function () { return String(credit); };
 
-  /* No artificial delay, checked over the shipped text rather than promised in a
+  /* No artificial DELAY, checked over the shipped text rather than promised in a
      comment. The needles are assembled from halves so that the grep in the
-     independence table still prints nothing over this file. */
+     independence table still prints nothing over this file.
+
+     TWO KINDS OF CLOCK, AND CONFLATING THEM IS HOW A CHECK COMES TO CLAIM MORE
+     THAN IT TESTS. A DELAY makes something happen later and would make the loss
+     a property of the delay rather than of the code; those are `hits`, and one
+     is a failure. A DEADLINE only fires when something has already gone wrong,
+     changes nothing on the path that succeeds, and cannot manufacture an
+     interleaving. There is exactly one on a write path — the lock request's
+     AbortSignal.timeout in the kunci arm — it is visible in the body this file
+     prints, and an earlier revision of this audit reported "no timer call was
+     found" directly underneath it. So deadlines are now COUNTED AND NAMED
+     rather than passed over: `tenggat` is the list, the suite pins its exact
+     contents, and a second one appearing on a write path is a red line rather
+     than a silence. */
   var TIMER_NEEDLES = [
     'set' + 'Timeout',
     'set' + 'Interval',
@@ -279,13 +292,27 @@
     'while' + ' (Date'
   ];
 
+  var DEADLINE_NEEDLES = [
+    'Abort' + 'Signal.timeout',
+    'Abort' + 'Controller'
+  ];
+
+  /* A FUNCTION is read back with Function.prototype.toString; a STRING is taken
+     as already-read text; anything else audits the whole switch. The string case
+     is here because it was missing and that was a footgun with a green face:
+     handing this one arm's body in as text used to fall through to "audit
+     everything", so an audit scoped to a single arm quietly answered about the
+     file and agreed with itself. */
   NS.assertNoTimer = function (fn) {
-    var text = String(typeof fn === 'function' ? fn : NS.sourceAll());
-    var hits = [], i;
+    var text = typeof fn === 'string' ? fn : String(typeof fn === 'function' ? fn : NS.sourceAll());
+    var hits = [], tenggat = [], i;
     for (i = 0; i < TIMER_NEEDLES.length; i++) {
       if (text.indexOf(TIMER_NEEDLES[i]) >= 0) hits.push(TIMER_NEEDLES[i]);
     }
-    return { ok: hits.length === 0, hits: hits };
+    for (i = 0; i < DEADLINE_NEEDLES.length; i++) {
+      if (text.indexOf(DEADLINE_NEEDLES[i]) >= 0) tenggat.push(DEADLINE_NEEDLES[i]);
+    }
+    return { ok: hits.length === 0, hits: hits, tenggat: tenggat };
   };
 
   /* ------------------------------------------------------- the W clamp */

@@ -277,6 +277,17 @@
             border: 1px solid color-mix(in srgb, var(--accent-2) 30%, transparent);
             padding: 6px 13px;
             border-radius: 100px;
+            /* It became a link to /hire/. The colour is already set above, so
+               only the default underline has to go — and a clickable badge
+               needs a hover state, or nothing says it can be pressed. */
+            text-decoration: none;
+            transition: background .15s ease, border-color .15s ease;
+        }
+
+        .hero-eyebrow:hover,
+        .hero-eyebrow:focus-visible {
+            background: color-mix(in srgb, var(--accent-2) 22%, transparent);
+            border-color: color-mix(in srgb, var(--accent-2) 55%, transparent);
         }
 
         .pulse {
@@ -1057,6 +1068,7 @@
                 <a href="#repos" data-i18n="nav.repos">Repos</a>
                 <a href="#skills" data-i18n="nav.skills">Skills</a>
                 <a href="#education" data-i18n="nav.education">Education</a>
+                <a href="./hire/" data-i18n="nav.hire">Hire</a>
             </nav>
             <div class="nav-actions">
                 <button type="button" class="icon-btn" id="themeToggle" aria-label="Toggle theme" title="Toggle theme">
@@ -1076,7 +1088,7 @@
         <!-- HERO -->
         <section class="hero">
             <div class="hero-text reveal">
-                <span class="hero-eyebrow" data-i18n-html="hero.eyebrow"><span class="pulse"></span>Available for opportunities</span>
+                <a class="hero-eyebrow" href="./hire/" data-i18n-html="hero.eyebrow"><span class="pulse"></span>Available for freelance — rates and scope</a>
                 <h1 data-i18n-html="hero.title">Hi, I'm <span class="grad">Bias Satrio Putra</span></h1>
                 <div class="role" data-i18n="hero.role">IT Professional · Full-Stack Developer &amp; Product Builder</div>
                 <p class="lede" data-i18n="hero.lede">I design, build, and ship end-to-end web &amp; mobile products — from backend APIs and databases to polished front-ends and live deployment. Indonesian, based in Colombo, Sri Lanka, with 7+ years across IT support, development, and teaching — and products shipped in four markets.</p>
@@ -2217,7 +2229,8 @@
             "btn.downloadcv": { en: "Download CV", id: "Unduh CV" },
             "btn.cv": { en: "CV", id: "CV" },
 
-            "hero.eyebrow": { en: "<span class=\"pulse\"></span>Available for opportunities", id: "<span class=\"pulse\"></span>Terbuka untuk peluang baru" },
+            "hero.eyebrow": { en: "<span class=\"pulse\"></span>Available for freelance — rates and scope", id: "<span class=\"pulse\"></span>Terbuka untuk freelance — tarif dan lingkupnya" },
+            "nav.hire": { en: "Hire", id: "Sewa jasa" },
             "hero.title": { en: "Hi, I'm <span class=\"grad\">Bias Satrio Putra</span>", id: "Halo, saya <span class=\"grad\">Bias Satrio Putra</span>" },
             "hero.role": { en: "IT Professional · Full-Stack Developer & Product Builder", id: "Profesional IT · Full-Stack Developer & Product Builder" },
             "hero.lede": { en: "I design, build, and ship end-to-end web & mobile products — from backend APIs and databases to polished front-ends and live deployment. Indonesian, based in Colombo, Sri Lanka, with 7+ years across IT support, development, and teaching — and products shipped in four markets.", id: "Saya merancang, membangun, dan merilis produk web & mobile secara menyeluruh — dari API dan basis data di sisi backend hingga front-end yang rapi dan deployment ke produksi. Orang Indonesia, berbasis di Colombo, Sri Lanka, dengan pengalaman 7+ tahun di dukungan IT, pengembangan, dan pengajaran — serta produk yang dirilis di empat pasar." },

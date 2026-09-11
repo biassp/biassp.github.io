@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<!--
+  Hire — biassp.github.io
+  Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+  Not open source. Readable for evaluation only — copying, modification,
+  re-branding or redistribution is not permitted. See /LICENSE.
+-->
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hire me — freelance, remote</title>
+    <meta name="description"
+        content="Freelance web, mobile and technical-SEO work, remote from Colombo. Every claim on the page links to something that runs in your browser: 5,826 assertions across ten of the eleven applications, re-run in CI on every commit.">
+    <meta name="author" content="Bias Satrio Putra">
+    <meta name="copyright" content="Copyright (c) 2026 Bias Satrio Putra. All rights reserved.">
+    <link rel="stylesheet" href="../case/case.css">
+    <link rel="stylesheet" href="./hire.css">
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2032%2032%22%3E%3Crect%20width=%2232%22%20height=%2232%22%20rx=%227%22%20fill=%22%236366f1%22/%3E%3Ccircle%20cx=%2216%22%20cy=%2212%22%20r=%224.5%22%20fill=%22%23fff%22/%3E%3Cpath%20d=%22M7%2026c0-4.4%204-8%209-8s9%203.6%209%208z%22%20fill=%22%23fff%22/%3E%3C/svg%3E">
+</head>
+
+<body>
+    <header class="top">
+        <div class="top-in">
+            <span class="crumb" data-i18n-html="h.crumb"><a href="../">CV</a> · Hire</span>
+            <div class="tools">
+                <button class="btn" type="button" id="tema" aria-pressed="false">Light</button>
+                <button class="btn" type="button" id="langToggle">ID</button>
+                <a class="btn" href="../#portfolio" data-i18n="h.nav.portfolio">← Portfolio</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="wrap">
+        <div class="hero">
+            <span class="eyebrow" data-i18n="h.eyebrow">Freelance · Remote · Colombo, GMT+5:30</span>
+            <h1 data-i18n-html="h.title">Work you can <span class="grad">check before you hire me</span></h1>
+            <p class="lede" data-i18n="h.lede">Every portfolio says it writes careful code. Mine has a link next to
+                each claim that runs in your browser right now — 5,826 assertions across ten of the eleven applications, re-run
+                in CI on every commit, with the failures visible in public. You can find out whether I am any good
+                before you pay me, which is not the usual order.</p>
+
+            <div class="facts">
+                <div class="fact"><b data-i18n="h.fact.avail.b">Part-time</b><span
+                        data-i18n="h.fact.avail.s">~15 hrs/week</span></div>
+                <div class="fact"><b data-i18n="h.fact.tz.b">GMT+5:30</b><span data-i18n="h.fact.tz.s">Colombo,
+                        Sri Lanka</span></div>
+                <div class="fact"><b data-i18n="h.fact.exp.b">7+ years</b><span data-i18n="h.fact.exp.s">shipped in
+                        4 markets</span></div>
+                <div class="fact"><b data-i18n="h.fact.reply.b">Under 24h</b><span data-i18n="h.fact.reply.s">first
+                        reply, weekdays</span></div>
+            </div>
+        </div>
+
+        <h2 data-i18n="h.svc.h2">What I do</h2>
+        <p class="muted" data-i18n="h.svc.p">Three kinds of work, because those are the three I can prove. Anything
+            outside them I will tell you is outside them.</p>
+
+        <section class="svc">
+            <h3 data-i18n="h.a.h3">1 · Technical &amp; programmatic SEO</h3>
+            <p class="for" data-i18n="h.a.for">For sites that are already built and are not being found.</p>
+            <ul>
+                <li data-i18n="h.a.li1">A crawl and index audit that names the pages Google is skipping and why,
+                    rather than a score out of a hundred.</li>
+                <li data-i18n="h.a.li2">Programmatic pages generated at build time — thousands of them, statically
+                    exported, each one worth indexing rather than padding a sitemap.</li>
+                <li data-i18n="h.a.li3">Core Web Vitals fixed at the cause, and Cloudflare configured at the edge:
+                    caching, redirects, and WAF rules that do not block the crawler by accident.</li>
+            </ul>
+            <div class="proof">
+                <b data-i18n="h.proof">Check it yourself</b>
+                <a href="../labs/harvest/" data-i18n="h.a.p1">HARvest — a 28-rule HTTP audit</a>
+                <a href="https://github.com/biassp/cloudflare-waf-rules" target="_blank"
+                    rel="noopener" data-i18n="h.a.p2">Cloudflare WAF rules</a>
+                <a href="../#portfolio" data-i18n="h.a.p3">Login Hub PK — programmatic, static</a>
+            </div>
+            <p class="band" data-i18n-html="h.a.band"><b>Typical engagement:</b> audit from $900; a programmatic
+                build from $3,500, scoped and quoted before anything starts.</p>
+        </section>
+
+        <section class="svc">
+            <h3 data-i18n="h.b.h3">2 · Product build — Flutter and Node, end to end</h3>
+            <p class="for" data-i18n="h.b.for">For a product that has to exist on a phone and in a browser, with one
+                backend behind both.</p>
+            <ul>
+                <li data-i18n="h.b.li1">Flutter for Android and iOS from one codebase, including the awkward part
+                    most quotes leave out: the bridge down to native when the platform will not do it in Dart.</li>
+                <li data-i18n="h.b.li2">A Node API and a real schema behind it, deployed — Docker, Nginx,
+                    Cloudflare, signing keys held outside the app repository.</li>
+                <li data-i18n="h.b.li3">Store submission, and the release plumbing nobody enjoys: signing, staged
+                    rollout, crash reporting, and the second submission after the first is rejected.</li>
+            </ul>
+            <div class="proof">
+                <b data-i18n="h.proof">Check it yourself</b>
+                <a href="../labs/saku/" data-i18n="h.b.p1">Saku — a service worker answering Android's share sheet</a>
+                <a href="../case/cek-aman/" data-i18n="h.b.p2">Cek Aman — case study</a>
+                <a href="../case/bioage/" data-i18n="h.b.p3">BioAge — case study</a>
+            </div>
+            <p class="band" data-i18n-html="h.b.band"><b>Typical engagement:</b> a first shippable version from
+                $6,000, or $45–75/hour on an existing codebase.</p>
+        </section>
+
+        <section class="svc">
+            <h3 data-i18n="h.c.h3">3 · Data correctness and legacy rescue</h3>
+            <p class="for" data-i18n="h.c.for">For the database that is quietly wrong, and the PHP nobody left will
+                touch.</p>
+            <ul>
+                <li data-i18n="h.c.li1">Schema migrations against rows that already exist, including the rebuild
+                    that commits, passes every integrity check, reports no error — and has silently deleted rows.</li>
+                <li data-i18n="h.c.li2">Slow queries read through the real plan rather than guessed at, and the
+                    indexes that follow from it.</li>
+                <li data-i18n-html="h.c.li3">Legacy PHP brought forward — the <code>mysql_*</code> era, applications on an
+                    unmaintained framework, systems whose author has left.</li>
+            </ul>
+            <div class="why">
+                <b data-i18n="h.c.why.b">One thing I have that an offshore quote usually does not.</b>
+                <span data-i18n="h.c.why.s">Indonesian regulatory domain, implemented and asserted rather than
+                    read about: PPh 21 under the TER regime, BPJS, FIFO costing with backdated recalculation, a cash
+                    flow statement that reconciles to the ledger, medical record numbering, PPDB admissions. If your
+                    product has to be correct under Indonesian rules, that is usually the expensive part, not the
+                    CRUD around it.</span>
+            </div>
+            <div class="proof">
+                <b data-i18n="h.proof">Check it yourself</b>
+                <a href="../labs/rombak/" data-i18n="h.c.p1">Rombak — 262 properties on migrations</a>
+                <a href="../labs/payroll/" data-i18n="h.c.p2">Payroll — PPh 21 TER</a>
+                <a href="../labs/buku/" data-i18n="h.c.p3">Buku — a reconciling cash flow statement</a>
+            </div>
+            <p class="band" data-i18n-html="h.c.band"><b>Typical engagement:</b> $50–85/hour, or a fixed price once
+                I have seen the schema. A one-week rescue is usually enough to know which it should be.</p>
+        </section>
+
+        <h2 data-i18n="h.rate.h2">Rates and how it works</h2>
+        <p class="muted" data-i18n="h.rate.p">In US dollars, before the platform's fee if you hire me through one.
+            Fixed price is better for both of us wherever the scope can be written down, because it puts the risk of
+            my own estimate on me rather than on you.</p>
+
+        <div class="scroller">
+            <table class="rates">
+                <thead>
+                    <tr>
+                        <th data-i18n="h.rate.th1">Shape</th>
+                        <th data-i18n="h.rate.th2">When it fits</th>
+                        <th data-i18n="h.rate.th3">Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td data-i18n="h.rate.r1a">Fixed scope</td>
+                        <td data-i18n="h.rate.r1b">The outcome can be written as a sentence we would both recognise
+                            as done or not done.</td>
+                        <td data-i18n="h.rate.r1c">Quoted, 40% up front</td>
+                    </tr>
+                    <tr>
+                        <td data-i18n="h.rate.r2a">Hourly</td>
+                        <td data-i18n="h.rate.r2b">An existing codebase, or work whose shape will change as we learn
+                            what is in there.</td>
+                        <td data-i18n="h.rate.r2c">$45–85</td>
+                    </tr>
+                    <tr>
+                        <td data-i18n="h.rate.r3a">Monthly retainer</td>
+                        <td data-i18n="h.rate.r3b">Ongoing maintenance, releases and a person who already knows the
+                            system.</td>
+                        <td data-i18n="h.rate.r3c">From $1,800/mo</td>
+                    </tr>
+                    <tr>
+                        <td data-i18n="h.rate.r4a">First call</td>
+                        <td data-i18n="h.rate.r4b">Thirty minutes to find out whether I am the right person. Often I
+                            am not, and I will say so.</td>
+                        <td data-i18n="h.rate.r4c">Free</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 data-i18n="h.no.h2">What I will not take on</h2>
+        <p class="muted" data-i18n="h.no.p">Every lab on this site ships its limits as part of the lab. The same
+            applies to me.</p>
+
+        <div class="honest">
+            <b data-i18n="h.no.b1">I am not a designer.</b>
+            <span data-i18n="h.no.s1">I can build a clean, accessible interface from a design, or from nothing when
+                the product is mostly mechanism. I cannot give you brand work, and a project whose success is mostly
+                visual identity should go to someone whose portfolio is visual.</span>
+        </div>
+
+        <div class="honest">
+            <b data-i18n="h.no.b2">Native iOS and Android are a bridge, not a speciality.</b>
+            <span data-i18n="h.no.s2">I write the platform channel when Flutter cannot reach something — an Android
+                notification listener, a share target, signed release plumbing. A pure Swift or Kotlin codebase is
+                not my strength and I would rather tell you that now than three weeks in.</span>
+        </div>
+
+        <div class="honest">
+            <b data-i18n="h.no.b3">I integrate AI models, I do not train them.</b>
+            <span data-i18n="h.no.s3">Vision and language models in shipped products, with the cost, latency and
+                failure handling that takes. Not model training, not research, and not a claim to accuracy I have
+                not measured.</span>
+        </div>
+
+        <div class="honest">
+            <b data-i18n="h.no.b4">US working hours do not fit.</b>
+            <span data-i18n="h.no.s4">Colombo is GMT+5:30. Europe, the Gulf and Southeast Asia overlap my day
+                comfortably; US Pacific does not, and a role that needs four hours of daily overlap with California
+                is one I would be bad at rather than one I would stretch to.</span>
+        </div>
+
+        <div class="honest">
+            <b data-i18n="h.no.b5">SEO that games rather than earns.</b>
+            <span data-i18n="h.no.s5">No link networks, no cloaking, no doorway pages. Programmatic pages have to be
+                worth indexing on their own, and if the honest version of a page has nothing to say, the answer is
+                not to generate it ten thousand times.</span>
+        </div>
+
+        <h2 data-i18n="h.start.h2">Start here</h2>
+        <p data-i18n-html="h.start.p">Tell me what is broken or what has to exist, and roughly when. If there is a
+            repository, a staging URL or a <code>.har</code> file from your DevTools, send it — I would rather answer
+            with something specific than with a rate card.</p>
+
+        <p>
+            <a class="cta" href="mailto:biascanester@gmail.com?subject=Freelance%20enquiry"
+                data-i18n="h.start.mail">Email me</a>
+            <a class="cta ghost" href="https://www.linkedin.com/in/bias-satrio-putra-b166a211b/" target="_blank"
+                rel="noopener" data-i18n="h.start.li">LinkedIn</a>
+            <a class="cta ghost" href="../labs/" data-i18n="h.start.labs">Open the labs first</a>
+        </p>
+
+        <div class="honest">
+            <b data-i18n="h.start.b">Availability, stated plainly.</b>
+            <span data-i18n="h.start.s">I hold a full-time role. Freelance work happens around it, which is why the
+                number at the top of this page is fifteen hours a week and not forty. I would rather quote you a
+                slower date I can hold than a fast one I cannot.</span>
+        </div>
+
+        <div class="next">
+            <a href="../" data-i18n="h.next.cv">← Back to the CV</a>
+            <a href="../labs/" data-i18n="h.next.labs">Eleven labs you can open →</a>
+        </div>
+    </main>
+
+    <footer class="wrap">
+        <p class="muted" data-i18n-html="h.footer">© 2026 Bias Satrio Putra. All rights reserved. Not open source —
+            see <a href="../LICENSE">LICENSE</a>.</p>
+    </footer>
+
+    <script>
+    window.PAGE_I18N = {
+        "h.crumb": {
+            en: `<a href="../">CV</a> · Hire`,
+            id: `<a href="../">CV</a> · Sewa jasa`
+        },
+        "h.nav.portfolio": { en: `← Portfolio`, id: `← Portfolio` },
+        "h.eyebrow": { en: `Freelance · Remote · Colombo, GMT+5:30`, id: `Freelance · Remote · Colombo, GMT+5:30` },
+        "h.title": {
+            en: `Work you can <span class="grad">check before you hire me</span>`,
+            id: `Pekerjaan yang bisa kamu <span class="grad">periksa sebelum menyewa saya</span>`
+        },
+        "h.lede": {
+            en: `Every portfolio says it writes careful code. Mine has a link next to each claim that runs in your browser right now — 5,826 assertions across ten of the eleven applications, re-run in CI on every commit, with the failures visible in public. You can find out whether I am any good before you pay me, which is not the usual order.`,
+            id: `Semua portofolio mengaku menulis kode dengan hati-hati. Punya saya menaruh tautan di sebelah tiap klaim, yang berjalan di browser kamu sekarang juga — 5.826 asersi di sepuluh dari sebelas aplikasi, dijalankan ulang di CI pada tiap commit, dan kegagalannya terlihat publik. Kamu bisa tahu saya bagus atau tidak sebelum membayar, dan itu bukan urutan yang biasa.`
+        },
+        "h.fact.avail.b": { en: `Part-time`, id: `Paruh waktu` },
+        "h.fact.avail.s": { en: `~15 hrs/week`, id: `±15 jam/minggu` },
+        "h.fact.tz.b": { en: `GMT+5:30`, id: `GMT+5:30` },
+        "h.fact.tz.s": { en: `Colombo, Sri Lanka`, id: `Colombo, Sri Lanka` },
+        "h.fact.exp.b": { en: `7+ years`, id: `7+ tahun` },
+        "h.fact.exp.s": { en: `shipped in 4 markets`, id: `rilis di 4 pasar` },
+        "h.fact.reply.b": { en: `Under 24h`, id: `Di bawah 24 jam` },
+        "h.fact.reply.s": { en: `first reply, weekdays`, id: `balasan pertama, hari kerja` },
+
+        "h.svc.h2": { en: `What I do`, id: `Yang saya kerjakan` },
+        "h.svc.p": {
+            en: `Three kinds of work, because those are the three I can prove. Anything outside them I will tell you is outside them.`,
+            id: `Tiga jenis pekerjaan, karena tiga itu yang bisa saya buktikan. Di luar itu, akan saya bilang bahwa itu di luar kemampuan saya.`
+        },
+        "h.proof": { en: `Check it yourself`, id: `Periksa sendiri` },
+
+        "h.a.h3": { en: `1 · Technical & programmatic SEO`, id: `1 · SEO teknis & programmatic` },
+        "h.a.for": {
+            en: `For sites that are already built and are not being found.`,
+            id: `Untuk situs yang sudah jadi tapi tidak ditemukan orang.`
+        },
+        "h.a.li1": {
+            en: `A crawl and index audit that names the pages Google is skipping and why, rather than a score out of a hundred.`,
+            id: `Audit crawl dan indeks yang menyebutkan halaman mana yang dilewati Google dan kenapa — bukan skor dari seratus.`
+        },
+        "h.a.li2": {
+            en: `Programmatic pages generated at build time — thousands of them, statically exported, each one worth indexing rather than padding a sitemap.`,
+            id: `Halaman programmatic yang dibangkitkan saat build — ribuan, diekspor statis, tiap halaman layak diindeks dan bukan sekadar menggemukkan sitemap.`
+        },
+        "h.a.li3": {
+            en: `Core Web Vitals fixed at the cause, and Cloudflare configured at the edge: caching, redirects, and WAF rules that do not block the crawler by accident.`,
+            id: `Core Web Vitals diperbaiki di akarnya, dan Cloudflare dikonfigurasi di edge: caching, redirect, dan aturan WAF yang tidak memblokir crawler tanpa sengaja.`
+        },
+        "h.a.p1": { en: `HARvest — a 28-rule HTTP audit`, id: `HARvest — audit HTTP 28 aturan` },
+        "h.a.p2": { en: `Cloudflare WAF rules`, id: `Aturan WAF Cloudflare` },
+        "h.a.p3": { en: `Login Hub PK — programmatic, static`, id: `Login Hub PK — programmatic, statis` },
+        "h.a.band": {
+            en: `<b>Typical engagement:</b> audit from $900; a programmatic build from $3,500, scoped and quoted before anything starts.`,
+            id: `<b>Bentuk umum:</b> audit mulai $900; pembangunan programmatic mulai $3.500, dilingkup dan dikutip harganya sebelum apa pun dimulai.`
+        },
+
+        "h.b.h3": { en: `2 · Product build — Flutter and Node, end to end`, id: `2 · Bangun produk — Flutter dan Node, ujung ke ujung` },
+        "h.b.for": {
+            en: `For a product that has to exist on a phone and in a browser, with one backend behind both.`,
+            id: `Untuk produk yang harus ada di ponsel sekaligus di browser, dengan satu backend di belakang keduanya.`
+        },
+        "h.b.li1": {
+            en: `Flutter for Android and iOS from one codebase, including the awkward part most quotes leave out: the bridge down to native when the platform will not do it in Dart.`,
+            id: `Flutter untuk Android dan iOS dari satu basis kode, termasuk bagian canggung yang biasanya tidak masuk penawaran: jembatan ke native ketika platformnya tidak bisa dikerjakan di Dart.`
+        },
+        "h.b.li2": {
+            en: `A Node API and a real schema behind it, deployed — Docker, Nginx, Cloudflare, signing keys held outside the app repository.`,
+            id: `API Node dengan skema yang sungguhan di belakangnya, dan di-deploy — Docker, Nginx, Cloudflare, kunci signing disimpan di luar repositori aplikasi.`
+        },
+        "h.b.li3": {
+            en: `Store submission, and the release plumbing nobody enjoys: signing, staged rollout, crash reporting, and the second submission after the first is rejected.`,
+            id: `Pengiriman ke store, dan pekerjaan rilis yang tidak disukai siapa pun: signing, staged rollout, laporan crash, dan pengiriman kedua setelah yang pertama ditolak.`
+        },
+        "h.b.p1": { en: `Saku — a service worker answering Android's share sheet`, id: `Saku — service worker yang menjawab share sheet Android` },
+        "h.b.p2": { en: `Cek Aman — case study`, id: `Cek Aman — studi kasus` },
+        "h.b.p3": { en: `BioAge — case study`, id: `BioAge — studi kasus` },
+        "h.b.band": {
+            en: `<b>Typical engagement:</b> a first shippable version from $6,000, or $45–75/hour on an existing codebase.`,
+            id: `<b>Bentuk umum:</b> versi pertama yang layak rilis mulai $6.000, atau $45–75/jam untuk basis kode yang sudah ada.`
+        },
+
+        "h.c.h3": { en: `3 · Data correctness and legacy rescue`, id: `3 · Kebenaran data dan penyelamatan sistem lama` },
+        "h.c.for": {
+            en: `For the database that is quietly wrong, and the PHP nobody left will touch.`,
+            id: `Untuk database yang diam-diam salah, dan PHP yang tidak ada lagi yang berani menyentuhnya.`
+        },
+        "h.c.li1": {
+            en: `Schema migrations against rows that already exist, including the rebuild that commits, passes every integrity check, reports no error — and has silently deleted rows.`,
+            id: `Migrasi skema terhadap baris yang sudah ada, termasuk rebuild yang berhasil commit, lolos semua pemeriksaan integritas, tidak melaporkan galat — dan sudah menghapus baris tanpa suara.`
+        },
+        "h.c.li2": {
+            en: `Slow queries read through the real plan rather than guessed at, and the indexes that follow from it.`,
+            id: `Query lambat dibaca lewat rencana eksekusi aslinya, bukan ditebak, berikut indeks yang mengikutinya.`
+        },
+        "h.c.li3": {
+            en: `Legacy PHP brought forward — the <code>mysql_*</code> era, applications on an unmaintained framework, systems whose author has left.`,
+            id: `PHP lama dibawa maju — era <code>mysql_*</code>, aplikasi di atas framework yang tidak lagi dirawat, sistem yang penulisnya sudah pergi.`
+        },
+        "h.c.why.b": {
+            en: `One thing I have that an offshore quote usually does not.`,
+            id: `Satu hal yang saya punya dan biasanya tidak ada di penawaran luar negeri.`
+        },
+        "h.c.why.s": {
+            en: `Indonesian regulatory domain, implemented and asserted rather than read about: PPh 21 under the TER regime, BPJS, FIFO costing with backdated recalculation, a cash flow statement that reconciles to the ledger, medical record numbering, PPDB admissions. If your product has to be correct under Indonesian rules, that is usually the expensive part, not the CRUD around it.`,
+            id: `Domain regulasi Indonesia, yang saya implementasikan dan asersi, bukan sekadar saya baca: PPh 21 rezim TER, BPJS, perhitungan FIFO dengan penghitungan ulang mundur, laporan arus kas yang rekonsiliasi ke buku besar, penomoran rekam medis, PPDB. Kalau produkmu harus benar menurut aturan Indonesia, di situ biasanya letak mahalnya — bukan di CRUD-nya.`
+        },
+        "h.c.p1": { en: `Rombak — 262 properties on migrations`, id: `Rombak — 262 properti tentang migrasi` },
+        "h.c.p2": { en: `Payroll — PPh 21 TER`, id: `Payroll — PPh 21 TER` },
+        "h.c.p3": { en: `Buku — a reconciling cash flow statement`, id: `Buku — arus kas yang rekonsiliasi` },
+        "h.c.band": {
+            en: `<b>Typical engagement:</b> $50–85/hour, or a fixed price once I have seen the schema. A one-week rescue is usually enough to know which it should be.`,
+            id: `<b>Bentuk umum:</b> $50–85/jam, atau harga tetap setelah saya melihat skemanya. Penyelamatan satu minggu biasanya cukup untuk tahu mana yang lebih tepat.`
+        },
+
+        "h.rate.h2": { en: `Rates and how it works`, id: `Tarif dan cara kerjanya` },
+        "h.rate.p": {
+            en: `In US dollars, before the platform's fee if you hire me through one. Fixed price is better for both of us wherever the scope can be written down, because it puts the risk of my own estimate on me rather than on you.`,
+            id: `Dalam dolar AS, belum termasuk potongan platform kalau kamu menyewa lewat salah satunya. Harga tetap lebih baik untuk kita berdua di mana pun lingkupnya bisa dituliskan, karena risiko estimasi saya jatuh ke saya, bukan ke kamu.`
+        },
+        "h.rate.th1": { en: `Shape`, id: `Bentuk` },
+        "h.rate.th2": { en: `When it fits`, id: `Kapan cocok` },
+        "h.rate.th3": { en: `Rate`, id: `Tarif` },
+        "h.rate.r1a": { en: `Fixed scope`, id: `Lingkup tetap` },
+        "h.rate.r1b": {
+            en: `The outcome can be written as a sentence we would both recognise as done or not done.`,
+            id: `Hasilnya bisa ditulis dalam satu kalimat yang kita berdua sepakat sudah selesai atau belum.`
+        },
+        "h.rate.r1c": { en: `Quoted, 40% up front`, id: `Ditawarkan, 40% di muka` },
+        "h.rate.r2a": { en: `Hourly`, id: `Per jam` },
+        "h.rate.r2b": {
+            en: `An existing codebase, or work whose shape will change as we learn what is in there.`,
+            id: `Basis kode yang sudah ada, atau pekerjaan yang bentuknya berubah seiring kita tahu isinya.`
+        },
+        "h.rate.r2c": { en: `$45–85`, id: `$45–85` },
+        "h.rate.r3a": { en: `Monthly retainer`, id: `Retainer bulanan` },
+        "h.rate.r3b": {
+            en: `Ongoing maintenance, releases and a person who already knows the system.`,
+            id: `Perawatan berjalan, rilis, dan orang yang sudah mengenal sistemnya.`
+        },
+        "h.rate.r3c": { en: `From $1,800/mo`, id: `Mulai $1.800/bln` },
+        "h.rate.r4a": { en: `First call`, id: `Panggilan pertama` },
+        "h.rate.r4b": {
+            en: `Thirty minutes to find out whether I am the right person. Often I am not, and I will say so.`,
+            id: `Tiga puluh menit untuk tahu apakah saya orang yang tepat. Sering kali bukan, dan akan saya katakan.`
+        },
+        "h.rate.r4c": { en: `Free`, id: `Gratis` },
+
+        "h.no.h2": { en: `What I will not take on`, id: `Yang tidak saya ambil` },
+        "h.no.p": {
+            en: `Every lab on this site ships its limits as part of the lab. The same applies to me.`,
+            id: `Tiap lab di situs ini mencantumkan batasnya sebagai bagian dari lab itu sendiri. Begitu juga saya.`
+        },
+        "h.no.b1": { en: `I am not a designer.`, id: `Saya bukan desainer.` },
+        "h.no.s1": {
+            en: `I can build a clean, accessible interface from a design, or from nothing when the product is mostly mechanism. I cannot give you brand work, and a project whose success is mostly visual identity should go to someone whose portfolio is visual.`,
+            id: `Saya bisa membangun antarmuka yang rapi dan aksesibel dari sebuah desain, atau dari nol kalau produknya sebagian besar mekanisme. Saya tidak bisa mengerjakan brand, dan proyek yang keberhasilannya terutama identitas visual sebaiknya ke orang yang portofolionya visual.`
+        },
+        "h.no.b2": {
+            en: `Native iOS and Android are a bridge, not a speciality.`,
+            id: `iOS dan Android native adalah jembatan, bukan spesialisasi.`
+        },
+        "h.no.s2": {
+            en: `I write the platform channel when Flutter cannot reach something — an Android notification listener, a share target, signed release plumbing. A pure Swift or Kotlin codebase is not my strength and I would rather tell you that now than three weeks in.`,
+            id: `Saya menulis platform channel ketika Flutter tidak sampai — notification listener Android, share target, perkakas rilis bertanda tangan. Basis kode Swift atau Kotlin murni bukan kekuatan saya, dan saya lebih baik mengatakannya sekarang daripada tiga minggu kemudian.`
+        },
+        "h.no.b3": { en: `I integrate AI models, I do not train them.`, id: `Saya mengintegrasikan model AI, bukan melatihnya.` },
+        "h.no.s3": {
+            en: `Vision and language models in shipped products, with the cost, latency and failure handling that takes. Not model training, not research, and not a claim to accuracy I have not measured.`,
+            id: `Model visi dan bahasa di dalam produk yang sudah rilis, lengkap dengan penanganan biaya, latensi dan kegagalannya. Bukan pelatihan model, bukan riset, dan bukan klaim akurasi yang belum saya ukur.`
+        },
+        "h.no.b4": { en: `US working hours do not fit.`, id: `Jam kerja Amerika tidak cocok.` },
+        "h.no.s4": {
+            en: `Colombo is GMT+5:30. Europe, the Gulf and Southeast Asia overlap my day comfortably; US Pacific does not, and a role that needs four hours of daily overlap with California is one I would be bad at rather than one I would stretch to.`,
+            id: `Colombo di GMT+5:30. Eropa, Teluk dan Asia Tenggara beririsan nyaman dengan hari saya; Amerika bagian Pasifik tidak, dan pekerjaan yang butuh empat jam irisan harian dengan California adalah pekerjaan yang akan saya kerjakan dengan buruk, bukan yang akan saya paksakan.`
+        },
+        "h.no.b5": { en: `SEO that games rather than earns.`, id: `SEO yang mengakali, bukan yang mendapatkan.` },
+        "h.no.s5": {
+            en: `No link networks, no cloaking, no doorway pages. Programmatic pages have to be worth indexing on their own, and if the honest version of a page has nothing to say, the answer is not to generate it ten thousand times.`,
+            id: `Tidak ada jaringan tautan, tidak ada cloaking, tidak ada doorway page. Halaman programmatic harus layak diindeks atas kemampuannya sendiri, dan kalau versi jujur sebuah halaman tidak punya isi, jawabannya bukan membangkitkannya sepuluh ribu kali.`
+        },
+
+        "h.start.h2": { en: `Start here`, id: `Mulai dari sini` },
+        "h.start.p": {
+            en: `Tell me what is broken or what has to exist, and roughly when. If there is a repository, a staging URL or a <code>.har</code> file from your DevTools, send it — I would rather answer with something specific than with a rate card.`,
+            id: `Ceritakan apa yang rusak atau apa yang harus ada, dan kira-kira kapan. Kalau ada repositori, URL staging, atau berkas <code>.har</code> dari DevTools kamu, kirimkan — saya lebih suka menjawab dengan sesuatu yang spesifik daripada dengan daftar tarif.`
+        },
+        "h.start.mail": { en: `Email me`, id: `Kirim email` },
+        "h.start.li": { en: `LinkedIn`, id: `LinkedIn` },
+        "h.start.labs": { en: `Open the labs first`, id: `Buka labnya dulu` },
+        "h.start.b": { en: `Availability, stated plainly.`, id: `Ketersediaan, dinyatakan terus terang.` },
+        "h.start.s": {
+            en: `I hold a full-time role. Freelance work happens around it, which is why the number at the top of this page is fifteen hours a week and not forty. I would rather quote you a slower date I can hold than a fast one I cannot.`,
+            id: `Saya memegang pekerjaan penuh waktu. Pekerjaan freelance berjalan di sekitarnya, dan itulah kenapa angka di atas halaman ini lima belas jam seminggu, bukan empat puluh. Saya lebih baik menjanjikan tanggal yang lebih lambat tapi bisa saya pegang daripada yang cepat tapi tidak.`
+        },
+        "h.next.cv": { en: `← Back to the CV`, id: `← Kembali ke CV` },
+        "h.next.labs": { en: `Eleven labs you can open →`, id: `Sebelas lab yang bisa kamu buka →` },
+        "h.footer": {
+            en: `© 2026 Bias Satrio Putra. All rights reserved. Not open source — see <a href="../LICENSE">LICENSE</a>.`,
+            id: `© 2026 Bias Satrio Putra. Seluruh hak dilindungi. Bukan open source — lihat <a href="../LICENSE">LICENSE</a>.`
+        }
+    };
+    </script>
+    <script src="../case/case.js"></script>
+</body>
+
+</html>

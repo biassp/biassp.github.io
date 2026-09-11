@@ -425,6 +425,45 @@ try/catch; zero network egress scoped to the lab page; copyright header in every
   for the repositories fallback, when one had been removed and there are eight. Rewritten without
   a number — a count in a comment nothing checks will drift again.
 
+## The hire page (added 2026-09-11)
+- `hire/`. The CV is chronological and talks to a recruiter. A freelance client needs a different
+  page: what I sell, what it costs, what I refuse. Three services, because three is what the
+  portfolio can actually prove — SEO/programmatic, Flutter+Node product build, data correctness
+  and legacy PHP.
+- THE SPINE IS THE PROOF ROW. Under every service sits a row of links that run in the reader's
+  own browser. The claim and its evidence are one block deliberately: a proof that scrolls away
+  from the claim it supports stops being read as proof.
+- Reuses `../case/case.css` and `../case/case.js` rather than copying them — case.js already reads
+  `window.PAGE_I18N` generically. Only the service cards, rate table and proof rows are new CSS.
+- Rates are stated on the page rather than hidden behind "contact us". Grounded on 2026 market
+  research, positioned for an Asia-based specialist, and deliberately below the headline numbers
+  those sources quote, because those are what clients pay vetted platforms, not what a freelancer
+  without platform history lands.
+- HONEST LIMITS ARE A SECTION, not a footnote — five of them, including "US working hours do not
+  fit" with the timezone arithmetic, and "I hold a full-time role", which is why the availability
+  tile says fifteen hours a week and not forty. Overselling availability is the one lie on a page
+  like this that gets discovered at the worst possible moment.
+- The availability badge on the CV became the way in. `.nav-links` is `display:none` below the
+  breakpoint, so a nav link alone would have been invisible on a phone — which is most readers.
+
+## test:i18n now covers eight pages, not two (2026-09-11)
+- The case studies and the hire page use `window.PAGE_I18N` with BACKTICK entries. The brace
+  walker only tracked `'` and `"`, so it mis-balanced on template literals — which is why six
+  pages had never been checked and nobody noticed the check was narrow.
+- Two characters of fix (`|| ch === '\`'`) plus six config lines, and it immediately went red on
+  the page I had just written:
+  * `h.a.h3` carried `&amp;` in the dictionary for a `data-i18n` key. data-i18n writes
+    textContent, so the toggle would have rendered five literal characters.
+  * `h.c.li3` was `data-i18n` while its dictionary entry carried `<code>` markup. The tags would
+    have appeared as visible angle brackets the moment anyone pressed the language button.
+  Both are invisible to an English reader. Both would have been found by a stranger, in the other
+  language — which is the entire reason this check exists.
+- The five case pages passed unchanged. The check was worth widening anyway: they were never
+  proven, only unexamined.
+- ALSO CAUGHT BY HAND, not by a validator: the new page's lede claimed "5,826 assertions across
+  eleven applications". It is ten — Saku is a share-target demo with no suite. On a page whose
+  whole argument is that its numbers are checkable, an inflated one is the worst error available.
+
 ## Next / ideas (not yet done)
 - Fill in the About + Topics fields of each repo on GitHub. The CV now reads them
   live, so this is by far the cheapest way to improve how the site looks — every

@@ -519,9 +519,16 @@
   function formPayload() {
     var F = state.fx, f = state.form;
     var now = F ? F.meta.now : 0;
+    /* iat is a minute in the past because a token nobody has carried anywhere is
+       not the interesting case. exp is measured FROM iat, not from now: the field
+       is labelled "exp — iat" and row 12 bounds exp-iat against maxLifetimeSec,
+       so anchoring exp to now would silently add that minute to every lifetime
+       and put the refusal boundary sixty seconds below the endpoint's own
+       published maximum. Type 900 and 900 is what the checklist reads. */
     return {
       sub: f.sub, role: f.role, iss: f.iss, aud: f.aud,
-      iat: now - 60, exp: now + (parseInt(f.lifetime, 10) || 0), jti: F ? F.meta.revokedJti : 'jti_FIKTIF_a3f1'
+      iat: now - 60, exp: (now - 60) + (parseInt(f.lifetime, 10) || 0),
+      jti: F ? F.meta.revokedJti : 'jti_FIKTIF_a3f1'
     };
   }
 
@@ -771,11 +778,21 @@
       dc.appendChild(h('p', { class: 'note' }, h('b', { text: 'The same claim, twice, by two files that share no identifier. ' }),
         'Route A is the issuer\'s own verifier holding the key it imported. Route B is periksa.js, handed the ' +
         'token as a string and the public key as JWK JSON text.'));
+      /* A red pill and nothing else is the one thing this page must not ship.
+         The Periksa card names the row that refused; this cell did not, so a
+         payload the reader had just typed came back refused with the reason
+         reachable only from the console. */
+      var routeCell = function (r, tail) {
+        var cell = h('td', null, verdictPill(r.ok), h('div', { class: 'small', text: tail }));
+        /* r.reason already opens with the code, the way the Periksa card prints it. */
+        if (!r.ok) cell.appendChild(h('div', { class: 'small v-refused', text: r.reason }));
+        return cell;
+      };
       dc.appendChild(tableOf(['claim', 'route A — SAHIH_JOSE.verifyStrict', 'route B — SAHIH_PERIKSA.check', 'agree'], [
         h('tr', null,
           h('td', { text: 'this token\'s signature is over this signing input' }),
-          h('td', null, verdictPill(t.routeA.ok), h('div', { class: 'small', text: t.routeA.checks + ' checks' })),
-          h('td', null, verdictPill(t.routeB.ok), h('div', { class: 'small', text: t.routeB.checks + ' checks, route ' + t.routeB.route })),
+          routeCell(t.routeA, t.routeA.checks + ' checks'),
+          routeCell(t.routeB, t.routeB.checks + ' checks, route ' + t.routeB.route),
           h('td', null, t.routeA.ok === t.routeB.ok ? pill('agree', 'pinned') : pill('DIFFER', 'bad')))
       ], { prose: true, minWidth: '640px' }));
       dc.appendChild(h('p', { class: 'hint',

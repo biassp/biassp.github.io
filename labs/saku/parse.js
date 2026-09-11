@@ -113,15 +113,24 @@
       if (a > 12 && b <= 12) { day = a; mon = b; order = 'DD/MM (day > 12)'; }
       else if (b > 12 && a <= 12) { day = b; mon = a; order = 'MM/DD (day > 12)'; }
       else if (currency === 'USD') { day = b; mon = a; order = 'MM/DD (USD)'; }
+      // new Date() normalises 31/02 into 03 March rather than failing, so an
+      // isNaN guard can never fire. Read the fields back: only a date that
+      // survives the round trip is a real calendar date. Anything else falls
+      // through, and the signal list then honestly reports no usable date.
       var d = new Date(yr, mon - 1, day);
-      if (!isNaN(d.getTime())) return { at: d.getTime(), matched: m[0] + ' as ' + order };
+      if (d.getFullYear() === yr && d.getMonth() === mon - 1 && d.getDate() === day) {
+        return { at: d.getTime(), matched: m[0] + ' as ' + order };
+      }
     }
     m = text.match(/\b(\d{1,2})\s+([A-Za-z]{3})[a-z]*\s+(\d{2,4})\b/);
     if (m && typeof MONTHS[m[2].toLowerCase()] === 'number') {
       var y2 = parseInt(m[3], 10);
       if (y2 < 100) y2 += 2000;
-      var d2 = new Date(y2, MONTHS[m[2].toLowerCase()], parseInt(m[1], 10));
-      if (!isNaN(d2.getTime())) return { at: d2.getTime(), matched: m[0] };
+      var mo2 = MONTHS[m[2].toLowerCase()], day2 = parseInt(m[1], 10);
+      var d2 = new Date(y2, mo2, day2);
+      if (d2.getFullYear() === y2 && d2.getMonth() === mo2 && d2.getDate() === day2) {
+        return { at: d2.getTime(), matched: m[0] };
+      }
     }
     return { at: now, matched: null };
   }

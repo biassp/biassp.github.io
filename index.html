@@ -30,9 +30,27 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
+    <!-- Shipped as media="print" so it is not render-blocking: a stylesheet
+         still pending in the head also holds back every script after it,
+         including the reveal animator at the end of the body. That is how a
+         slow fonts.googleapis.com used to keep the entire CV at opacity 0 for
+         as long as the CDN took to answer. The system stack in `body` carries
+         the page until the real fonts arrive. -->
+    <link id="webfont" media="print"
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap"
         rel="stylesheet">
+    <noscript>
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+    </noscript>
+    <script>
+        (function () {
+            var l = document.getElementById('webfont');
+            if (!l) return;
+            function use() { l.media = 'all'; }
+            if (l.sheet) { use(); return; }   // already cached
+            l.addEventListener('load', use);
+        })();
+    </script>
 
     <style>
         :root {
@@ -48,6 +66,11 @@
             --accent: #6366f1;
             --accent-2: #22d3ee;
             --accent-3: #a855f7;
+            /* status colours for the Live / In-progress badges. Tokens, not
+               literals, so the light theme and the print sheet can darken them
+               — on white they were washing out to under 2:1. */
+            --ok: #34d399;
+            --warn: #fbbf24;
             --grad: linear-gradient(120deg, #6366f1 0%, #a855f7 50%, #22d3ee 100%);
             --shadow: 0 18px 50px -24px rgba(0, 0, 0, 0.85);
             --shadow-sm: 0 8px 24px -16px rgba(0, 0, 0, 0.8);
@@ -63,7 +86,15 @@
             --border-strong: rgba(15, 23, 42, 0.16);
             --text: #131a2e;
             --muted: #55618a;
-            --faint: #8891ad;
+            --faint: #5f6880;
+            /* the dark theme's accents are tuned for a near-black ground; on
+               white the cyan sat at 1.8:1, so every job date, project link and
+               status badge needs its own darker value here */
+            --accent: #4338ca;
+            --accent-2: #0e7490;
+            --accent-3: #7e22ce;
+            --ok: #047857;
+            --warn: #b45309;
             --shadow: 0 18px 50px -30px rgba(30, 41, 90, 0.35);
             --shadow-sm: 0 10px 26px -20px rgba(30, 41, 90, 0.4);
         }
@@ -129,11 +160,16 @@
             border-bottom: 1px solid var(--border);
         }
 
+        /* min-height, not height: the bar has to grow rather than clip when the
+           brand or the CTA needs a second line. At 390px the wordmark used to
+           render three lines with the first cut off above the bar. */
         .nav-inner {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            height: 66px;
+            gap: 10px;
+            min-height: 66px;
+            padding: 9px 0;
         }
 
         .brand {
@@ -143,6 +179,11 @@
             font-family: 'Space Grotesk', sans-serif;
             font-weight: 700;
             font-size: 1.02rem;
+            min-width: 0;
+        }
+
+        .brand-name {
+            white-space: nowrap;
         }
 
         .brand .dot {
@@ -157,10 +198,15 @@
             box-shadow: 0 6px 18px -6px var(--accent);
         }
 
+        /* wraps instead of squeezing the brand off the bar — the links reappear
+           at 900px and there is not always room for them on one line */
         .nav-links {
             display: flex;
             align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
             gap: 4px;
+            min-width: 0;
         }
 
         .nav-links a {
@@ -199,7 +245,11 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            flex: none;
         }
+
+        /* the CTA carries a long label on wide screens and a short one on phones */
+        .cta-short { display: none; }
 
         svg {
             display: block;
@@ -660,14 +710,18 @@
             gap: 6px;
             font-size: .72rem;
             font-weight: 600;
-            color: #34d399;
-            background: rgba(52, 211, 153, .12);
+            color: var(--ok);
+            background: color-mix(in srgb, var(--ok) 12%, transparent);
             padding: 3px 9px;
             border-radius: 100px;
             white-space: nowrap;
         }
 
-        .live .pulse { background: #34d399; box-shadow: 0 0 0 0 rgba(52, 211, 153, .6); }
+        .live .pulse { background: var(--ok); box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 60%, transparent); }
+
+        .live.warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); }
+
+        .live.warn .pulse { background: var(--warn); box-shadow: none; }
 
         .proj-body p {
             color: var(--muted);
@@ -912,21 +966,78 @@
             .port-grid { grid-template-columns: repeat(2, 1fr); }
             .grid-3 { grid-template-columns: 1fr; }
             .stats { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* The link row needs 990px to sit on one line beside the brand and the
+           three controls — measured. Below that it is hidden rather than
+           squeezing the brand off the bar; .nav-links also wraps, which catches
+           the case where the web font comes out wider than the fallback. */
+        @media (max-width: 989px) {
             .nav-links { display: none; }
         }
 
         @media (max-width: 560px) {
             .port-grid { grid-template-columns: 1fr; }
             .hero-photo, .hero-photo img { width: 210px; height: 210px; }
+            /* the "B" tile still identifies the page; the wordmark does not fit
+               next to three controls on a 320px bar */
+            .brand-name { display: none; }
+            .cta-long { display: none; }
+            .cta-short { display: inline; }
         }
 
         /* ---------- PRINT ---------- */
         @media print {
+            /* Re-point the palette itself rather than patching body. Chrome
+               prints with "Background graphics" OFF by default, so every colour
+               that only worked because a dark panel was painted behind it lands
+               on white paper: the toolbox tags used to print white-on-white and
+               the card headings black-on-navy. Re-declaring the tokens makes the
+               CV readable whether or not the reader turns backgrounds on.
+               html[data-theme] is needed as well as :root so this also beats the
+               light-theme block, which is equally specific and comes earlier. */
+            :root, html[data-theme] {
+                --bg: #fff;
+                --bg-soft: #fff;
+                --card: #fff;
+                --card-2: #f2f2f2;
+                --border: #ccc;
+                --border-strong: #999;
+                --text: #000;
+                --muted: #333;
+                --faint: #555;
+                --accent: #3730a3;
+                --accent-2: #0e7490;
+                --accent-3: #6d28d9;
+                --ok: #047857;
+                --warn: #b45309;
+                --shadow: none;
+                --shadow-sm: none;
+            }
             body::before, header.nav, .hero-cta, footer .soc, .proj-cover .blob,
             .repo-filters, .repo-note, .repo-skel { display: none !important; }
-            body { background: #fff; color: #000; }
             .card, .tl-card, .proj, .stat { box-shadow: none; border-color: #ccc; break-inside: avoid; }
+            /* The one row still under 4.5:1 on paper once the reader turns
+               "Background graphics" ON: small text in --accent-2 on its own 12%
+               tint of the same colour measures 4.08:1 composited onto white.
+               Dropping the tint and darkening the ink takes it to 9.74:1 in both
+               of Chrome's print modes, which is the point — a printed CV must
+               not depend on a setting the reader chose. */
+            .tl-time { background: none !important; color: #0b4a5e !important; }
             .grad, .stat .num, .num { -webkit-text-fill-color: #4338ca !important; }
+            /* the cover glyph is white on a .blob that print removes */
+            .proj-cover .glyph { color: var(--accent); }
+        }
+
+        /* ---------- REDUCED MOTION ---------- */
+        /* A visitor who asked the OS to stop animations still got 20 infinite
+           loops and a fade-in on 41 blocks. The reveal opacity has to be undone
+           here too, otherwise "no transition" would mean "never appears". */
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            .reveal, .bar span, body, .btn, .chip, .icon-btn, .proj, .card { transition: none !important; }
+            .js .reveal, .js .reveal.in { opacity: 1; transform: none; }
+            .pulse, .hero-photo .ring, .repo-skel .ln { animation: none !important; }
         }
     </style>
 </head>
@@ -937,7 +1048,7 @@
         <div class="wrap nav-inner">
             <a class="brand" href="#top">
                 <span class="dot">B</span>
-                <span>Bias Satrio Putra</span>
+                <span class="brand-name">Bias Satrio Putra</span>
             </a>
             <nav class="nav-links">
                 <a href="#about" data-i18n="nav.about">About</a>
@@ -954,7 +1065,8 @@
                 <button type="button" class="icon-btn" id="langToggle" aria-label="Switch language" title="Switch language" style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.82rem">ID</button>
                 <a class="btn btn-primary" href="#" onclick="window.print();return false;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                    <span data-i18n="btn.downloadcv">Download CV</span>
+                    <span class="cta-long" data-i18n="btn.downloadcv">Download CV</span>
+                    <span class="cta-short" data-i18n="btn.cv">CV</span>
                 </a>
             </div>
         </div>
@@ -986,7 +1098,7 @@
             <div class="hero-photo reveal">
                 <div class="ring"></div>
                 <img src="assets/images/profile-2026.png" alt="Bias Satrio Putra">
-                <div class="badge"><span class="pulse" style="background:#34d399;box-shadow:none"></span><span data-i18n="hero.badge">Colombo, LK</span></div>
+                <div class="badge"><span class="pulse" style="background:var(--ok);box-shadow:none"></span><span data-i18n="hero.badge">Colombo, LK</span></div>
             </div>
         </section>
 
@@ -1337,7 +1449,7 @@
                         <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 4v16M17 4v16M2 9h5M17 9h5M2 15h5M17 15h5"/></svg>
                     </div>
                     <div class="proj-body">
-                        <div class="proj-head"><h3>Movieca</h3><span class="live" style="color:#fbbf24;background:rgba(251,191,36,.12)" data-i18n-html="card.status.progress"><span class="pulse" style="background:#fbbf24;box-shadow:none"></span>In progress</span></div>
+                        <div class="proj-head"><h3>Movieca</h3><span class="live warn" data-i18n-html="card.status.progress"><span class="pulse"></span>In progress</span></div>
                         <p data-i18n="card.movieca.desc">A legal movie-discovery app with gamification — quests, XP, streaks, badges and referrals — built on Flutter with a Node back-end aggregating open content sources.</p>
                         <div class="proj-tags"><span>Flutter</span><span>Node.js</span><span>Gamification</span><span>REST API</span></div>
                         <span class="proj-link" style="color:var(--faint);cursor:default" data-i18n="card.faint.mobile">Cross-platform mobile app</span>
@@ -1364,7 +1476,7 @@
                         <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01M15 9h.01"/></svg>
                     </div>
                     <div class="proj-body">
-                        <div class="proj-head"><h3>FaceVibe</h3><span class="live" style="color:#fbbf24;background:rgba(251,191,36,.12)" data-i18n-html="card.status.progress"><span class="pulse" style="background:#fbbf24;box-shadow:none"></span>In progress</span></div>
+                        <div class="proj-head"><h3>FaceVibe</h3><span class="live warn" data-i18n-html="card.status.progress"><span class="pulse"></span>In progress</span></div>
                         <p data-i18n="card.facevibe.desc">A viral face-scan personality app for Android &amp; iOS — analyzes a selfie to generate a fun personality profile, built end-to-end in Flutter and targeting both app stores.</p>
                         <div class="proj-tags"><span>Flutter</span><span>Android + iOS</span><span>AI</span><span>Viral UX</span></div>
                         <span class="proj-link" style="color:var(--faint);cursor:default" data-i18n="card.faint.mobile">Cross-platform mobile app</span>
@@ -1377,7 +1489,7 @@
                         <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M3 9.5v5M21 9.5v5M6.5 12h11"/></svg>
                     </div>
                     <div class="proj-body">
-                        <div class="proj-head"><h3>RepBout</h3><span class="live" style="color:#fbbf24;background:rgba(251,191,36,.12)" data-i18n-html="card.status.progress"><span class="pulse" style="background:#fbbf24;box-shadow:none"></span>In progress</span></div>
+                        <div class="proj-head"><h3>RepBout</h3><span class="live warn" data-i18n-html="card.status.progress"><span class="pulse"></span>In progress</span></div>
                         <p data-i18n="card.repbout.desc">A head-to-head workout-battle app for Android — players challenge each other on training sets. Built in Flutter, with release signing material kept in a separate encrypted store rather than in the app repository.</p>
                         <div class="proj-tags"><span>Flutter</span><span>Android</span><span>Fitness</span><span>Signed release</span></div>
                         <a class="proj-link" href="case/repbout/"><span data-i18n="card.link.case">Case study</span>
@@ -1396,7 +1508,7 @@
             </div>
             <!-- counter strip + language chips: filled in by the live feed, hidden until then -->
             <div class="stats" id="repoStats" hidden>
-                <div class="stat"><div class="num" id="repoStatCount">0</div><div class="lbl" data-i18n="repos.stat.count">Public repositories</div></div>
+                <div class="stat"><div class="num" id="repoStatCount">0</div><div class="lbl" data-i18n="repos.stat.count">Repositories shown</div></div>
                 <div class="stat"><div class="num" id="repoStatLangs">0</div><div class="lbl" data-i18n="repos.stat.langs">Languages used</div></div>
                 <div class="stat"><div class="num" id="repoStatStars">0</div><div class="lbl" data-i18n="repos.stat.stars">Total stars</div></div>
                 <div class="stat"><div class="num" id="repoStatForks">0</div><div class="lbl" data-i18n="repos.stat.forks">Total forks</div></div>
@@ -1671,7 +1783,6 @@
             if (!statsBox || !filters || !empty || !note) return;
 
             var API = 'https://api.github.com/users/biassp/repos?per_page=100&sort=pushed';
-            var PROFILE = 'https://github.com/biassp?tab=repositories';
             var CACHE_KEY = 'gh_repos_v1';
             var TTL = 6 * 60 * 60 * 1000;          // 6 hours
             var STALE_OK = 30 * 24 * 60 * 60 * 1000; // last resort before the hardcoded cards
@@ -1748,6 +1859,39 @@
 
             var FALLBACK_HTML = grid.innerHTML;  // stash before we touch anything
             var live = false;                    // true once real data is on screen
+
+            // The note has to name the source that is actually on screen. It
+            // used to read "Live from the GitHub API ... cached for 6 hours"
+            // over a month-old copy served after the call had failed — the one
+            // sentence on a CV built around checkable claims that wasn't true.
+            var noteKey = null;
+            var noteAge = 0;
+
+            function fill(str, n) { return str.replace('{n}', n); }
+
+            function paintNote() {
+                // the dictionary lives in a later <script>; until it is parsed
+                // the markup's own wording stands, which is honest either way
+                if (!noteKey || typeof I18N === 'undefined' || !I18N[noteKey]) return;
+                var lang = document.documentElement.lang === 'id' ? 'id' : 'en';
+                var pick = function (key) {
+                    var d = I18N[key];
+                    return d && typeof d[lang] === 'string' ? d[lang] : (d ? d.en : '');
+                };
+                var html = pick(noteKey);
+                if (noteKey === 'repos.note.stale') {
+                    var hours = Math.floor(noteAge / 3600000);
+                    var age = hours < 48 ? fill(pick('repos.age.hours'), hours)
+                                         : fill(pick('repos.age.days'), Math.floor(noteAge / 86400000));
+                    html = html.replace('{age}', age);
+                }
+                note.innerHTML = html;
+            }
+
+            function setNote(key, age) { noteKey = key; noteAge = age || 0; paintNote(); }
+
+            // the language toggle calls this back so the note follows the page
+            window.cvRepaintRepoNote = paintNote;
 
             // ---- helpers ----
             var ESCAPE = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
@@ -1940,7 +2084,7 @@
                 applyFilter(chip.getAttribute('data-lang'));
             });
 
-            function render(repos) {
+            function render(repos, staleAge) {
                 var keep = live ? activeLang() : '*';   // don't drop the user's chip on a refresh
                 var list = sorted(repos);
                 var html = '';
@@ -1949,8 +2093,7 @@
                 renderStats(list);
                 renderChips(list);
                 empty.hidden = true;
-                note.innerHTML = 'Live from the <a href="https://docs.github.com/rest" target="_blank" rel="noopener">GitHub API</a>' +
-                    ' — forks and archived repos filtered out, cached in your browser for 6 hours.';
+                setNote(staleAge ? 'repos.note.stale' : 'repos.note.live', staleAge);
                 live = true;
                 if (keep !== '*') applyFilter(keep);
             }
@@ -1971,25 +2114,28 @@
             function fallback() {
                 if (live) return;
                 var stale = readCache(STALE_OK);
-                if (stale) { render(stale); return; }
+                if (stale) { render(stale, cacheAge); return; }
                 grid.innerHTML = FALLBACK_HTML;
                 statsBox.hidden = true;
                 filters.hidden = true;
                 empty.hidden = true;
-                note.innerHTML = 'GitHub’s API is out of reach right now (it allows 60 unauthenticated requests ' +
-                    'per hour). Showing a hand-picked selection — browse everything at ' +
-                    '<a href="' + PROFILE + '" target="_blank" rel="noopener">github.com/biassp</a>.';
+                setNote('repos.note.down');
             }
 
             // ---- cache ----
+            var cacheAge = 0;   // age of whatever readCache last handed back, in ms
+
             function readCache(maxAge) {
                 try {
                     var raw = localStorage.getItem(CACHE_KEY);
                     if (!raw) return null;
                     var box = JSON.parse(raw);
                     if (!box || typeof box.at !== 'number') return null;
-                    if (Date.now() - box.at > maxAge) return null;
-                    return normalize(box.repos);
+                    var age = Date.now() - box.at;
+                    if (age > maxAge) return null;
+                    var repos = normalize(box.repos);
+                    if (repos) cacheAge = age;
+                    return repos;
                 } catch (err) { return null; }
             }
 
@@ -2010,15 +2156,25 @@
                     request = fetch(API, { headers: { 'Accept': 'application/vnd.github+json' } });
                 } catch (err) { fallback(); return; }
                 if (!request || typeof request.then !== 'function') { fallback(); return; }
+
+                // A captive portal or a stalled mobile link accepts the
+                // connection and then never answers, so neither .then nor
+                // .catch ever runs and the six skeletons shimmer forever over a
+                // grid whose hand-written cards showSkeleton() already wiped.
+                // Give the request a deadline of its own.
+                var timer = setTimeout(function () { timer = null; fallback(); }, 6000);
+                function settled() { if (timer) { clearTimeout(timer); timer = null; } }
+
                 request.then(function (res) {
                     if (!res || !res.ok) throw new Error('HTTP ' + (res && res.status));
                     return res.json();
                 }).then(function (payload) {
                     var repos = normalize(payload);
                     if (!repos) throw new Error('unexpected payload');
+                    settled();
                     writeCache(repos);
                     render(repos);
-                })['catch'](function () { fallback(); });
+                })['catch'](function () { settled(); fallback(); });
             })();
         })();
     </script>
@@ -2041,6 +2197,7 @@
             "nav.skills": { en: "Skills", id: "Keahlian" },
             "nav.education": { en: "Education", id: "Pendidikan" },
             "btn.downloadcv": { en: "Download CV", id: "Unduh CV" },
+            "btn.cv": { en: "CV", id: "CV" },
 
             "hero.eyebrow": { en: "<span class=\"pulse\"></span>Available for opportunities", id: "<span class=\"pulse\"></span>Terbuka untuk peluang baru" },
             "hero.title": { en: "Hi, I'm <span class=\"grad\">Bias Satrio Putra</span>", id: "Halo, saya <span class=\"grad\">Bias Satrio Putra</span>" },
@@ -2104,7 +2261,7 @@
             "port.head.sub": { en: "Products I've designed, built & deployed to production", id: "Produk yang saya rancang, bangun & rilis ke produksi" },
 
             "card.status.live": { en: "<span class=\"pulse\"></span>Live", id: "<span class=\"pulse\"></span>Aktif" },
-            "card.status.progress": { en: "<span class=\"pulse\" style=\"background:#fbbf24;box-shadow:none\"></span>In progress", id: "<span class=\"pulse\" style=\"background:#fbbf24;box-shadow:none\"></span>Dalam proses" },
+            "card.status.progress": { en: "<span class=\"pulse\"></span>In progress", id: "<span class=\"pulse\"></span>Dalam proses" },
             "card.link.demo": { en: "Live demo", id: "Demo langsung" },
             "card.link.source": { en: "Source", id: "Kode sumber" },
             "card.link.visit": { en: "Visit product", id: "Kunjungi produk" },
@@ -2132,7 +2289,14 @@
 
             "repos.head.title": { en: "Open-Source & Repositories", id: "Open-Source & Repositori" },
             "repos.head.sub": { en: "Public projects &amp; code on GitHub — <a href=\"https://github.com/biassp?tab=repositories\" target=\"_blank\" rel=\"noopener\" style=\"color:var(--accent-2);font-weight:600\">github.com/biassp</a>", id: "Proyek &amp; kode publik di GitHub — <a href=\"https://github.com/biassp?tab=repositories\" target=\"_blank\" rel=\"noopener\" style=\"color:var(--accent-2);font-weight:600\">github.com/biassp</a>" },
-            "repos.stat.count": { en: "Public repositories", id: "Repositori publik" },
+            "repos.stat.count": { en: "Repositories shown", id: "Repositori ditampilkan" },
+            /* written by the feed, not by the markup, so nothing carries these
+               keys as a data-i18n attribute — paintNote() reads them directly */
+            "repos.note.live": { en: "Live from the <a href=\"https://docs.github.com/rest\" target=\"_blank\" rel=\"noopener\">GitHub API</a> — forks and archived repos filtered out, cached in your browser for 6 hours.", id: "Langsung dari <a href=\"https://docs.github.com/rest\" target=\"_blank\" rel=\"noopener\">GitHub API</a> — fork dan repo yang diarsipkan disaring, di-cache di peramban Anda selama 6 jam." },
+            "repos.note.stale": { en: "GitHub\u2019s API is out of reach right now — showing a copy cached in your browser {age}. Browse everything at <a href=\"https://github.com/biassp?tab=repositories\" target=\"_blank\" rel=\"noopener\">github.com/biassp</a>.", id: "API GitHub sedang tidak dapat dijangkau — menampilkan salinan yang di-cache di peramban Anda {age}. Jelajahi semuanya di <a href=\"https://github.com/biassp?tab=repositories\" target=\"_blank\" rel=\"noopener\">github.com/biassp</a>." },
+            "repos.note.down": { en: "GitHub\u2019s API is out of reach right now (it allows 60 unauthenticated requests per hour). Showing a hand-picked selection — browse everything at <a href=\"https://github.com/biassp?tab=repositories\" target=\"_blank\" rel=\"noopener\">github.com/biassp</a>.", id: "API GitHub sedang tidak dapat dijangkau (hanya mengizinkan 60 permintaan tanpa autentikasi per jam). Menampilkan sebagian pilihan — jelajahi semuanya di <a href=\"https://github.com/biassp?tab=repositories\" target=\"_blank\" rel=\"noopener\">github.com/biassp</a>." },
+            "repos.age.hours": { en: "{n} hours ago", id: "{n} jam lalu" },
+            "repos.age.days": { en: "{n} days ago", id: "{n} hari lalu" },
             "repos.stat.langs": { en: "Languages used", id: "Bahasa digunakan" },
             "repos.stat.stars": { en: "Total stars", id: "Total bintang" },
             "repos.stat.forks": { en: "Total forks", id: "Total fork" },
@@ -2214,6 +2378,9 @@
                 if (I18N.meta_desc && I18N.meta_desc[lang]) setMeta('meta[name="description"]', I18N.meta_desc[lang]);
                 if (I18N.meta_ogtitle && I18N.meta_ogtitle[lang]) setMeta('meta[property="og:title"]', I18N.meta_ogtitle[lang]);
                 if (I18N.meta_ogdesc && I18N.meta_ogdesc[lang]) setMeta('meta[property="og:description"]', I18N.meta_ogdesc[lang]);
+
+                // the repositories note is written by the feed, after this runs
+                if (typeof window.cvRepaintRepoNote === 'function') window.cvRepaintRepoNote();
 
                 var btn = document.getElementById('langToggle');
                 if (btn) btn.textContent = lang === 'en' ? 'ID' : 'EN';

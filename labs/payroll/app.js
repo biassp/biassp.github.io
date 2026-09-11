@@ -1063,14 +1063,26 @@
         'tangga hari libur bertumpu pada jam kedelapan. Angka di kolom kanan dihitung dari upah sebulan ',
         D.rupiah(upah) + '.'));
     var lrows = [];
-    for (var j = 1; j <= 11; j++) {
+    var maksKerja = D.LEMBUR_HARI_KERJA.maksJam;
+    var maksLibur = D.LEMBUR_HARI_LIBUR.maksJam;
+    /* The ladder runs as far as the REST-DAY cap, because that is the taller of
+     * the two. The working-day columns stop four hours earlier: past PP 35/2021
+     * Pasal 26 ayat (1) the engine has no rate and throws, and quite rightly —
+     * so those cells say why the hour is unpriced instead of asking for a price
+     * that does not exist. */
+    for (var j = 1; j <= maksLibur; j++) {
       (function (j) {
+        var kerja = j <= maksKerja
+          ? [td(j === 1 ? '1,5x' : '2x'),
+             tdNum(D.bobotLembur(j, false) / 100 + 'x'),
+             tdRp(D.upahLembur(upah, j, false))]
+          : [td(h('span', { class: 'small sub', text: 'di luar batas ' + maksKerja + ' jam (PP 35/2021 Pasal 26 ayat (1))' })),
+             tdNum('\u2014'),
+             tdNum('\u2014')];
         lrows.push(h('tr', null,
           tdNum(j),
-          td(j === 1 ? '1,5x' : '2x'),
-          tdNum(D.bobotLembur(j, false) / 100 + 'x'),
-          tdRp(D.upahLembur(upah, j, false)),
-          td(j <= 8 ? '2x' : (j === 9 ? '3x' : '4x')),
+          kerja[0], kerja[1], kerja[2],
+          td(j <= D.LEMBUR_HARI_LIBUR.blokDasar ? '2x' : (j === D.LEMBUR_HARI_LIBUR.blokDasar + 1 ? '3x' : '4x')),
           tdNum(D.bobotLembur(j, true) / 100 + 'x'),
           tdRp(D.upahLembur(upah, j, true))));
       })(j);

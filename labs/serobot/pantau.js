@@ -172,8 +172,17 @@
 
   NS.rafAda = function () { return typeof root.requestAnimationFrame === 'function'; };
 
+  /* The monitor is meant to run for as long as the page is open, so the sample
+     buffer is bounded: at sixty frames a second an unbounded array is both a
+     leak and, worse, a sort inside a render that would itself become a gap.
+     The figures that must stay exact over the WHOLE session — the longest gap,
+     the count over 100 ms, the frame count — are accumulated as they arrive and
+     never read from the buffer. Only the percentiles come from samples, and
+     they say so when the buffer has wrapped. */
+  var SAMPEL = 12000;
+
   NS.rafMulai = function () {
-    var h = { jalan: true, gaps: [], frames: 0, ada: NS.rafAda() };
+    var h = { jalan: true, gaps: [], frames: 0, max: 0, over100: 0, dibuang: 0, ada: NS.rafAda() };
     if (!h.ada) return h;
     var last = null;
     function frame() {
@@ -183,7 +192,13 @@
          human notices. */
       Promise.resolve().then(function () {
         var t = root.performance ? root.performance.now() : 0;
-        if (last !== null) h.gaps.push(t - last);
+        if (last !== null) {
+          var d = t - last;
+          h.gaps.push(d);
+          if (h.gaps.length > SAMPEL) { h.gaps.shift(); h.dibuang = h.dibuang + 1; }
+          if (d > h.max) h.max = d;
+          if (d > 100) h.over100 = h.over100 + 1;
+        }
         last = t;
         h.frames = h.frames + 1;
         if (h.jalan) root.requestAnimationFrame(frame);
@@ -193,20 +208,30 @@
     return h;
   };
 
-  NS.rafSelesai = function (h) {
-    var out = { ada: !!(h && h.ada), frames: 0, max: 0, p95: 0, median: 0, over100: 0 };
-    if (!h) return out;
-    h.jalan = false;
-    if (!h.ada) return out;
-    var g = h.gaps.slice().sort(function (a, b) { return a - b; });
-    var i;
+  function ringkas(h) {
+    var out = { ada: !!(h && h.ada), frames: 0, max: 0, p95: 0, median: 0, over100: 0, sampel: 0, penuh: false };
+    if (!h || !h.ada) return out;
     out.frames = h.frames | 0;
+    out.max = Math.round(h.max);
+    out.over100 = h.over100 | 0;
+    var g = h.gaps.slice().sort(function (a, b) { return a - b; });
+    out.sampel = g.length;
+    out.penuh = (h.dibuang | 0) > 0;
     if (!g.length) return out;
-    for (i = 0; i < g.length; i++) if (g[i] > 100) out.over100++;
-    out.max = Math.round(g[g.length - 1]);
     out.median = Math.round(g[Math.floor((g.length - 1) / 2)]);
     out.p95 = Math.round(g[Math.min(g.length - 1, Math.floor(g.length * 0.95))]);
     return out;
+  }
+
+  /* Read the monitor WITHOUT stopping it. A one-shot summary taken when the
+     boot chain ends describes a session the visitor has not started yet, and a
+     panel that then keeps calling it "every demonstration on this page" is
+     claiming coverage of runs that were never measured. */
+  NS.rafBaca = function (h) { return ringkas(h); };
+
+  NS.rafSelesai = function (h) {
+    if (h) h.jalan = false;
+    return ringkas(h);
   };
 
   /* ------------------------------------------------------------ the squad */

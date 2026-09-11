@@ -230,7 +230,7 @@
      * in this tab, so exactly one tab may post; the others are read-only and the
      * context bar says so. See St.lock. */
     tulis: true,
-    tabId: 'T' + Date.now().toString(36) + '-' + Math.floor(Math.random() * 1e9).toString(36),
+    tabId: St.tabId(),
     lockPemilik: null,
     lockPesan: '',
     lockBebas: false,
@@ -2432,12 +2432,24 @@
     /* Both sides of the margin have to be on the same tax base and both sides
      * have to be net of returns. Revenue is the DPP the entry carries (never the
      * PPN-inclusive nilaiJual) and a retur penjualan subtracts from revenue AND
-     * from cost, because a cancelled sale is not profit. */
+     * from cost, because a cancelled sale is not profit.
+     *
+     * Every movement lands in EXACTLY ONE itemised column, and the ones with no
+     * column of their own land in "Lainnya" — the book's opening balance, retur
+     * pembelian, and goods still in TRANSIT when the month ended. Without that
+     * bucket the row simply did not add up: March opened at Rp0, bought Rp56,6
+     * juta, sold Rp95,6 juta at cost and closed at Rp247,9 juta, which is a
+     * statement that Rp286,8 juta of stock appeared from nowhere. The closing
+     * column was right all along — it is masuk − keluar over every entry — so
+     * what was missing was not a number but a column to put it in. */
     var mut = {}, s = sortedEntries();
     for (i = 0; i < s.length; i++) {
       var e = s[i], per = D.periodeOf(e.tgl), hh = H.hasil[e.id];
-      if (!mut[per]) mut[per] = { masuk: 0, keluar: 0, hpp: 0, jual: 0, bruto: 0, beli: 0, adj: 0 };
+      if (!mut[per]) mut[per] = { masuk: 0, keluar: 0, hpp: 0, jual: 0, bruto: 0, beli: 0, adj: 0, lain: 0 };
       if (!hh) continue;
+      /* One sign rule for the whole loop: whatever moves the closing balance is
+       * exactly what the itemised columns have to account for. */
+      var gerak = e.arah > 0 ? hh.nilai : -hh.nilai;
       if (e.arah > 0) mut[per].masuk += hh.nilai; else mut[per].keluar += hh.nilai;
       if (e.jenis === 'jual') {
         mut[per].hpp += hh.nilai;
@@ -2450,18 +2462,21 @@
         mut[per].bruto -= (e.nilaiJual || 0);
       }
       if (e.jenis === 'terima') mut[per].beli += hh.nilai;
-      if (e.jenis === 'adjust') mut[per].adj += e.arah * hh.nilai;
+      else if (e.jenis === 'adjust') mut[per].adj += gerak;
+      else if (e.jenis !== 'jual' && e.jenis !== 'retur-jual') mut[per].lain += gerak;
     }
     var perList = Object.keys(mut).sort();
-    var rows2 = [], saldo = 0;
+    var rows2 = [], saldo = 0, selisihMaks = 0;
     for (i = 0; i < perList.length; i++) {
       var m = mut[perList[i]];
       var awal = saldo;
       saldo = saldo + m.masuk - m.keluar;
+      var sisa = saldo - (awal + m.beli - m.hpp + m.adj + m.lain);
+      if (Math.abs(sisa) > Math.abs(selisihMaks)) selisihMaks = sisa;
       var laba = m.jual - m.hpp;
       rows2.push(h('tr', null,
         h('td', { text: D.periodeLabel(perList[i]) }),
-        tdRp(awal), tdRp(m.beli), tdRp(m.hpp), tdRp(m.adj),
+        tdRp(awal), tdRp(m.beli), tdRp(m.hpp), tdRp(m.adj), tdRp(m.lain),
         tdRp(saldo),
         tdRp(m.bruto),
         tdRp(m.jual),
@@ -2472,12 +2487,21 @@
       h('h3', { text: 'Mutasi dan laba kotor per bulan' }),
       h('p', { class: 'note' },
         'Saldo awal setiap bulan adalah saldo akhir bulan sebelumnya, dihitung dari buku yang sama — ',
-        'bukan angka yang disalin. Metode ', h('b', { text: state.metode === 'fifo' ? 'FIFO' : 'rata-rata' }),
+        'bukan angka yang disalin. ', h('b', { text: 'Lainnya' }), ' memuat mutasi yang tidak punya kolom ',
+        'sendiri: saldo awal buku per 1 Maret 2026, retur pembelian ke supplier, dan barang yang masih ',
+        'di TRANSIT saat bulan berganti. Metode ', h('b', { text: state.metode === 'fifo' ? 'FIFO' : 'rata-rata' }),
         '; ganti metode di bilah konteks dan kolom HPP serta laba kotornya akan bergeser.'));
     mutCard.appendChild(tableOf(['Periode', { label: 'Persediaan awal', num: 1 }, { label: 'Pembelian', num: 1 },
-      { label: 'HPP neto retur', num: 1 }, { label: 'Penyesuaian', num: 1 }, { label: 'Persediaan akhir', num: 1 },
+      { label: 'HPP neto retur', num: 1 }, { label: 'Penyesuaian', num: 1 }, { label: 'Lainnya', num: 1 },
+      { label: 'Persediaan akhir', num: 1 },
       { label: 'Penjualan bruto', num: 1 }, { label: 'Penjualan DPP', num: 1 }, { label: 'Laba kotor', num: 1 }, { label: 'Margin', num: 1 }],
-      rows2, { minWidth: '1080px' }));
+      rows2, { minWidth: '1180px' }));
+    /* The point of the Lainnya column is that this line can be printed at all,
+     * and printed from the rendered numbers rather than asserted in prose. */
+    mutCard.appendChild(h('p', { class: 'hint' },
+      'Setiap baris tutup: ', h('b', { text: 'awal + pembelian − HPP + penyesuaian + lainnya = akhir' }),
+      '. Selisih terbesar di antara ' + D.angka(rows2.length) + ' baris di atas: ',
+      h('b', { text: D.rupiah(selisihMaks) }), '.'));
     var lkT = L.labaKotor(H);
     mutCard.appendChild(h('p', { class: 'hint' },
       'Laba kotor di sini adalah ', h('b', { text: 'penjualan DPP − HPP' }), ', keduanya neto retur. ',
@@ -2732,6 +2756,57 @@
     });
   }
 
+  /* sessionStorage alone cannot tell a reload from a duplicated tab, and that
+   * distinction is the whole point of the lock. Duplicating a tab COPIES
+   * sessionStorage into the new context, so the duplicate presents the
+   * incumbent's own id, the "is this lock already mine?" test passes, and both
+   * tabs mint the same nota number — exactly what pesanKunci() warns about.
+   * Measured: two tabs, same session id, neither showing the read-only banner.
+   *
+   * Identity cannot settle it, so liveness does. A reload leaves nobody behind
+   * to answer; a duplicate leaves the original running. The incumbent therefore
+   * answers for its own id, and whoever hears an answer for the id it is using
+   * knows it is the copy and steps down. BroadcastChannel never delivers to the
+   * sender, so a tab cannot answer itself.
+   *
+   * Where BroadcastChannel is missing the lock behaves exactly as before: the
+   * duplicate case goes unnoticed, which is the bug this guards, not a new one. */
+  var kanal = null;
+
+  function mulaiKanalKunci() {
+    if (typeof BroadcastChannel !== 'function') return;
+    try { kanal = new BroadcastChannel('gudang.kunci'); } catch (e) { kanal = null; return; }
+
+    kanal.onmessage = function (ev) {
+      var m = ev && ev.data;
+      if (!m) return;
+
+      /* Somebody booted claiming the id this tab is writing under. If this tab
+         holds the lock it is the original, and says so. */
+      if (m.halo && m.halo === state.tabId && state.tulis) {
+        try { kanal.postMessage({ punyaku: state.tabId }); } catch (e2) { }
+        return;
+      }
+
+      /* An answer for the id this tab is using, from a tab that is not this one:
+         this tab is the duplicate. Take a fresh id so the two stop colliding,
+         then drop to read-only the same way losing the lock already does. */
+      if (m.punyaku && m.punyaku === state.tabId) {
+        state.tabId = 'T' + Date.now().toString(36) + '-' + Math.floor(Math.random() * 1e9).toString(36);
+        try { sessionStorage.setItem('gudang.tab', state.tabId); } catch (e3) { }
+        if (state.tulis) {
+          state.tulis = false;
+          state.lockPemilik = m.punyaku;
+          state.lockPesan = pesanKunci(m.punyaku);
+          say('Tab ini adalah salinan dari tab yang sedang memposting. Tab ini sekarang hanya membaca.');
+          renderAll();
+        }
+      }
+    };
+
+    try { kanal.postMessage({ halo: state.tabId }); } catch (e4) { }
+  }
+
   function mulaiDenyutKunci() {
     if (lockTimer) return;
     lockTimer = setInterval(function () {
@@ -2773,6 +2848,7 @@
     }).then(function () {
       renderAll();
       mulaiDenyutKunci();
+      mulaiKanalKunci();
       setTimeout(runTests, 30);
     });
 

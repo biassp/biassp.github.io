@@ -858,6 +858,29 @@ tbody tr.clickable:hover {
     background: var(--card-2);
 }
 
+/* The row is picked by the button in its name cell, so the row has to light up
+   for the outline that lands there, exactly as it does under the pointer. */
+tbody tr.clickable:focus-within {
+    background: var(--card-2);
+}
+
+/* A name that acts like a link and is reached like one, without the weight of a
+   button sitting inside a table cell. */
+.linkbtn {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--link);
+    font: inherit;
+    font-size: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.linkbtn:hover {
+    text-decoration: underline;
+}
+
 td.num, th.num {
     text-align: right;
     font-family: var(--mono);

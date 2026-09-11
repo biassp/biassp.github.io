@@ -96,7 +96,7 @@
     $('themeBtn').setAttribute('aria-pressed', t === 'light' ? 'true' : 'false');
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', t === 'light' ? '#f5f7fc' : '#0b1020');
-    try { localStorage.setItem('saku_theme', t); } catch (e) { /* site data blocked; theme is session-only */ }
+    try { localStorage.setItem('saku.theme', t); } catch (e) { /* site data blocked; theme is session-only */ }
   }
   $('themeBtn').addEventListener('click', function () {
     var cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
@@ -830,7 +830,10 @@
         snack('Drain: ' + sum.applied + ' applied, ' + sum.conflicts + ' conflict(s), ' +
           sum.failed + ' failed, depth now ' + sum.depth + '.');
       }
-      return Promise.all([refreshOutbox(), renderInbox(), refreshConflicts()]);
+      // refreshIDB() is the only thing that repaints the IDB card's outbox and
+      // peer rows, so leaving it out left that card quoting pre-drain counts —
+      // contradicting the Outbox card directly beneath it.
+      return Promise.all([refreshIDB(), refreshOutbox(), renderInbox(), refreshConflicts()]);
     }).catch(function (err) {
       draining = false;
       syncLog('drain threw: ' + String(err && err.message || err), 'err');
@@ -1333,11 +1336,31 @@
     });
   }
 
+  /* The edit form is a view of the current parse, so it may never outlive one:
+     while it stayed populated after Clear, the next Commit quietly re-saved the
+     parse the visitor thought they had thrown away, with no raw text behind it. */
+  function resetEditFields() {
+    $('fAmount').value = '';
+    $('fCurrency').value = '';
+    $('fMerchant').value = '';
+    $('fCategory').value = '';
+    $('fDirection').value = 'out';
+    $('fDate').value = '';
+  }
+
+  // A photo with no text is still a capture worth committing, so it arms the
+  // button on its own; nothing parsed and nothing attached means nothing to save.
+  function armSave() {
+    $('saveEntryBtn').disabled = !parsed && !pendingPhoto;
+  }
+
   function doParse() {
     var text = $('pasteText').value;
     if (!text.trim()) {
       $('parseOut').hidden = true;
       parsed = null;
+      resetEditFields();
+      armSave();
       return;
     }
     parsed = P.parse(text);
@@ -1367,6 +1390,7 @@
     $('fMerchant').value = parsed.merchant || '';
     $('fDirection').value = parsed.direction;
     $('fDate').value = fmtDate(parsed.occurredAt);
+    armSave();
     S.merchantLookup(parsed.merchant).then(function (cat) {
       if (cat) {
         $('fCategory').value = cat;
@@ -1444,6 +1468,7 @@
     $('photoOut').hidden = false;
     downscaleInPage(f).then(function (out) {
       pendingPhoto = out;
+      armSave();
       var u = URL.createObjectURL(out.blob);
       var img = $('photoPreview');
       img.src = u;
@@ -1610,6 +1635,7 @@
   paintNet();
   paintSWPill();
   renderRules();
+  armSave();   // the form starts empty, so the button starts disabled
   registerSW();
 
   var startView = handleLandingParams();

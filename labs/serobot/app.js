@@ -250,7 +250,11 @@
     var el = document.activeElement;
     if (!el || el === document.body || !el.getAttribute) return null;
     var key = el.getAttribute('data-fkey');
-    if (!key) return null;
+    /* Focus parked on the panel by an earlier restore, because the control the
+       visitor pressed was disabled for the length of the run. Keep aiming at
+       that control so it gets focus back the moment the run re-enables it,
+       instead of leaving the reader stranded on the panel. */
+    if (!key) return (pendingKey && el === $('panel-' + state.view)) ? { key: pendingKey } : null;
     var snap = { key: key };
     try {
       if (el.selectionStart !== undefined && el.selectionStart !== null) {
@@ -268,17 +272,32 @@
     queue: 'queue:again', tests: 'tests:again'
   };
 
-  function restoreFocus(snap) {
-    if (!snap) return;
+  /* The key restoreFocus wanted and could not use. Remembered rather than
+     dropped, so that the control comes back when the run that disabled it ends. */
+  var pendingKey = null;
+
+  /* A disabled match is no match: the control that started the run is disabled
+     for the length of it, and focus() on a disabled element is a silent no-op —
+     which is how the anchor branch below never ran and every run ended on
+     <body>. */
+  function focusable(key) {
     var el = null;
-    try { el = document.querySelector('[data-fkey="' + snap.key + '"]'); } catch (e) { el = null; }
+    try { el = document.querySelector('[data-fkey="' + key + '"]'); } catch (e) { el = null; }
+    return (el && !el.disabled) ? el : null;
+  }
+
+  function restoreFocus(snap) {
+    if (!snap) { pendingKey = null; return; }
+    var el = focusable(snap.key);
     if (!el) {
+      pendingKey = snap.key;
       var anchor = FOCUS_ANCHOR[state.view];
-      if (anchor) { try { el = document.querySelector('[data-fkey="' + anchor + '"]'); } catch (e0) { el = null; } }
+      if (anchor) el = focusable(anchor);
       if (!el) el = $('panel-' + state.view);
       if (el) { try { el.focus({ preventScroll: true }); } catch (e1) { try { el.focus(); } catch (e1b) { /* gone */ } } }
       return;
     }
+    pendingKey = null;
     if (el === document.activeElement) return;
     try { el.focus({ preventScroll: true }); } catch (e2) { try { el.focus(); } catch (e3) { return; } }
     if (snap.selStart !== undefined) {
@@ -626,7 +645,15 @@
     var exp = m.expected;
 
     var sum = h('div', { class: 'summary' });
-    sum.appendChild(stat('writers, W', int(res.W), 'clamped from hardwareConcurrency ' + int(state.hc), 'exact'));
+    /* The clamp only produced this number when the visitor left the slider
+       alone. Saying "clamped from" over a value the clamp could never return —
+       in the ASSERTED styling, a screen below a line spelling the clamp out —
+       claims an assertion that is not being made. Mirrors the free-mode wording
+       in renderBebas. */
+    var cw = state.mesin ? state.mesin.clampW : 2;
+    sum.appendChild(res.W === cw
+      ? stat('writers, W', int(res.W), 'clamped from hardwareConcurrency ' + int(state.hc), 'exact')
+      : stat('writers, W', int(res.W), 'you moved this; the clamped count is ' + int(cw)));
     sum.appendChild(stat('rounds, n', int(res.n), 'each writer, each arm', 'exact'));
     sum.appendChild(stat('expected per arm', int(exp), 'W × n, multiplied twice by two files', 'exact'));
     sum.appendChild(stat('workers spawned', int(res.spawned), int(res.terminated) + ' terminated, ' + int(res.done) + ' reported done'));
@@ -1533,13 +1560,20 @@
       'detector that fails silently in exactly the arrangement a boot-time monitor is written in, which is why ' +
       'this one is not built that way.');
     p.appendChild(c3);
+    /* Re-read on every draw. The figures below are the only ones on this page
+       that are supposed to keep moving after boot. */
+    if (state.rafH) { try { state.raf = PANTAU.rafBaca(state.rafH); } catch (e5) { /* keep the last reading */ } }
     var r = state.raf;
     if (!r) { c3.appendChild(h('div', { class: 'empty', text: 'Still measuring: ' + state.step })); }
     else {
+      /* The percentiles come from a bounded buffer; the longest gap, the count
+         over 100 ms and the frame count do not, so only the percentiles get the
+         narrower wording once the buffer has wrapped. */
+      var win = r.penuh ? 'of the last ' + int(r.sampel) + ' frames' : '';
       var s3 = h('div', { class: 'summary' });
-      s3.appendChild(stat('longest gap', int(r.max) + ' ms', 'across the whole boot, the suite and every demonstration on this page', 'measured'));
-      s3.appendChild(stat('p95 gap', int(r.p95) + ' ms', 'ninety-fifth percentile', 'measured'));
-      s3.appendChild(stat('median gap', int(r.median) + ' ms', 'the ordinary frame', 'measured'));
+      s3.appendChild(stat('longest gap', int(r.max) + ' ms', 'across this whole session: boot, the suite and every run you have started', 'measured'));
+      s3.appendChild(stat('p95 gap', int(r.p95) + ' ms', 'ninety-fifth percentile' + (win ? ', ' + win : ''), 'measured'));
+      s3.appendChild(stat('median gap', int(r.median) + ' ms', 'the ordinary frame' + (win ? ', ' + win : ''), 'measured'));
       s3.appendChild(stat('gaps over 100 ms', int(r.over100), 'frames a human would notice', 'measured'));
       s3.appendChild(stat('frames observed', int(r.frames), 'animation callbacks that ran', 'measured'));
       c3.appendChild(s3);
@@ -2263,10 +2297,12 @@
     stage(demoAudit);
     return chain.then(function () {
       idle();
-      /* The monitor covered the whole of it — boot, the suite, and every
-         demonstration above — and the longest gap is whatever it is. */
-      state.raf = PANTAU.rafSelesai(state.rafH);
-      state.rafH = null;
+      /* The monitor is READ here, not stopped. Boot and the suite are the least
+         interesting part of the session: the runs the visitor starts by hand are
+         the ones the page's whole argument is about, and a monitor switched off
+         before those happen cannot report on them. renderLimits reads it again
+         every time the panel is drawn. */
+      state.raf = PANTAU.rafBaca(state.rafH);
       paintNet();
       renderIfVisible('limits');
       say('Every demonstration on this page has finished.');
@@ -2281,7 +2317,20 @@
       setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
     });
     var bt = $('testBadge');
-    if (bt) bt.addEventListener('click', function () { switchTab('tests'); });
+    /* switchTab alone is enough for the tab strip, which the visitor is already
+       looking at. From the header badge it is not: the strip sits a screenful
+       below the fold, so the panel changed and nothing the visitor could see
+       did. Focus moves too, so the keyboard path lands where the pointer one
+       does instead of staying on the badge. */
+    if (bt) bt.addEventListener('click', function () {
+      switchTab('tests');
+      var strip = $('tabs');
+      if (strip && strip.scrollIntoView) {
+        try { strip.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (e) { strip.scrollIntoView(); }
+      }
+      var tt = $('tab-tests');
+      if (tt) { try { tt.focus({ preventScroll: true }); } catch (e2) { try { tt.focus(); } catch (e3) { /* gone */ } } }
+    });
     if (root.SEROBOT_GUARD) root.SEROBOT_GUARD.onchange = paintNet;
     paintNet();
     paintTests();

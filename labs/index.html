@@ -374,16 +374,18 @@
             <h1 data-i18n-html="hero.title">Demos you can <span class="grad">open and test yourself</span></h1>
             <p class="lede" data-i18n="hero.lede">Ten applications that run entirely inside a single browser tab. No server
                 and no build step, and nine of the ten have no dependencies either — just plain HTML, CSS and
-                JavaScript. Rombak is the exception: it vendors SQLite, and says so on its own front page. The code is readable, and every
-                page runs its own assertions the moment it opens, so the claims are yours to verify, not merely to
-                trust. The same assertions are re-run automatically in CI on every change to the repository, in
+                JavaScript. Rombak is the exception: it vendors SQLite, and says so on its own front page. The code is readable, and nine of the
+                ten run their own assertions the moment they open, so the claims are yours to verify, not merely to
+                trust. Saku is the other exception: it is a share-target demo rather than an engine, and its Engine tab
+                reports what this browser actually supports instead. The same assertions are re-run automatically in CI on every change to the repository, in
                 real Chromium, against the very page you are looking at.</p>
 
             <div class="note" data-i18n-html="hero.note">
                 <b>Every piece of data here is fabricated.</b> No real patients, students, employees, suppliers or
                 companies — all of it is generated from seed numbers inside the code. No valid national ID, tax,
-                student or social-security numbers. Not a single page sends data anywhere; each one shows a
-                network-call counter that stays pinned at zero.
+                student or social-security numbers. Not a single page sends data anywhere; nine of the ten
+                show a network-call counter that stays pinned at zero. Saku has no counter — it is a share-target demo,
+                and what it captures is written to IndexedDB on this device and goes nowhere.
             </div>
 
             <div class="stats">
@@ -580,8 +582,9 @@
         </section>
 
         <footer>
-            <p data-i18n-html="foot.read"><b>How to read these demos.</b> Each page has a <i>Tests</i> tab that runs its
-                assertions in front of you, and a network-call counter up top. The numbers shown are computed from the
+            <p data-i18n-html="foot.read"><b>How to read these demos.</b> Nine of the ten have a <i>Tests</i> tab that runs
+                their assertions in front of you, and a network-call counter up top; Saku, the share-target demo, has an
+                <i>Engine</i> tab that probes this browser's capabilities live instead. The numbers shown are computed from the
                 data inside the tab, not read from stored values — that's exactly what's being tested.</p>
             <p data-i18n-html="foot.disclaimer">These are demos, not finished products, and not medical, tax or accounting
                 advice. Each application's limitations are written plainly in a <code>README.md</code> file inside its
@@ -623,12 +626,12 @@
                     "id": "Demo yang bisa kamu <span class=\"grad\">buka dan uji sendiri</span>"
                 },
                 "hero.lede": {
-                    "en": "Ten applications that run entirely inside a single browser tab. No server and no build step, and nine of the ten have no dependencies either — just plain HTML, CSS and JavaScript. Rombak is the exception: it vendors SQLite, and says so on its own front page. The code is readable, and every page runs its own assertions the moment it opens, so the claims are yours to verify, not merely to trust. The same assertions are re-run automatically in CI on every change to the repository, in real Chromium, against the very page you are looking at.",
-                    "id": "Sepuluh aplikasi yang berjalan penuh di dalam satu tab browser. Tanpa server dan tanpa langkah build, dan sembilan dari sepuluh juga tanpa dependensi — HTML, CSS dan JavaScript biasa. Rombak pengecualiannya: dia memuat SQLite, dan mengatakannya sendiri di halaman depannya. Kodenya bisa dibaca, dan setiap halaman menjalankan asersinya sendiri saat dibuka, jadi klaimnya bisa kamu periksa, bukan cuma dipercaya. Asersi yang sama dijalankan ulang otomatis di CI setiap kali repositorinya berubah, di Chromium sungguhan, terhadap halaman yang persis sama dengan yang kamu buka sekarang."
+                    "en": "Ten applications that run entirely inside a single browser tab. No server and no build step, and nine of the ten have no dependencies either — just plain HTML, CSS and JavaScript. Rombak is the exception: it vendors SQLite, and says so on its own front page. The code is readable, and nine of the ten run their own assertions the moment they open, so the claims are yours to verify, not merely to trust. Saku is the other exception: it is a share-target demo rather than an engine, and its Engine tab reports what this browser actually supports instead. The same assertions are re-run automatically in CI on every change to the repository, in real Chromium, against the very page you are looking at.",
+                    "id": "Sepuluh aplikasi yang berjalan penuh di dalam satu tab browser. Tanpa server dan tanpa langkah build, dan sembilan dari sepuluh juga tanpa dependensi — HTML, CSS dan JavaScript biasa. Rombak pengecualiannya: dia memuat SQLite, dan mengatakannya sendiri di halaman depannya. Kodenya bisa dibaca, dan sembilan dari sepuluh menjalankan asersinya sendiri saat dibuka, jadi klaimnya bisa kamu periksa, bukan cuma dipercaya. Saku pengecualian yang satunya: dia demo share-target, bukan mesin, dan tab Engine-nya melaporkan apa yang sebenarnya didukung browser ini. Asersi yang sama dijalankan ulang otomatis di CI setiap kali repositorinya berubah, di Chromium sungguhan, terhadap halaman yang persis sama dengan yang kamu buka sekarang."
                 },
                 "hero.note": {
-                    "en": "<b>Every piece of data here is fabricated.</b> No real patients, students, employees, suppliers or companies — all of it is generated from seed numbers inside the code. No valid national ID, tax, student or social-security numbers. Not a single page sends data anywhere; each one shows a network-call counter that stays pinned at zero.",
-                    "id": "<b>Semua data di sini fabrikasi.</b> Tidak ada pasien, siswa, karyawan, pemasok atau perusahaan nyata — semuanya dibangkitkan dari bilangan seed di dalam kode. Tidak ada NIK, NPWP, NISN atau nomor BPJS yang berlaku. Tidak ada satu pun halaman yang mengirim data ke mana pun; masing-masing menampilkan penghitung panggilan jaringan yang tetap di angka nol."
+                    "en": "<b>Every piece of data here is fabricated.</b> No real patients, students, employees, suppliers or companies — all of it is generated from seed numbers inside the code. No valid national ID, tax, student or social-security numbers. Not a single page sends data anywhere; nine of the ten show a network-call counter that stays pinned at zero. Saku has no counter — it is a share-target demo, and what it captures is written to IndexedDB on this device and goes nowhere.",
+                    "id": "<b>Semua data di sini fabrikasi.</b> Tidak ada pasien, siswa, karyawan, pemasok atau perusahaan nyata — semuanya dibangkitkan dari bilangan seed di dalam kode. Tidak ada NIK, NPWP, NISN atau nomor BPJS yang berlaku. Tidak ada satu pun halaman yang mengirim data ke mana pun; sembilan dari sepuluh menampilkan penghitung panggilan jaringan yang tetap di angka nol. Saku tidak punya penghitung itu — dia demo share-target, dan apa yang ditangkapnya ditulis ke IndexedDB di perangkat ini dan tidak ke mana-mana."
                 },
                 "stat.apps.lbl": {
                     "en": "applications",
@@ -875,8 +878,8 @@
                     "id": "Buka Saku →"
                 },
                 "foot.read": {
-                    "en": "<b>How to read these demos.</b> Each page has a <i>Tests</i> tab that runs its assertions in front of you, and a network-call counter up top. The numbers shown are computed from the data inside the tab, not read from stored values — that's exactly what's being tested.",
-                    "id": "<b>Cara membaca demo ini.</b> Tiap halaman punya tab <i>Uji</i> yang menjalankan asersinya di depan kamu, dan penghitung panggilan jaringan di bagian atas. Angka yang ditampilkan dihitung dari data di dalam tab, bukan dari nilai yang disimpan — itu justru yang diuji."
+                    "en": "<b>How to read these demos.</b> Nine of the ten have a <i>Tests</i> tab that runs their assertions in front of you, and a network-call counter up top; Saku, the share-target demo, has an <i>Engine</i> tab that probes this browser's capabilities live instead. The numbers shown are computed from the data inside the tab, not read from stored values — that's exactly what's being tested.",
+                    "id": "<b>Cara membaca demo ini.</b> Sembilan dari sepuluh punya tab <i>Uji</i> yang menjalankan asersinya di depan kamu, dan penghitung panggilan jaringan di bagian atas; Saku, si demo share-target, punya tab <i>Engine</i> yang memeriksa kemampuan browser ini secara langsung. Angka yang ditampilkan dihitung dari data di dalam tab, bukan dari nilai yang disimpan — itu justru yang diuji."
                 },
                 "foot.disclaimer": {
                     "en": "These are demos, not finished products, and not medical, tax or accounting advice. Each application's limitations are written plainly in a <code>README.md</code> file inside its own folder.",

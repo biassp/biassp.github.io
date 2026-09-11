@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<!--
+  Sepakat — part of the biassp.github.io portfolio
+  Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+  Not open source. Readable for evaluation only — copying, modification,
+  re-branding or redistribution is not permitted. See /LICENSE.
+  https://biassp.github.io/
+-->
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; worker-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sepakat — four phones, one job board, no server</title>
+    <meta name="description" content="Three ways to sync one offline-first job board across four devices — an op log, last-writer-wins, and CRDTs — run against the same hostile network in the browser tab, with 169 properties asserting which one loses your data.">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2032%2032%22%3E%3Crect%20width=%2232%22%20height=%2232%22%20rx=%227%22%20fill=%22%236366f1%22/%3E%3Cpath%20d=%22M11%2021.5c1.6%201%203.2%201.4%204.9%201.4%202.9%200%204.6-1.3%204.6-3.3%200-1.8-1.1-2.8-3.7-3.5l-1.5-.4c-1.2-.3-1.7-.7-1.7-1.4%200-.8.8-1.3%202-1.3%201.3%200%202.6.4%203.8%201.1l1.3-2.6c-1.4-.9-3-1.3-4.9-1.3-2.8%200-4.6%201.4-4.6%203.4%200%201.8%201.1%202.9%203.5%203.5l1.6.4c1.3.3%201.8.7%201.8%201.4%200%20.9-.9%201.4-2.3%201.4-1.4%200-2.8-.5-4-1.3z%22%20fill=%22%23fff%22/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="app.css">
+    <script src="guard.js"></script>
+</head>
+
+<body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="top">
+        <div class="brand">
+            <span class="mark" aria-hidden="true">SPKT</span>
+            <div>
+                <h1>Sepakat</h1>
+                <p class="sub">Four phones, one job board, no server in the middle.</p>
+            </div>
+        </div>
+        <div class="top-actions">
+            <span class="netbadge" id="netBadge" title="fetch / XMLHttpRequest / WebSocket / sendBeacon attempts made by this page since load">
+                <span class="dot" aria-hidden="true"></span><span id="netCount">network calls from this page: 0</span>
+            </span>
+            <button type="button" id="themeBtn" class="btn ghost" aria-label="Switch theme">Light</button>
+            <a class="btn ghost" href="../../">CV</a>
+        </div>
+    </header>
+
+    <main id="main">
+
+        <section class="lede">
+            <h2>Four technicians, one job board, and no server to referee it</h2>
+            <p>
+                Every phone holds the whole board and edits it offline. When two of them are
+                connected they gossip directly. Nothing is in charge, so there is no lock to take
+                and no moment when a write is <em>the</em> write — which means the interesting
+                question is not whether the phones end up agreeing. It is
+                <b>what they agree on, and whose work is missing from it</b>.
+            </p>
+            <p>
+                Three merge strategies run below against the <b>same</b> user actions, the same
+                latencies, the same duplicate deliveries and the same partition. The one that
+                loses data is not the one that looks broken: it converges quickly, quietly, and
+                on a number nobody typed.
+            </p>
+            <p class="mono" style="font-size:.78rem;color:var(--faint)">
+                Every technician, job and timestamp on this page is generated from a seeded
+                pseudo-random number generator in <code>net.js</code>. None of it is real, and none
+                of it leaves the tab.
+            </p>
+        </section>
+
+        <section class="picker" aria-labelledby="scen-h">
+            <h2 id="scen-h" class="picker-label">Pick something to go wrong</h2>
+            <div class="scen-btns" id="scenBtns"></div>
+            <div class="seed-row">
+                <label for="seedInput">or a random schedule, seed</label>
+                <input type="text" id="seedInput" inputmode="numeric" value="1907" aria-describedby="seed-hint">
+                <button type="button" class="btn" id="seedGo">Run it</button>
+                <button type="button" class="btn ghost" id="seedRandom">Surprise me</button>
+                <span id="seed-hint" class="mono" style="font-size:.74rem;color:var(--faint)">same seed, same run, on any machine</span>
+            </div>
+            <div class="blurb" id="blurb"></div>
+        </section>
+
+        <section class="verdicts" id="verdicts" aria-label="Result per strategy"></section>
+
+        <nav class="tabs" id="tabs" role="tablist" aria-label="Views">
+            <button type="button" role="tab" id="tab-boards" aria-controls="panel-boards" aria-selected="true" class="tab">Boards</button>
+            <button type="button" role="tab" id="tab-timeline" aria-controls="panel-timeline" aria-selected="false" tabindex="-1" class="tab">Timeline</button>
+            <button type="button" role="tab" id="tab-text" aria-controls="panel-text" aria-selected="false" tabindex="-1" class="tab">Text merge</button>
+            <button type="button" role="tab" id="tab-tests" aria-controls="panel-tests" aria-selected="false" tabindex="-1" class="tab">Properties</button>
+            <button type="button" role="tab" id="tab-how" aria-controls="panel-how" aria-selected="false" tabindex="-1" class="tab">How it works</button>
+        </nav>
+
+        <div class="panels">
+
+            <section id="panel-boards" role="tabpanel" aria-labelledby="tab-boards" tabindex="0" class="panel">
+                <h3>What each phone is showing when the dust settles</h3>
+                <p>
+                    Every column is one device's copy of the board after every message has been
+                    delivered and nothing is left in flight. A column outlined in red disagrees with
+                    the first one.
+                </p>
+                <div class="eng-switch" id="engSwitch" role="group" aria-label="Merge strategy"></div>
+                <div class="replicas" id="replicas"></div>
+                <p class="legend" id="boardLegend"></p>
+            </section>
+
+            <section id="panel-timeline" role="tabpanel" aria-labelledby="tab-timeline" tabindex="0" class="panel" hidden>
+                <h3>Every edit and every delivery, in order</h3>
+                <p>
+                    Drag the scrubber to walk the run. The boards on this tab are the state at that
+                    exact moment — including the middle of a partition, when two halves of the crew
+                    are looking at genuinely different boards and neither of them is wrong yet.
+                </p>
+                <div class="scrub">
+                    <label class="sr-only" for="scrubber">Position in the run</label>
+                    <input type="range" id="scrubber" min="0" max="0" value="0" step="1">
+                    <span class="pos" id="scrubPos">0 / 0</span>
+                    <button type="button" class="btn" id="scrubEnd">Jump to end</button>
+                </div>
+                <div class="replicas" id="tlReplicas"></div>
+                <div class="tl" id="tlLog" tabindex="0" role="group" aria-label="Event log"></div>
+            </section>
+
+            <section id="panel-text" role="tabpanel" aria-labelledby="tab-text" tabindex="0" class="panel" hidden>
+                <h3>The one field where a register is not good enough</h3>
+                <p>
+                    A job title is a single value, so a register handles it: one of the two edits
+                    wins, deterministically. A <em>report</em> is not — two technicians adding a line
+                    each should end up with both lines. Edit the two boxes below as if they were
+                    offline copies of the same note, then compare what the two strategies make of it.
+                </p>
+                <div class="text-grid">
+                    <div class="pane">
+                        <h4>Ari's copy</h4>
+                        <label class="sr-only" for="taA">Ari's copy of the note</label>
+                        <textarea id="taA" spellcheck="false"></textarea>
+                        <p class="note" id="noteA"></p>
+                    </div>
+                    <div class="pane">
+                        <h4>Budi's copy</h4>
+                        <label class="sr-only" for="taB">Budi's copy of the note</label>
+                        <textarea id="taB" spellcheck="false"></textarea>
+                        <p class="note" id="noteB"></p>
+                    </div>
+                </div>
+                <div class="result">
+                    <div class="res rga">
+                        <h4>Merged as a sequence (RGA)</h4>
+                        <div class="out" id="outRga"></div>
+                        <p class="why" id="whyRga"></p>
+                    </div>
+                    <div class="res lwwtext">
+                        <h4>Merged as one value (last writer wins)</h4>
+                        <div class="out" id="outLww"></div>
+                        <p class="why" id="whyLww"></p>
+                    </div>
+                </div>
+                <p class="legend">
+                    <b>Reset:</b> <button type="button" class="btn ghost" id="textReset">start both copies from the same note again</button>
+                </p>
+            </section>
+
+            <section id="panel-tests" role="tabpanel" aria-labelledby="tab-tests" tabindex="0" class="panel" hidden>
+                <h3>The properties, run in this tab</h3>
+                <p>
+                    Merge laws over random states, convergence over random schedules, and the
+                    quantities each engine is supposed to preserve or destroy. Roughly a quarter of
+                    them pass only when something <em>refuses</em>, <em>loses</em> or
+                    <em>diverges</em> — a foil that quietly started working would turn this red, and
+                    it is meant to.
+                </p>
+                <div class="stats" id="testStats"></div>
+                <div id="testGroups"></div>
+                <div class="fails" id="testFails"></div>
+            </section>
+
+            <section id="panel-how" role="tabpanel" aria-labelledby="tab-how" tabindex="0" class="panel" hidden>
+                <div class="prose">
+                    <h3>The three strategies</h3>
+                    <p>
+                        <b>Op log, applied on arrival.</b> Send what the user did; do it again on the
+                        other side. Every line of it is reasonable, and it fails on the two things a
+                        real network does constantly: a message delivered twice happens twice, and two
+                        messages that arrive in a different order at different phones leave those
+                        phones in different states — permanently, with nothing to bring them back.
+                    </p>
+                    <p>
+                        <b>Last writer wins.</b> Send state, keep the value with the higher timestamp.
+                        This genuinely converges: it is a real join, and duplicates and reordering are
+                        both harmless to it. What it cannot do is represent two writes. A concurrent
+                        edit is resolved by discarding one of them, silently, and which one survives
+                        is decided by whose phone clock was fast. <code>+3</code> and <code>+2</code>
+                        over a 5 becomes an 8 or a 7 — never a 10.
+                    </p>
+                    <p>
+                        <b>CRDT join.</b> Pick a type per field whose merge is commutative, associative
+                        and idempotent, so any order of any deliveries lands in the same place. What
+                        exists is an <b>OR-Set</b>; the numbers are a <b>PN-Counter</b>, which adds up
+                        per replica so nothing is ever overwritten; single-value fields are still
+                        registers, but stamped with a <b>hybrid logical clock</b> so that a reply can
+                        never be ordered before the message it answers, whatever the clocks say.
+                    </p>
+
+                    <h3>Where the CRDT column is also lossy, and why that is fine</h3>
+                    <p>
+                        The job title in the <code>crdt</code> column is a register too. Two people
+                        renaming a job concurrently still ends with one title. What changed is the
+                        reason: the winner is decided by causality rather than by clock skew, and the
+                        outcome is the same on every phone and in every replay.
+                    </p>
+                    <p>
+                        For a field where both edits genuinely have to survive, a register is the
+                        wrong type and no amount of better stamping fixes that — you need a sequence.
+                        That is the <b>Text merge</b> tab: the same two edits, once through an RGA and
+                        once through a register, side by side. A board field is not text just because
+                        it holds a string, and pretending otherwise is how a "CRDT sync" ends up
+                        losing exactly as much as the thing it replaced.
+                    </p>
+
+                    <h3>What the network is allowed to do</h3>
+                    <ul>
+                        <li><b>Reorder freely.</b> Latency is drawn per message per link, so later messages routinely overtake earlier ones.</li>
+                        <li><b>Deliver twice.</b> At-least-once, decided per link — one phone can see a message twice while its neighbour sees it once.</li>
+                        <li><b>Hold traffic.</b> A partition defers everything crossing it until the link returns.</li>
+                        <li><b>Disagree about the time.</b> Each device carries a fixed skew, one of them by seconds.</li>
+                        <li><b>Never lose a message for good.</b> This is the one thing it may not do — and it is a restriction on the <em>simulator</em>, not a favour to the engines. If messages could vanish, a divergence could always be blamed on the network instead of on the merge.</li>
+                    </ul>
+
+                    <h3>What this does not model</h3>
+                    <ul>
+                        <li><b>Byzantine peers.</b> Every replica here is honest and correct; a phone that lies about its own state is a different problem with different answers.</li>
+                        <li><b>Tombstone growth.</b> OR-Set tags and RGA nodes are kept forever. A real deployment needs a compaction story, and this page does not have one.</li>
+                        <li><b>Authentication and access control.</b> Anything a peer says is accepted.</li>
+                        <li><b>Bandwidth.</b> Deltas here are small because the board is small. State-based CRDTs get expensive in ways a four-job demo will never show you.</li>
+                    </ul>
+
+                    <h3>Reading the numbers</h3>
+                    <p>
+                        <b>Agreement</b> is whether every phone's board serialises identically.
+                        <b>Totals</b> compares the point column against the sum of every increment the
+                        script contained — a number that is knowable regardless of interleaving,
+                        because addition does not care about order. That second check is the one that
+                        catches the failure people miss: an engine can be perfectly converged and
+                        still be wrong, and only the totals column can tell you.
+                    </p>
+                </div>
+            </section>
+        </div>
+
+        <footer class="foot">
+            <p>
+                <b>How the no-server claim is enforced.</b> This page ships
+                <code>connect-src 'none'</code> in a <code>&lt;meta http-equiv="Content-Security-Policy"&gt;</code>
+                tag in its own source, so the browser refuses every outbound connection whatever the
+                JavaScript asks for. The counter in the header wraps <code>fetch</code>,
+                <code>XMLHttpRequest</code>, <code>WebSocket</code> and <code>sendBeacon</code> and
+                shows how many were attempted. Open DevTools and watch the Network tab stay empty:
+                the four "phones" are four objects in one tab. This is a statement about
+                <em>this page</em> — the CV homepage does fetch the GitHub API for its repository list.
+            </p>
+            <p>
+                No framework, no bundler, no dependency, no build step:
+                <code>guard.js</code>, <code>core.js</code>, <code>crdt.js</code>,
+                <code>text.js</code>, <code>engines.js</code>, <code>net.js</code>,
+                <code>tests.js</code>, <code>app.js</code>, <code>app.css</code>.
+                The property suite runs on the main thread because it takes about a fifth of a
+                second; the lab next door moved its suite into a Worker because it takes twenty.
+                <a href="README.md">README</a>
+            </p>
+        </footer>
+    </main>
+
+    <script src="core.js"></script>
+    <script src="crdt.js"></script>
+    <script src="text.js"></script>
+    <script src="engines.js"></script>
+    <script src="net.js"></script>
+    <script src="tests.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

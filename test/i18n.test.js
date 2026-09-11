@@ -52,6 +52,17 @@ const OFF = '[0m';
 const PAGES = [
   { file: 'index.html', decl: /var\s+I18N\s*=\s*\{/ },
   { file: 'labs/index.html', decl: /var\s+I18N\s*=\s*\{/ },
+  /* The hire page and the case studies share ../case/case.js, which reads
+     window.PAGE_I18N instead of a local var. Their entries are written with
+     backticks rather than quotes, which is why the brace walker below has to
+     know about template literals — it silently mis-balanced on them before,
+     and that is exactly how these pages went unchecked for so long. */
+  { file: 'hire/index.html', decl: /window\.PAGE_I18N\s*=\s*\{/ },
+  { file: 'case/bioage/index.html', decl: /window\.PAGE_I18N\s*=\s*\{/ },
+  { file: 'case/radar-duit/index.html', decl: /window\.PAGE_I18N\s*=\s*\{/ },
+  { file: 'case/cek-aman/index.html', decl: /window\.PAGE_I18N\s*=\s*\{/ },
+  { file: 'case/penyidik/index.html', decl: /window\.PAGE_I18N\s*=\s*\{/ },
+  { file: 'case/repbout/index.html', decl: /window\.PAGE_I18N\s*=\s*\{/ },
 ];
 
 function extractDict(src, decl, rel) {
@@ -70,7 +81,7 @@ function extractDict(src, decl, rel) {
       else if (ch === inStr) inStr = null;
       continue;
     }
-    if (ch === '"' || ch === "'") { inStr = ch; continue; }
+    if (ch === '"' || ch === "'" || ch === '`') { inStr = ch; continue; }
     if (ch === '{') depth++;
     else if (ch === '}') { depth--; if (depth === 0) { end = i; break; } }
   }

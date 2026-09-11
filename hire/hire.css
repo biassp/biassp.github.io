@@ -1,0 +1,137 @@
+/*!
+ * Hire — biassp.github.io
+ * Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+ * Not open source. Readable for evaluation only — copying, modification,
+ * re-branding or redistribution is not permitted. See /LICENSE.
+ *
+ * Layered on ../case/case.css, which owns every colour token, the light/dark
+ * swap, the header and the typography. Only what a services page needs and a
+ * case study does not lives here: the service cards, the rate table and the
+ * proof rows.
+ */
+
+/* A service is a claim, and directly under every claim sits the link that
+   checks it. The two are one block on purpose — a proof that scrolls away
+   from the claim it supports stops being read as proof. */
+.svc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 22px 18px;
+    margin: 16px 0;
+    box-shadow: var(--shadow-sm);
+}
+
+.svc h3 {
+    margin: 0 0 4px;
+    font-size: 1.12rem;
+}
+
+.svc .for {
+    color: var(--muted);
+    font-size: .88rem;
+    margin: 0 0 14px;
+}
+
+.svc ul {
+    margin: 0 0 16px;
+    padding-left: 20px;
+}
+
+.svc li { margin: 5px 0; }
+
+/* The proof row. Monospace deliberately: these are artefacts, not adjectives. */
+.proof {
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+    margin-top: 4px;
+}
+
+.proof b {
+    display: block;
+    font-size: .78rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin-bottom: 8px;
+}
+
+.proof a {
+    display: inline-block;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .84rem;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px 10px;
+    margin: 0 6px 6px 0;
+    text-decoration: none;
+}
+
+.proof a:hover { border-color: var(--border-strong); }
+
+.band {
+    margin: 14px 0 0;
+    font-size: .92rem;
+    color: var(--muted);
+}
+
+.band b { color: var(--text); }
+
+/* Rates. A table because a price list IS tabular data, and because a screen
+   reader should be able to say "Hourly, forty-five to seventy-five dollars"
+   rather than read two unrelated paragraphs. */
+.rates {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0 6px;
+    font-size: .94rem;
+}
+
+.rates th,
+.rates td {
+    text-align: left;
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+}
+
+.rates th {
+    color: var(--faint);
+    font-size: .78rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.rates td:first-child { white-space: nowrap; font-weight: 600; }
+
+.rates td:nth-child(2) { color: var(--muted); }
+
+/* Below 620px a three-column table cannot fit without either shrinking the
+   text past readable or scrolling the whole page sideways. It gets its own
+   scroller instead, which is the one place on this site allowed to. */
+.scroller { overflow-x: auto; }
+
+.cta {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-weight: 600;
+    text-decoration: none;
+    margin: 4px 8px 8px 0;
+}
+
+.cta:hover { filter: brightness(1.08); }
+
+.cta.ghost {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+}
+
+@media (max-width: 620px) {
+    .svc { padding: 18px 16px 14px; }
+}

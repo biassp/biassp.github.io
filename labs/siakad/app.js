@@ -439,7 +439,12 @@
     stat('Guru', String(sc.guru.length), 'mengampu ' + sc.mapel.length + ' mapel');
     stat('Beban kurikulum', totalJp + ' JP', S.JP_INTRA + ' intra + ' + S.JP_MULOK + ' mulok, per rombel/minggu');
     stat('Hari efektif', kal ? String(kal.hariEfektif.length) : '—', kal ? kal.mulai + ' → ' + kal.selesai : '');
-    stat('Jadwal', jd ? (jd.assign ? 'tersusun' : 'gagal') : 'belum', jd && jd.stats ? (jd.stats.msTotal + ' ms · skor lunak ' + jd.stats.softAkhir) : 'buka tab Jadwal');
+    /* The live soft score is jd.soft, rescored after every accepted manual
+     * move; jd.stats is the solver run's own report and does not follow the
+     * board. Reading stats here is how this tile ends up quoting a figure the
+     * move confirmation has already contradicted. */
+    var jdSoft = jd && jd.soft ? jd.soft.total : (jd && jd.stats ? jd.stats.softAkhir : null);
+    stat('Jadwal', jd ? (jd.assign ? 'tersusun' : 'gagal') : 'belum', jd && jd.stats ? (jd.stats.msTotal + ' ms · skor lunak ' + jdSoft) : 'buka tab Jadwal');
     p.appendChild(stats);
 
     p.appendChild(h('div', { class: 'card' },
@@ -472,6 +477,13 @@
       h('div', { class: 'controls' },
         h('button', {
           class: 'btn', type: 'button', onclick: function () {
+            /* Synchronously, before the clear even resolves: a solve still
+             * running would otherwise put the timetable and an audit row back
+             * into the store the visitor just emptied, and "dihapus" would be
+             * a lie for as long as the search lasts. */
+            liveReq = null;
+            state.solving = false;
+            state.solveNote = '';
             St.clearAll().then(function () {
               state.nilaiOverrides = {}; state.presensiOverrides = {};
               state.komiteOverrides = {}; state.sikapOverrides = {};
@@ -709,6 +721,15 @@
 
   var worker = null, workerBroken = false, reqSeq = 0;
 
+  /* A solve takes seconds, and in those seconds the visitor can change the
+   * tahun ajaran, change the skenario, or empty the store. So every request
+   * carries a snapshot of what it actually asked for, and the result is judged
+   * against that snapshot rather than against whatever the page holds when it
+   * lands. pending maps reqId -> snapshot; liveReq is the one request whose
+   * result is still wanted, and setting it to null is how a wipe cancels a
+   * search that would otherwise write the timetable straight back. */
+  var pending = {}, liveReq = null;
+
   function ensureWorker() {
     if (worker || workerBroken) return worker;
     try {
@@ -719,57 +740,78 @@
     return worker;
   }
 
+  function noteWorkerNet(m) {
+    if (window.SIAKAD_GUARD && window.SIAKAD_GUARD.noteExternal) {
+      window.SIAKAD_GUARD.noteExternal(m.kind, m.target, 'worker');
+    }
+  }
+
   function onWorkerMessage(ev) {
     var m = ev.data || {};
     /* The page's meta CSP does NOT apply to a dedicated worker's global scope,
      * so the worker installs its own wrappers and reports attempts back here.
      * Without this the header counter would be a claim about the document only,
      * while the footer sentence talks about the whole page. */
-    if (m.type === 'net') {
-      if (window.SIAKAD_GUARD && window.SIAKAD_GUARD.noteExternal) {
-        window.SIAKAD_GUARD.noteExternal(m.kind, m.target, 'worker');
-      }
-      return;
-    }
+    if (m.type === 'net') { noteWorkerNet(m); return; }
+    var req = pending[m.reqId];
+    delete pending[m.reqId];
     if (m.type === 'error') {
+      if (req !== liveReq) return;
+      liveReq = null;
       state.solving = false;
       state.solveNote = 'Worker melempar: ' + m.message;
       say('Penyusunan jadwal gagal: ' + m.message);
-      renderPanel('jadwal');
+      paintSolveResult();
       return;
     }
-    finishSolve(m);
+    finishSolve(m, req);
+  }
+
+  /* The result can land while the visitor is reading another tab: the Beranda
+   * tile and the jejak audit both report on the timetable, so redraw what is
+   * actually on screen as well as the board itself. The visible panel goes
+   * last, because every render restores keyboard focus. */
+  function paintSolveResult() {
+    renderPanel('jadwal');
+    if (state.view !== 'jadwal') renderPanel(state.view);
   }
 
   // Applies whatever the solver produced, but only after re-verifying it here,
-  // in the page, against the spec the page holds. A schedule that fails is
-  // reported, never rendered.
-  function finishSolve(m) {
+  // in the page, against the spec that was sent with the request. A schedule
+  // that fails is reported, never rendered; a schedule belonging to a request
+  // the page has since abandoned is dropped without a word.
+  function finishSolve(m, req) {
+    if (!req || req !== liveReq) return;
+    liveReq = null;
     state.solving = false;
-    var spec = state.spec[state.ta];
+    var spec = req.spec;
     if (m.ok) {
       var check = SV.verify(spec, m.assign);
       if (!check.ok) {
-        state.solveNote = 'Jadwal ditolak di sisi halaman: ' + check.violations[0].pesan;
-        say('Jadwal ditolak: ' + check.violations[0].pesan);
-        renderPanel('jadwal');
+        // Name the year and skenario: the visitor may well be looking at another.
+        state.solveNote = 'Jadwal ' + req.ta + ' (skenario ' + req.skenario +
+          ') ditolak di sisi halaman: ' + check.violations[0].pesan;
+        say(state.solveNote);
+        paintSolveResult();
         return;
       }
-      state.jadwal[state.ta] = {
+      // The board and the spec it is validated against have to be the same pair.
+      state.spec[req.ta] = spec;
+      state.jadwal[req.ta] = {
         assign: m.assign, stats: m.stats, soft: m.soft,
-        skenario: state.sel.skenario, at: Date.now(), verifikasi: check
+        skenario: req.skenario, at: Date.now(), verifikasi: check
       };
-      St.put('jadwal', { k: state.ta, v: state.jadwal[state.ta] });
+      St.put('jadwal', { k: req.ta, v: state.jadwal[req.ta] });
       state.solveNote = '';
-      audit('jadwal disusun', state.ta + ' · skenario ' + state.sel.skenario + ' · ' + m.stats.msTotal + ' ms');
-      say('Jadwal tersusun dalam ' + m.stats.msTotal + ' milidetik, ' + m.stats.backtrack +
+      audit('jadwal disusun', req.ta + ' · skenario ' + req.skenario + ' · ' + m.stats.msTotal + ' ms');
+      say('Jadwal ' + req.ta + ' tersusun dalam ' + m.stats.msTotal + ' milidetik, ' + m.stats.backtrack +
         ' backtrack. Verifikasi ulang: nol pelanggaran kendala keras.');
     } else {
-      state.jadwal[state.ta] = { assign: null, stats: m.stats, diagnosis: m.diagnosis, skenario: state.sel.skenario, at: Date.now() };
+      state.jadwal[req.ta] = { assign: null, stats: m.stats, diagnosis: m.diagnosis, skenario: req.skenario, at: Date.now() };
       state.solveNote = '';
-      say('Jadwal tidak tersusun. ' + (m.diagnosis ? m.diagnosis.judul : ''));
+      say('Jadwal ' + req.ta + ' tidak tersusun. ' + (m.diagnosis ? m.diagnosis.judul : ''));
     }
-    renderPanel('jadwal');
+    paintSolveResult();
   }
 
   var SKENARIO = [
@@ -825,9 +867,12 @@
      * cost of the higher ceiling is a slightly longer 'Menyusun…', not a frozen
      * tab, and the alternative is telling a user a solvable week is impossible. */
     var opts = { budgetMs: 12000, optimiseMs: 2500, seed: (Date.now() % 100000) | 0, maxRestarts: 600 };
+    var req = { id: ++reqSeq, ta: state.ta, skenario: state.sel.skenario, spec: spec };
+    pending[req.id] = req;
+    liveReq = req;
     var w = ensureWorker();
     if (w) {
-      w.postMessage({ type: 'solve', reqId: ++reqSeq, spec: spec, opts: opts });
+      w.postMessage({ type: 'solve', reqId: req.id, spec: spec, opts: opts });
     } else {
       // Worker unavailable (some hardened browsers). Same solver, main thread,
       // and the UI says so rather than pretending. The try/catch matters: the
@@ -836,13 +881,16 @@
       // leave the button reading "Menyusun…" forever.
       state.solveNote = 'Web Worker tidak tersedia; solver dijalankan di thread utama.';
       setTimeout(function () {
+        delete pending[req.id];
         try {
-          finishSolve(SV.solve(spec, opts));
+          finishSolve(SV.solve(spec, opts), req);
         } catch (e) {
+          if (req !== liveReq) return;
+          liveReq = null;
           state.solving = false;
           state.solveNote = 'Solver melempar di thread utama: ' + String(e && e.message || e);
           say(state.solveNote);
-          renderPanel('jadwal');
+          paintSolveResult();
         }
       }, 20);
     }
@@ -947,7 +995,14 @@
       sstat('Backtrack', String(st.backtrack), st.restart ? st.restart + ' restart' : 'tanpa restart');
       sstat('Dipangkas', String(st.propagasiDibuang), 'nilai dibuang forward checking');
       sstat('Waktu', st.msTotal + ' ms', 'cari ' + st.msCari + ' · optimasi ' + st.msOptimasi);
-      if (st.softAwal !== null && st.softAwal !== undefined) sstat('Skor lunak', st.softAwal + ' → ' + st.softAkhir, st.langkahOptimasi + ' langkah perbaikan');
+      if (st.softAwal !== null && st.softAwal !== undefined) {
+        // Board first, provenance underneath — after a manual move the pair the
+        // solver finished on is history, not the score of what is on screen.
+        var kini = jd.soft ? jd.soft.total : st.softAkhir;
+        sstat('Skor lunak', String(kini), kini === st.softAkhir
+          ? st.softAwal + ' → ' + st.softAkhir + ', ' + st.langkahOptimasi + ' langkah perbaikan'
+          : 'solver ' + st.softAwal + ' → ' + st.softAkhir + ', lalu pemindahan manual');
+      }
       card.appendChild(box);
     }
 
@@ -2054,7 +2109,81 @@
     p.appendChild(card);
   }
 
+  var ujiWorker = null, ujiWorkerBroken = false;
+
+  /* The suite is 309 assertions with several full solver runs in it, well over
+   * a second of straight-line work. Run on the main thread it did that a few
+   * milliseconds after first paint: the page looked ready and then ignored
+   * every click until the last assertion was in. So it runs in a Worker.
+   *
+   * There is no test worker file to point at, hence the Blob — and hence the
+   * rebasing importScripts, because a blob: worker has no base URL that a bare
+   * 'solver.js' can resolve against. solver.worker.js is imported first and on
+   * purpose: this realm then carries the SAME egress wrappers the solver's
+   * realm does, reported to the same counter, instead of a second copy of them
+   * that could drift, or a third realm nothing is watching. */
+  function ujiWorkerSource() {
+    var base = location.href.replace(/[?#].*$/, '').replace(/[^/]*$/, '');
+    return 'var __base = ' + JSON.stringify(base) + ';\n' +
+      'var __imp = self.importScripts;\n' +
+      'self.importScripts = function () {\n' +
+      '  var a = [], i, u;\n' +
+      '  for (i = 0; i < arguments.length; i++) {\n' +
+      '    u = String(arguments[i]);\n' +
+      '    a.push(/^[a-z][a-z0-9+.-]*:/i.test(u) ? u : __base + u);\n' +
+      '  }\n' +
+      '  return __imp.apply(self, a);\n' +
+      '};\n' +
+      "self.importScripts('solver.worker.js', 'domain.js', 'data.js', 'akademik.js', 'tests.js');\n" +
+      'self.addEventListener("message", function (ev) {\n' +
+      '  var m = ev.data || {};\n' +
+      '  if (m.type !== "uji") return;\n' +
+      '  var t0 = Date.now();\n' +
+      '  try {\n' +
+      '    var run = SIAKAD_TESTS.run();\n' +
+      '    run.ms = Date.now() - t0;\n' +
+      '    self.postMessage({ type: "uji", run: run });\n' +
+      '  } catch (e) {\n' +
+      '    self.postMessage({ type: "uji-gagal", message: String(e && e.stack || e) });\n' +
+      '  }\n' +
+      '});\n';
+  }
+
+  function ensureUjiWorker() {
+    if (ujiWorker || ujiWorkerBroken) return ujiWorker;
+    try {
+      var url = URL.createObjectURL(new Blob([ujiWorkerSource()], { type: 'text/javascript' }));
+      ujiWorker = new Worker(url);
+      ujiWorker.onmessage = function (ev) {
+        var m = ev.data || {};
+        if (m.type === 'net') { noteWorkerNet(m); return; }
+        if (m.type === 'uji') { applyTests(m.run); return; }
+        if (m.type === 'uji-gagal') {
+          applyTests({
+            results: [{ group: 'runner', name: 'suite melempar', ok: false, message: m.message }],
+            passed: 0, failed: 1, total: 1, ms: 0
+          });
+        }
+      };
+      // An import that fails leaves the badge spinning forever unless the page
+      // falls back, and a badge that never resolves is worse than a slow one.
+      ujiWorker.onerror = function () {
+        ujiWorkerBroken = true; ujiWorker = null;
+        if (!state.tests) runTestsMainThread();
+      };
+    } catch (e) { ujiWorkerBroken = true; ujiWorker = null; }
+    return ujiWorker;
+  }
+
   function runTests() {
+    var w = ensureUjiWorker();
+    if (w) { w.postMessage({ type: 'uji' }); return; }
+    runTestsMainThread();
+  }
+
+  // Same suite, same file, main thread — for a browser with no Worker or no
+  // blob: URL. It blocks, and the page says nothing it cannot back up.
+  function runTestsMainThread() {
     var t0 = Date.now();
     var run;
     try { run = T.run(); }
@@ -2062,6 +2191,10 @@
       run = { results: [{ group: 'runner', name: 'suite melempar', ok: false, message: String(e && e.stack || e) }], passed: 0, failed: 1, total: 1 };
     }
     run.ms = Date.now() - t0;
+    applyTests(run);
+  }
+
+  function applyTests(run) {
     state.tests = run;
     paintTests();
     say(run.failed ? ('Uji: ' + run.failed + ' gagal.') : ('Uji: ' + run.passed + ' assertion lulus.'));
@@ -2152,14 +2285,13 @@
 
     loadAll().then(function () {
       renderAll();
-      // Tests first (they are the badge), then the timetable so the Jadwal tab
-      // is alive without a click.
+      // The suite drives the badge, the solver makes the Jadwal tab alive
+      // without a click. Both hand their work to a Worker, so neither is in the
+      // way of the visitor's first click.
       setTimeout(function () {
         runTests();
-        setTimeout(function () {
-          if (!state.jadwal[state.ta]) solveJadwal();
-          else { state.spec[state.ta] = buildSpec(state.ta, state.jadwal[state.ta].skenario || 'normal'); renderPanel(state.view); }
-        }, 30);
+        if (!state.jadwal[state.ta]) solveJadwal();
+        else { state.spec[state.ta] = buildSpec(state.ta, state.jadwal[state.ta].skenario || 'normal'); renderPanel(state.view); }
       }, 30);
     });
   }

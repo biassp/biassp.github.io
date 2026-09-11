@@ -192,7 +192,14 @@
      the two sides share none. census.js is handed `db.exec.bind(db)` by the
      runner and never sees this file. */
 
-  NS.exec = function (sql, db) { return need(db).exec(sql); };
+  /* (sql, params, db) like run/all/plan below, and the params argument is not
+     decoration: without it a caller with a parameterised statement bound NULL to
+     every `?` and got an empty result set back that looked exactly like a query
+     with no rows. sql.js binds the array to each statement it steps. */
+  NS.exec = function (sql, params, db) {
+    var h = need(db);
+    return (params && params.length) ? h.exec(sql, params) : h.exec(sql);
+  };
 
   NS.rows = function (sql, db) {
     var r = need(db).exec(sql);

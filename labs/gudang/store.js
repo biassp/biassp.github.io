@@ -238,6 +238,27 @@
     });
   };
 
+  /* The write lock's holder id, kept in sessionStorage.
+   *
+   * sessionStorage is scoped to ONE TAB and survives a reload of that tab, which
+   * is exactly what the write lock needs: pressing F5 must reclaim the lock this
+   * same tab already held, while a genuinely different tab is still refused.
+   * Without it the release on pagehide — an async IndexedDB write the browser
+   * does not wait for during a reload — raced the fresh page, which then minted
+   * a new random id, found the old one still in 'konfig', and sat read-only for
+   * the whole nine-second ttl. Measured, not theorised.
+   *
+   * Wrapped like every other storage access here: sessionStorage throws outright
+   * where a browser is set to block site data, and a per-load id still works. */
+  St.tabId = function () {
+    var id = null;
+    try { id = sessionStorage.getItem('gudang.tab'); } catch (e) { id = null; }
+    if (id) return id;
+    id = 'T' + Date.now().toString(36) + '-' + Math.floor(Math.random() * 1e9).toString(36);
+    try { sessionStorage.setItem('gudang.tab', id); } catch (e2) { /* data diblokir: id per-muat tetap jalan */ }
+    return id;
+  };
+
   /* localStorage is used ONLY for the theme, so it can be applied before first
    * paint without waiting on an async database. Wrapped, obviously. */
   St.readLocal = function (key) {

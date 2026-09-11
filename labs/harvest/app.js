@@ -462,18 +462,12 @@
           // builds a fresh one. Without restoring the selection the caret lands at 0
           // and every further character is inserted at the FRONT of the string
           // ("orders" typed one key at a time became "sredro"), and Backspace does
-          // nothing because there is no text to its left. So: carry the caret over.
+          // nothing because there is no text to its left. renderPanelOnly carries
+          // both focus and caret over, keyed on this id — so the id must not move.
           oninput: function (ev) {
-            var start = ev.target.selectionStart, end = ev.target.selectionEnd;
             state.filter = ev.target.value;
             state.traceNote = '';
-            renderPanelOnly('trace', function () {
-              var el = $('traceFilter');
-              if (!el) return;
-              try { el.focus({ preventScroll: true }); } catch (err) { el.focus(); }
-              try { el.setSelectionRange(start == null ? el.value.length : start, end == null ? el.value.length : end); }
-              catch (err2) { /* some input types refuse setSelectionRange */ }
-            });
+            renderPanelOnly('trace');
           }
         }),
         h('label', { class: 'inline' },
@@ -748,7 +742,7 @@
       h('h3', { text: 'Classifier decisions' }),
       Object.keys(state.overrides).length
         ? h('button', {
-          type: 'button', class: 'btn small', onclick: function () {
+          type: 'button', id: 'resetOverrides', class: 'btn small', onclick: function () {
             state.overrides = {}; save('harvest.overrides', {}); loadHar(state.har, state.name);
           }
         }, 'Reset ' + Object.keys(state.overrides).length + ' override(s)')
@@ -769,7 +763,8 @@
         var btns = h('div', { class: 'controls', style: { marginBottom: '0' } });
         ['literal', 'param'].forEach(function (kind) {
           btns.appendChild(h('button', {
-            type: 'button', class: 'btn small', 'aria-pressed': d.kind === kind ? 'true' : 'false',
+            type: 'button', id: 'dec-' + kind + '-' + d.key.replace(/\s+/g, '_'),
+            class: 'btn small', 'aria-pressed': d.kind === kind ? 'true' : 'false',
             onclick: function () {
               if (d.defaultKind === kind) delete state.overrides[d.key];
               else state.overrides[d.key] = kind;
@@ -915,6 +910,7 @@
     var ctrl = h('div', { class: 'controls', style: { marginBottom: '0' } });
     if (r.hosts.length > 1) {
       var sel = h('select', {
+        id: 'specHost',
         'aria-label': 'Host', onchange: function (ev) { state.specHost = ev.target.value; renderPanelOnly('spec'); }
       });
       r.hosts.forEach(function (hh) {
@@ -924,7 +920,7 @@
     }
     ['yaml', 'json'].forEach(function (fmt) {
       ctrl.appendChild(h('button', {
-        type: 'button', class: 'btn small', 'aria-pressed': state.specFormat === fmt ? 'true' : 'false',
+        type: 'button', id: 'specFmt-' + fmt, class: 'btn small', 'aria-pressed': state.specFormat === fmt ? 'true' : 'false',
         onclick: function () { state.specFormat = fmt; renderPanelOnly('spec'); }
       }, fmt.toUpperCase()));
     });
@@ -1063,7 +1059,7 @@
     ctrls.appendChild(h('label', { class: 'inline' }, 'window (ms)', winIn));
     ctrls.appendChild(h('label', { class: 'inline' }, 'mitigation (ms)', blockIn));
     ctrls.appendChild(h('button', {
-      type: 'button', class: 'btn small primary', onclick: function () {
+      type: 'button', id: 'rateRun', class: 'btn small primary', onclick: function () {
         state.rate.key = keySel.value;
         state.rate.limit = Math.max(1, parseInt(limitIn.value, 10) || 1);
         state.rate.windowMs = Math.max(100, parseInt(winIn.value, 10) || 1000);
@@ -1124,7 +1120,7 @@
     var sum = h('div', { class: 'test-summary' });
     sum.appendChild(h('span', { class: 'pillbig ' + (testRun.failed ? 'fail' : 'pass'), text: testRun.failed ? testRun.failed + ' FAILING' : testRun.passed + ' PASSING' }));
     sum.appendChild(h('span', { class: 'hint', text: testRun.passed + ' of ' + testRun.total + ' assertions across ' + H.testGroups.length + ' groups.' }));
-    sum.appendChild(h('button', { type: 'button', class: 'btn small', onclick: function () { testRun = null; renderPanelOnly('tests'); } }, 'Re-run'));
+    sum.appendChild(h('button', { type: 'button', id: 'testsRerun', class: 'btn small', onclick: function () { testRun = null; renderPanelOnly('tests'); } }, 'Re-run'));
     card.appendChild(sum);
 
     var byGroup = {};
@@ -1156,9 +1152,42 @@
     latency: renderLatency, spec: renderSpec, edge: renderEdge, tests: renderTests
   };
 
+  // A rebuild destroys every node in the panel, including whichever one the
+  // keyboard was on, and focus falls to <body>. That made the lab unusable
+  // without a mouse: ticking Redact, pinning a classifier decision, switching the
+  // spec format or re-running the tests threw the visitor back to the top of the
+  // document, with the whole header, drop zone and tab strip to Tab through
+  // again. So the focused control is remembered by id across the rebuild and the
+  // fresh element wearing that id gets focus back. Every control that survives
+  // its own rebuild therefore needs a stable id, not a generated one.
+  function focusMemo(panel) {
+    var el = document.activeElement;
+    if (!el || !el.id || !panel.contains(el)) return null;
+    var memo = { id: el.id, start: null, end: null };
+    // Text fields also need the caret, or typing in the trace filter inserts
+    // every further character at position 0.
+    try { memo.start = el.selectionStart; memo.end = el.selectionEnd; }
+    catch (e) { /* inputs without a text caret throw on selectionStart */ }
+    return memo;
+  }
+
+  function restoreFocus(panel, memo) {
+    if (!memo) return;
+    var el = $(memo.id);
+    // Some controls remove themselves by doing their job — "Reset 1 override(s)"
+    // is gone the moment it is pressed. There is no successor to hand focus to,
+    // so it goes to the panel (already tabindex=0) rather than to <body>, which
+    // would send the visitor back to the top of the document all the same.
+    if (!el) { try { panel.focus({ preventScroll: true }); } catch (e0) { panel.focus(); } return; }
+    try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
+    if (memo.start == null) return;
+    try { el.setSelectionRange(memo.start, memo.end); } catch (e2) { /* no caret */ }
+  }
+
   function renderPanelOnly(name, after) {
     var panel = $('panel-' + name);
     var scroll = window.scrollY;
+    var memo = focusMemo(panel);
     clear(panel);
     try { RENDERERS[name](panel); }
     catch (e) {
@@ -1166,6 +1195,7 @@
       if (window.console) console.error(e);
     }
     window.scrollTo(0, scroll);
+    restoreFocus(panel, memo);
     if (after) after();
   }
 

@@ -258,6 +258,11 @@
       btn.tabIndex = on ? 0 : -1;
       panel.hidden = !on;
     });
+    // The strip and the tab badges describe the whole clinic, not the panel, and
+    // openVisit mutates the clinic and then navigates here. Rebuilding them on
+    // every navigation is what stops the header reading 10 tickets above a board
+    // that is already showing 11.
+    renderSummary();
     renderPanel(name);
   }
 
@@ -598,7 +603,21 @@
         onclick: selectable ? function () { selRM = p.rmNumber; renderAll(); } : null
       },
         h('td', { class: 'mono', text: p.rmNumber }),
-        h('td', { text: p.name }),
+        // A whole-row onclick is invisible to the keyboard: a <tr> is not
+        // focusable and nothing here would ever put the caret on it. The name
+        // cell therefore carries a real button that does nothing of its own —
+        // Enter and Space on it raise the same click the mouse does, and that
+        // click reaches the row handler by bubbling. One code path, two inputs.
+        selectable
+          ? h('td', {}, h('button', {
+              type: 'button', class: 'linkbtn',
+              // The visible text is the name, so the label repeats it first and
+              // only then adds the No. RM — the part that separates two patients
+              // who happen to share a name.
+              'aria-label': 'Pilih ' + p.name + ' — ' + p.rmNumber,
+              text: p.name
+            }))
+          : h('td', { text: p.name }),
         h('td', { text: p.sex }),
         h('td', { class: 'num', text: String(clinic.age(p)) }),
         h('td', {}, h('span', { class: 'pill ' + p.klass, text: p.klass === 'bpjs' ? 'BPJS' : 'Umum' })),

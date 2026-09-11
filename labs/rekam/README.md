@@ -302,7 +302,7 @@ REKAM.runTests().then(r => {
 "
 ```
 
-271 assertions across 16 groups. The load-bearing ones:
+379 assertions across 20 groups. The load-bearing ones:
 
 - an RM is never reused, **not even after the patient it belonged to is deleted**;
 - queue numbers **do** repeat across days, and that is asserted as correct behaviour;

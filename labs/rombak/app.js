@@ -212,9 +212,49 @@
 
   function btn(label, onclick, cls, fkey) {
     return h('button', {
-      type: 'button', class: 'btn' + (cls ? ' ' + cls : ''), 'data-fkey': fkey || null, onclick: onclick
+      type: 'button', class: 'btn' + (cls ? ' ' + cls : ''), 'data-fkey': fkey || null,
+      /* A rung is a fifth of a second to a second of synchronous SQLite, and the
+       * database is mid-ladder for the whole walk. A live-looking button that
+       * eats a press — or worse, applies a rung into a walk already in progress —
+       * is worse than a greyed one. */
+      disabled: (state.busy || ladderWalking()) ? true : null,
+      onclick: onclick
     }, label);
   }
+
+  /* A task boundary the browser has actually PAINTED across. setTimeout(…, 0)
+   * hands back one tick — enough for a queued input event, not enough to
+   * guarantee the frame that shows the reader what is happening, because
+   * Chromium may run the next timeout before it commits a frame. rAF puts us
+   * inside the frame; the timeout inside it puts the work after that frame. */
+  function afterPaint(fn) {
+    if (typeof root.requestAnimationFrame === 'function') {
+      root.requestAnimationFrame(function () { setTimeout(fn, 0); });
+    } else setTimeout(fn, 0);
+  }
+
+  /* Paint "we are working on it", THEN work. Without the paint the press looks
+   * like it was dropped: what follows is seconds long, and the first thing the
+   * reader would see is the finished page. The label stays up until whoever set
+   * it clears it, because the job it names outlives this task. */
+  function busyThen(label, fn) {
+    state.busy = label;
+    rerender();
+    paintLive();
+    say(label + '. This holds the tab while SQLite runs.');
+    afterPaint(fn);
+  }
+
+  /* What the page is doing right now, in one line: the rung while a ladder walk
+   * is running, the job's own label otherwise. */
+  function busyLine() {
+    return state.walkTarget ? state.bootStep : state.busy;
+  }
+
+  /* True between the first rung and the last. It matters because the page now
+   * ANSWERS during the walk, and two panels measure something once and keep it:
+   * measured at v4 those figures would be wrong and would never be re-taken. */
+  function ladderWalking() { return !!state.walkTarget; }
 
   var sayTimer = null;
   function say(text) {
@@ -279,6 +319,9 @@
     bootErr: null,
     booting: true,
     bootStep: 'waiting for the engine',
+    busy: null,               // a label while a long job is running, or null
+    walkTarget: null,         // the version a ladder walk is heading for, while one is running
+    walkAfter: null,          // what to do when it gets there
     boot: null,               // RN.boot() report, minus the handle
     rungs: {},                // version -> { refused: report|null, applied: report|null }
     version: 0,
@@ -313,7 +356,7 @@
   }
 
   function tryExec(sql, db) {
-    try { return { ok: true, res: E.exec(sql, db || dbh()) }; }
+    try { return { ok: true, res: E.exec(sql, null, db || dbh()) }; }
     catch (e) { return { ok: false, error: e.message, res: [] }; }
   }
 
@@ -381,7 +424,13 @@
       return;
     }
     var s = state.liveSummary;
-    if (!s) { b.className = 'testbadge busy'; t.textContent = 'live db: checking…'; return; }
+    /* Nine rungs of SQLite is several seconds, and a badge that says "checking…"
+     * for all of them reads as a hung page. It says which rung instead. */
+    if (!s || state.busy) {
+      b.className = 'testbadge busy';
+      t.textContent = 'live db: ' + (busyLine() || (state.booting ? state.bootStep : 'checking…'));
+      return;
+    }
     var pendingOrMissing = s.total - s.passed;
     b.className = 'testbadge' + ((s.failed || s.pending) ? ' bad' : '');
     t.textContent = 'live db: ' + s.passed + '/' + s.total + ' invariants' +
@@ -448,6 +497,12 @@
     if (!panel) return;
     var snap = captureFocus();
     clear(panel);
+    if (state.busy || ladderWalking()) {
+      panel.appendChild(callout('warn', 'Working: ' + busyLine() + '.',
+        'SQLite runs on this tab\'s only thread. The ladder is walked one census at a time so the page keeps ' +
+        'answering, but the buttons are off and the measured panels hold back until it finishes — figures ' +
+        'taken off a half-migrated database would be figures of a schema that is about to stop existing.'));
+    }
     try { RENDER[name](panel); }
     catch (e) {
       /* The last line of defence. A renderer that throws must not become a
@@ -983,30 +1038,63 @@
    * REPLACES the live handle, which is why ours is re-read from the engine
    * afterwards rather than kept. */
   function rewindReplay(target) {
-    var out = RN.rewindTo(target, {});
-    if (out.ok === false && out.refused) { say(out.refused); state.ladderMsg = out.refused; rerender(); return; }
+    /* The walk yields between rungs now, so a second press can land in one of
+     * those gaps. Two walks sharing state.rungs and one database handle would
+     * interleave rungs from different ladders, so the second press is refused
+     * out loud instead. */
+    if (state.walkTarget || state.busy) {
+      say('The ladder is already walking. That press was ignored — wait for it to finish.');
+      return;
+    }
+    busyThen('rewinding to v1 and replaying to v' + target, function () { rewindNow(target); });
+  }
+
+  /* RN.rewindTo(target) does the reopen AND the whole replay in one call, and
+   * that call is nine rungs of synchronous SQLite — nine and a half seconds with
+   * the thread shut, which is the same freeze boot used to have and for the same
+   * reason. So it is asked only for the reopen, which is cheap, and the replay
+   * runs through the same chunked walk the boot uses. Same applyOne calls, same
+   * auto-fix, same order; only the yielding is different. */
+  function rewindNow(target) {
+    var out = RN.rewindTo(1, {});
+    if (out.ok === false && out.refused) {
+      state.busy = null;
+      state.ladderMsg = out.refused;
+      say(out.refused);
+      rerender();
+      return;
+    }
     state.db = E.db();
     state.rungs = {};
-    recordWalk(out.reports);
-    afterLadderChange();
-    say('Rewound to v1\'s bytes and replayed to v' + target + '. ' +
-      out.reports.length + ' rung report(s), ' + countRefusals(out.reports) + ' refusal(s) on the way.');
+    state.ladderMsg = null;
+    if (target <= 1) { rewindDone(target); return; }
+    startLadderWalk(2, null, target, function () { rewindDone(target); });
   }
 
-  function countRefusals(reports) {
-    var n = 0, i;
-    for (i = 0; i < reports.length; i++) if (reports[i].refused) n++;
-    return n;
+  function rewindDone(target) {
+    var t = walkTally(target);
+    /* The live recompute is both routes over the whole database and costs about
+     * as much as a rung, so it gets a chunk and a label of its own instead of
+     * being tacked onto the last one. */
+    busyThen('recomputing the live invariants on both routes', function () {
+      state.busy = null;
+      afterLadderChange();
+      say('Rewound to v1\'s bytes and replayed to v' + target + '. ' +
+        t.reports + ' rung report(s), ' + t.refusals + ' refusal(s) on the way.');
+    });
   }
 
-  function recordWalk(reports) {
-    var i, r;
-    for (i = 0; i < reports.length; i++) {
-      r = reports[i];
-      var slot = state.rungs[r.version] || { refused: null, applied: null };
-      if (r.refused) slot.refused = r; else slot.applied = r;
-      state.rungs[r.version] = slot;
+  /* Counted off the slots the walk actually filled, not off a returned array:
+   * a refusing rung leaves two reports behind, its refusal and its re-run. */
+  function walkTally(upTo) {
+    var v, sl, reports = 0, refusals = 0;
+    for (v = 1; v <= upTo; v++) {
+      sl = state.rungs[v];
+      if (!sl) continue;
+      if (sl.refused) { reports++; refusals++; }
+      if (sl.applied) reports++;
     }
+    return { reports: reports, refusals: refusals };
   }
 
   /* Every path that can move the schema ends here: the version is re-read with a
@@ -1226,6 +1314,10 @@
    * where the audit triggers exist to be lost. */
   function computeRebuild() {
     if (state.rebuild || state.rebuildErr) return;
+    /* Mid-walk there is no v9 export yet, and latching that as an error would
+     * leave the tab permanently reading "the ladder did not reach v6 and v9"
+     * after it had. */
+    if (ladderWalking()) return;
     if (!state.bytes6 || !state.bytes9) {
       state.rebuildErr = 'The ladder walk did not reach v6 and v9, so there are no bytes to open.';
       return;
@@ -1268,6 +1360,7 @@
       'opinion about the rows that are no longer there to violate anything.'));
 
     computeRebuild();
+    if (ladderWalking()) return;
     if (state.rebuildErr) { p.appendChild(failCard('The four variants', state.rebuildErr)); return; }
     if (!state.rebuild) { p.appendChild(h('div', { class: 'empty', text: 'Computing…' })); return; }
 
@@ -1396,6 +1489,21 @@
       { label: 'ms', num: true }], rows, { minWidth: '420px', prose: true });
   }
 
+  /* The delete action on this row is read out of the DDL the variant actually
+   * holds, never typed. Variant C exists BECAUSE one word of it was changed, and
+   * a hard-coded 'RESTRICT' here contradicted the DDL box printed two lines above
+   * it on that very card — on the one card whose whole premise is the change. */
+  function encDiagOnDelete(vv) {
+    var ddl = vv.childDdlLine || (S.TABLE_DDL && S.TABLE_DDL.encounter_diagnosis) || '';
+    var m = /REFERENCES\s+encounter\s*\(\s*id\s*\)\s+ON DELETE\s+([A-Z]+(?:\s+[A-Z]+)?)/.exec(ddl);
+    return m ? m[1] : null;
+  }
+
+  function encDiagLabel(vv) {
+    var act = encDiagOnDelete(vv);
+    return act ? 'encounter_diagnosis (ON DELETE ' + act + ')' : 'encounter_diagnosis';
+  }
+
   function variantCard(vv) {
     var c = h('section', { class: 'card' });
     c.appendChild(h('h3', { text: vv.id + '. ' + vv.label }));
@@ -1418,7 +1526,7 @@
 
     c.appendChild(h('h4', { text: 'The children, before and after' }));
     c.appendChild(snapLine('addendum (ON DELETE CASCADE)', vv.before.addendum, vv.after.addendum));
-    c.appendChild(snapLine('encounter_diagnosis (ON DELETE RESTRICT)', vv.before.encounter_diagnosis, vv.after.encounter_diagnosis));
+    c.appendChild(snapLine(encDiagLabel(vv), vv.before.encounter_diagnosis, vv.after.encounter_diagnosis));
     c.appendChild(snapLine('encounter itself', vv.before.encounter, vv.after.encounter));
 
     var committed = naive ? naive.committed : (vv.rung ? vv.rung.ok : false);
@@ -1730,6 +1838,9 @@
       'Route B is you, in the Console, sending your own values: the constraint is in the table, not in the button.'));
 
     if (!db) { p.appendChild(callout('warn', 'The database has not booted yet.', state.bootStep)); return; }
+    /* Every matrix on this tab is run once and kept. Run against v4 they would be
+     * matrices of a schema that no longer exists, and nothing re-runs them. */
+    if (ladderWalking()) return;
 
     /* The tab detects the pragma and says so in red, because a visitor who types
      * PRAGMA foreign_keys=OFF in the Console will find every foreign-key test on
@@ -1964,7 +2075,10 @@
         out.variants.push({ id: v.id, pragma: v.pragma, restore: v.restore, why: v.why,
           plan: got, expect: v.expectPlan, ok: sameArray(got, v.expectPlan) });
       }
-      out.rows = E.exec(e.sql, db);
+      /* The SAME params the plan and the timing above were measured with. Bound
+       * NULL instead, every parameterised card printed "(no columns) / no rows"
+       * three lines under its own hash saying the query returned rows. */
+      out.rows = E.exec(e.sql, params, db);
       for (i = 0; i < (e.teardown || []).length; i++) db.run(e.teardown[i]);
     } catch (err) {
       out.error = err.message || String(err);
@@ -2030,6 +2144,7 @@
       'figure is a suite that goes red on somebody else\'s laptop for a reason that is not a defect.'));
 
     if (!db) { p.appendChild(callout('warn', 'The database has not booted yet.', state.bootStep)); return; }
+    if (ladderWalking()) return;
 
     /* Measured once, on the first visit, rather than left as fourteen "press me"
      * cards: a panel whose default state is empty is a panel a reader concludes
@@ -2398,7 +2513,7 @@
     var t0 = E.now();
     var out = { sql: text, ms: 0, sets: [], error: null, changed: null };
     try {
-      out.sets = E.exec(text, db);
+      out.sets = E.exec(text, null, db);
       out.ms = Math.round(E.now() - t0);
       try { if (typeof db.getRowsModified === 'function') out.changed = db.getRowsModified(); }
       catch (e) { out.changed = null; }
@@ -2502,9 +2617,10 @@
         onclick: function () { state.consolePlan = !state.consolePlan; rerender(); }
       }, 'EXPLAIN QUERY PLAN'),
       btn('Rebuild from the seed', function () {
-        rewindReplay(S.TARGET_VERSION);
+        /* The announcement used to be made here, in the click handler, before a
+         * single statement had run. rewindNow() makes it when it is true. */
         state.consoleOut = null;
-        say('The database was rebuilt from v1\'s bytes and replayed to v' + S.TARGET_VERSION + '.');
+        rewindReplay(S.TARGET_VERSION);
       }, 'small ghost', 'con:reset'),
       h('span', { class: 'small' }, 'PRAGMA foreign_keys reads ',
         h('code', { text: String(fkOn) }),
@@ -2936,41 +3052,92 @@
 
   /* ============================================================== BOOT === */
 
-  /* The walk is chunked, one rung per timeout.
+  /* The walk is chunked, and the unit of a chunk is ONE census-bearing call.
    *
-   * A census is about a quarter of a second and the walk takes thirteen of them,
-   * so run as one block this is five seconds of a frozen page with nothing on it.
-   * One rung per timeout costs the same total and the Migrations panel fills in
-   * in front of the reader, the badges update, and the browser answers a click.
-   * Each rung's AFTER census becomes the next rung's BEFORE — still a value
-   * captured before the next rung runs, which is the rule that matters — and that
-   * halves the count. */
+   * A census is about a third of a second and the walk takes nineteen of them.
+   * Run as one block that is the freeze RN.rewindTo() still demonstrates when it
+   * is asked to replay in a single call: measured on this machine, one
+   * uninterrupted block of nine and a half seconds. The chunking costs the same
+   * total and the Migrations panel fills in in front of the reader, the badge
+   * counts the rungs off, and the browser answers a click in between. Each rung's
+   * AFTER census becomes the next rung's BEFORE — still a value captured before
+   * the next rung runs, which is the rule that matters — and that halves the
+   * count.
+   *
+   * One chunk per RUNG is not enough, because a refusing rung is three of those
+   * calls — the refusal, the fixes, the re-run — and those were the longest
+   * blocks on the page. So each gets its own task. The rung still repairs itself
+   * without being asked; only the yielding changed.
+   *
+   * Both walkers on this page — the one at boot and the one behind Rewind — enter
+   * through startLadderWalk, so there is one ladder walk and not two that drift
+   * apart. */
+  function startLadderWalk(from, carry, target, done) {
+    state.walkTarget = target;
+    state.walkAfter = done || null;
+    walkStep(from, carry);
+  }
+
   function walkStep(v, carry) {
     var db = dbh();
-    if (!db || v > S.TARGET_VERSION) { walkDone(); return; }
-    state.bootStep = 'applying v' + v + ' of ' + S.TARGET_VERSION;
+    if (!db || v > state.walkTarget) { walkDone(); return; }
+    /* Announced BEFORE the rung runs and painted across, so the seconds the
+     * thread is shut have a number on them rather than being dead air. */
+    state.bootStep = 'applying v' + v + ' of ' + state.walkTarget;
+    paintLive();
+    renderIfVisible('migrations');
+    afterPaint(function () { walkApply(v, carry); });
+  }
+
+  function walkApply(v, carry) {
+    var db = dbh();
+    if (!db) { walkDone(); return; }
     var r = RN.applyOne(v, { db: db, before: carry });
     var slot = { refused: null, applied: null };
-    if (r.refused) {
-      slot.refused = r;
-      state.rungs[v] = slot;
-      renderIfVisible('migrations');
-      /* The fixes are applied and the rung re-run in the same chunk, because a
-       * page that stopped on the first refusal would need the reader to know
-       * which button to press before anything else on it worked. Both reports are
-       * kept: the refusal is the interesting one. */
-      slot.fixes = RN.fixRefusal(v, { db: db });
-      var again = RN.applyOne(v, { db: db });
-      if (again.refused) slot.refused = again; else slot.applied = again;
-    } else slot.applied = r;
+    if (!r.refused) { slot.applied = r; walkRungDone(v, slot); return; }
+    slot.refused = r;
+    state.rungs[v] = slot;
+    renderIfVisible('migrations');
+    afterPaint(function () { walkFix(v, slot); });
+  }
+
+  function walkFix(v, slot) {
+    var db = dbh();
+    if (!db) { walkDone(); return; }
+    slot.fixes = RN.fixRefusal(v, { db: db });
+    afterPaint(function () { walkCensus(v, slot); });
+  }
+
+  /* The re-run cannot reuse the census this rung started from — the fixes wrote
+   * rows since — so it needs one of its own, and left to applyOne that census
+   * shares a task with the rung and doubles the block. Taken here it is a VALUE
+   * handed over, which is the §4.3 rule anyway, and nothing between this line and
+   * the rung writes to the database. */
+  function walkCensus(v, slot) {
+    var db = dbh();
+    if (!db) { walkDone(); return; }
+    var before = C ? C.take(db.exec.bind(db)) : null;
+    afterPaint(function () { walkRetry(v, slot, before); });
+  }
+
+  function walkRetry(v, slot, before) {
+    var db = dbh();
+    if (!db) { walkDone(); return; }
+    /* Both reports are kept: the refusal is the interesting one. */
+    var again = RN.applyOne(v, { db: db, before: before });
+    if (again.refused) slot.refused = again; else slot.applied = again;
+    walkRungDone(v, slot);
+  }
+
+  function walkRungDone(v, slot) {
+    var db = dbh();
     state.rungs[v] = slot;
     state.version = RN.userVersion({ db: db });
     if (v === 6 && slot.applied) state.bytes6 = exportKeepingFk(db);
     if (v === S.TARGET_VERSION && slot.applied) state.bytes9 = exportKeepingFk(db);
     renderIfVisible('migrations');
-    var next = slot.applied && slot.applied.census ? slot.applied.census.after : null;
     if (!slot.applied) { walkDone(); return; }
-    setTimeout(function () { walkStep(v + 1, next); }, 0);
+    walkStep(v + 1, slot.applied.census ? slot.applied.census.after : null);
   }
 
   function renderIfVisible(name) {
@@ -2978,10 +3145,17 @@
   }
 
   function walkDone() {
-    state.booting = false;
+    state.walkTarget = null;
     state.bootStep = 'ready';
-    recomputeLive();
-    rerender();
+    var after = state.walkAfter;
+    state.walkAfter = null;
+    /* A replay brought its own ending — the badge, the announcement and the
+     * re-measured invariants all differ from the boot's. */
+    if (after) { after(); return; }
+    state.booting = false;
+    /* The same ending every other path that moves the schema gets: the version
+     * re-read, the per-panel caches dropped, both routes recomputed. */
+    afterLadderChange();
     if (T) setTimeout(runTests, 30);
     if (St) {
       St.history(12).then(function (list) {
@@ -3016,7 +3190,7 @@
     state.rungs[1] = { refused: null, applied: b.v1 };
     state.version = b.version;
     rerender();
-    setTimeout(function () { walkStep(2, b.census); }, 0);
+    startLadderWalk(2, b.census, S.TARGET_VERSION, null);
   }
 
   function boot() {
@@ -3062,8 +3236,9 @@
     }
     E.ready().then(function () {
       state.bootStep = 'building the fixture';
+      paintLive();
       rerender();
-      setTimeout(startWalk, 0);
+      afterPaint(startWalk);
     }).catch(function (e) {
       state.bootErr = 'The SQLite engine did not start: ' + (e && e.message || e);
       state.booting = false;

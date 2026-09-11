@@ -289,7 +289,9 @@ have locked up for seven.
 So the whole engine moved into a worker. After the change the longest main-thread
 block is **1.2 seconds**, and every tab responds in under 100 ms while the suite
 is still running. The badge takes the same ~29 seconds to reach `1012/1012`; the
-difference is that the page works the entire time.
+difference is that the page works the entire time the suite is running. That
+sentence is about the suite and nothing else — the ladder is a second block on the
+same thread, it is not in the worker, and the section below is about that one.
 
 This was possible without touching any of the engine files because they are all
 DOM-free by design — only `app.js` and `store.js` reach for the document or for
@@ -301,6 +303,55 @@ path CI drives. Moving the badge off-thread changed nothing about what is
 verified on every push. It is also the fallback: a worker can fail to start for
 reasons that have nothing to do with this code, and both paths were verified to
 reach `1012/1012` — the second by deleting `window.Worker` before load.
+
+---
+
+## The ladder walk is chunked, and one rung per timeout was not enough
+
+The nine rungs are the other long job on this page and they cannot move into a
+worker: the ladder walks the database the tabs are showing, so it runs here. A
+rung is a migration plus one or two censuses, a census is about a third of a
+second, and boot takes **19 of them** to get from v1 to v9.
+
+The walk was already chunked, one rung per `setTimeout(…, 0)`, and that was not
+enough. How it was measured: fourteen page loads, one real trusted click each on a
+tab button, at 800 ms through 6,000 ms after navigation commit, timing the press
+against the page's own capture-phase listener. Before the change those clicks were
+answered in **5–6 ms when the press happened to land between tasks and in
+372–1,327 ms when it landed inside one**, and the longest single main-thread block
+was **1,460 ms**. Two things were wrong with the chunking. A refusing rung is
+three census-bearing calls in ONE task — the refusal, the one-statement fixes, the
+re-run — and those were the longest tasks on the page. And a timer tick is not a
+painted frame, so the rung the page was on was never actually seen.
+
+So the unit of a chunk is one census-bearing call rather than one rung, and the
+yield is `requestAnimationFrame` and then a task, which puts the work after a
+frame the browser has committed. The same fourteen clicks are now answered in
+**2–7 ms between chunks and 305–445 ms inside one**, and the longest block is
+**0.70–0.85 s** — `RN.boot()` itself, which applies v1 and pours in the whole
+fixture in one call and cannot be split from `app.js`. The shape is still
+bimodal, because a press either lands in a gap or waits out the chunk it landed
+in; what changed is how long that chunk is. Nothing about the ladder changed: the
+same `applyOne` calls in the same order, the same auto-fix, the same 19 censuses.
+
+**Rewind and replay** was worse than boot. `RN.rewindTo(9)` reopens v1's bytes and
+replays all nine rungs inside one call, which measured a **single 9.4–10.3 second
+block** — no spinner, no disabled button, nothing said until it was over. The page
+now asks the runner only for the reopen, which is cheap, and replays through the
+same chunked walk. Measured after, over the three buttons that do it: **17 chunks,
+longest block 830–927 ms**, and a labelled busy state painted **86–193 ms after
+the press** that greys every button until the replay finishes.
+
+While the ladder is walking, the three tabs that measure something once and keep
+it — Plans, Rebuild, Constraints — hold back rather than print figures taken off a
+half-migrated database, and fill in when the walk arrives. That is the cost of a
+page that answers during the walk, and it is the right one: a plan measured at v4
+is a plan of a schema about to stop existing, and nothing would ever have
+re-measured it.
+
+What is still true: the total is unchanged. Chunking buys no speed and was never
+meant to — boot still takes about six seconds of real work. It buys a page that
+answers while that work happens, and a badge that says which rung it is on.
 
 ---
 

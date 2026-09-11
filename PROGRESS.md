@@ -385,6 +385,46 @@ try/catch; zero network egress scoped to the lab page; copyright header in every
 - ONE REAL FINDING FROM CI while wiring up: vnu rejected `aria-label` on a bare `<div>` with no
   role. Fixed with `role="group"`. Exactly the class of thing the three-validator stack exists for.
 
+## End-to-end debug pass over the whole site (2026-09-11)
+- Every one of the 17 pages driven in real Chromium, not read: hostile storage (localStorage and
+  IndexedDB both throwing), `Worker` removed, `crypto.subtle` removed, `BroadcastChannel` removed,
+  390px, both themes, and a keyboard-only sweep of every interactive control.
+- 74 raw findings. Each blocker and serious one was REPRODUCED before it counted: 32 confirmed,
+  6 rejected — including one of the triage pass's own measurements. 33 fixed.
+- THE FIX PASS WAS SPLIT INTO DISJOINT FILE GROUPS, and that is the standing rule now. Parallel
+  agents editing one working tree collide, and the collision does not look like a conflict — it
+  looks like a verifier reporting that the tree "was moving the whole time". Hunting can be wide
+  and read-only; fixing has to partition the files.
+- THE WORST BUG WAS INTRODUCED BY A FIX, not found by the hunt. A tab id kept in `sessionStorage`
+  passes the gudang write-lock check in BOTH tabs after Duplicate Tab, because sessionStorage is
+  COPIED into the duplicate — so two tabs minted the same nota number. Reproduced by hand, then
+  fixed with a `BroadcastChannel` liveness handshake: a tab that hears its own id claimed by
+  someone else re-mints and drops to read-only. Verified the duplicate is read-only and that a
+  plain reload still reclaims the lock, three times running.
+- Print contrast: `.tl-time` was a light chip on a light ground once the browser's
+  Background-graphics setting is off, which is the DEFAULT. Forced to ink on white — measured
+  9.74:1, not estimated. I wrote "8.6:1" in the comment before measuring and had to correct it.
+- The live site is NOT reachable from this sandbox (`CONNECT tunnel failed, response 403`). All of
+  this ran against the byte-identical working tree over local HTTP. Said plainly rather than
+  implied, because "tested end to end" reads as "tested the deployment" and it was not.
+- Two known non-clean pages, both already on the blocked list: the font CDN and GitHub API on `/`
+  (sandbox egress), and the missing `assets/images/vault-dashboard.png` on `/case/repbout/`.
+
+## Merging with a parallel session (2026-09-11)
+- Another session landed Sepakat on master while this branch was open. git auto-merged all 16
+  files with ZERO conflicts — and a clean auto-merge is exactly where the counts break, because
+  both branches edited the same aggregate prose and git takes both edits happily.
+- Caught by hand, not by a validator: the labs hub still said "Ten applications", "nine of the ten
+  have no dependencies", "nine of the ten run their own assertions", "five engineering demos" and
+  the Indonesian equivalents, while the stats strip beside them already read 11 / 10-of-11 / 5,826.
+  test:i18n does not catch this — the markup and the dictionary agreed with each other; they were
+  simply both wrong.
+- Site total re-measured rather than inherited: 5,826 across ten engine labs, sepakat contributing
+  169. Eleven applications, ten of eleven with zero dependencies (Rombak vendors SQLite).
+- Also stale and unrelated to the merge: a comment claiming "the nine cards already in the markup"
+  for the repositories fallback, when one had been removed and there are eight. Rewritten without
+  a number — a count in a comment nothing checks will drift again.
+
 ## Next / ideas (not yet done)
 - Fill in the About + Topics fields of each repo on GitHub. The CV now reads them
   live, so this is by far the cheapest way to improve how the site looks — every

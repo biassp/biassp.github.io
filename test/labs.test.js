@@ -41,6 +41,7 @@ const LABS = [
   { dir: 'rombak', call: 'ROMBAK_TESTS.run()' },
   { dir: 'sahih', call: 'SAHIH_TESTS.run()' },
   { dir: 'serobot', call: 'SEROBOT_TESTS.run()' },
+  { dir: 'sepakat', call: 'SEPAKAT_TESTS.run()' },
 ];
 
 const MIME = {

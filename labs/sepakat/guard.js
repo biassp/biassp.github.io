@@ -1,0 +1,109 @@
+/*!
+ * Sepakat — part of the biassp.github.io portfolio
+ * Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+ * Not open source. Readable for evaluation only — copying, modification,
+ * re-branding or redistribution is not permitted. See /LICENSE.
+ * https://biassp.github.io/
+ */
+/* Sepakat - guard.js
+ * Loaded first, before anything else, for two jobs.
+ *
+ * 1. Theme, applied before first paint so there is no flash. Every storage
+ *    access is wrapped: localStorage THROWS outright where site data is blocked,
+ *    and one unguarded read is enough to kill a whole script block.
+ *
+ * 2. The egress counter. The page's CSP already sets connect-src 'none', so the
+ *    browser refuses outbound connections whatever the JavaScript does. This wraps
+ *    the four APIs that could try anyway and counts attempts, so the header can
+ *    show a number a visitor can check against their own DevTools Network tab.
+ *
+ * That claim carries more weight here than in the other labs, because this one is
+ * about replication: the whole page is four "devices" gossiping to each other, and
+ * the natural assumption is that a server somewhere is holding the state. There is
+ * no server. Every replica, every message and every clock in this page lives in
+ * one tab, in memory, and the counter is how you check that without taking my word
+ * for it. The CV homepage does call api.github.com for its repo feed; this page
+ * calls nothing.
+ */
+(function () {
+  'use strict';
+
+  /* ---- theme ---- */
+  // Values are stored RAW ('light' / 'dark') by both this lab and the CV. Anything
+  // else under our own key is a fossil from some other build and must not pin a
+  // returning visitor to the wrong theme, so it falls through to the shared key.
+  function readTheme(key) {
+    var v = null;
+    try { v = localStorage.getItem(key); } catch (e) { return null; }
+    if (v == null) return null;
+    v = String(v).replace(/^"+|"+$/g, '');
+    return (v === 'light' || v === 'dark') ? v : null;
+  }
+  var stored = readTheme('sepakat.theme') || readTheme('theme');
+  // Dark by default, exactly like the CV, which also ignores prefers-color-scheme
+  // so that a visitor who chose a theme there sees the same one here.
+  var theme = (stored === 'light' || stored === 'dark') ? stored : 'dark';
+  try {
+    var raw = localStorage.getItem('sepakat.theme');
+    if (raw != null && raw !== 'light' && raw !== 'dark') localStorage.setItem('sepakat.theme', theme);
+  } catch (e2) { /* site data blocked */ }
+  document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.classList.add('js');
+
+  /* ---- egress counter ---- */
+  var counts = { fetch: 0, xhr: 0, beacon: 0, websocket: 0, eventsource: 0 };
+  var log = [];
+  function note(kind, target) {
+    counts[kind]++;
+    log.push({ kind: kind, target: String(target).slice(0, 200), at: Date.now() });
+    if (window.SEPAKAT_GUARD && typeof window.SEPAKAT_GUARD.onchange === 'function') {
+      try { window.SEPAKAT_GUARD.onchange(); } catch (e) { }
+    }
+  }
+
+  if (typeof window.fetch === 'function') {
+    var realFetch = window.fetch;
+    window.fetch = function (input) {
+      note('fetch', (input && input.url) || input);
+      return realFetch.apply(this, arguments);
+    };
+  }
+  if (window.XMLHttpRequest && window.XMLHttpRequest.prototype) {
+    var realOpen = window.XMLHttpRequest.prototype.open;
+    window.XMLHttpRequest.prototype.open = function (method, url) {
+      note('xhr', method + ' ' + url);
+      return realOpen.apply(this, arguments);
+    };
+  }
+  if (window.navigator && typeof window.navigator.sendBeacon === 'function') {
+    var realBeacon = window.navigator.sendBeacon.bind(window.navigator);
+    window.navigator.sendBeacon = function (url) { note('beacon', url); return realBeacon.apply(null, arguments); };
+  }
+  if (typeof window.WebSocket === 'function') {
+    var RealWS = window.WebSocket;
+    var WrappedWS = function (url, protocols) {
+      note('websocket', url);
+      return protocols === undefined ? new RealWS(url) : new RealWS(url, protocols);
+    };
+    WrappedWS.prototype = RealWS.prototype;
+    ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'].forEach(function (k) { WrappedWS[k] = RealWS[k]; });
+    window.WebSocket = WrappedWS;
+  }
+  if (typeof window.EventSource === 'function') {
+    var RealES = window.EventSource;
+    var WrappedES = function (url, cfg) { note('eventsource', url); return new RealES(url, cfg); };
+    WrappedES.prototype = RealES.prototype;
+    window.EventSource = WrappedES;
+  }
+
+  window.SEPAKAT_GUARD = {
+    counts: counts,
+    log: log,
+    total: function () {
+      var n = 0;
+      for (var k in counts) if (Object.prototype.hasOwnProperty.call(counts, k)) n += counts[k];
+      return n;
+    },
+    onchange: null
+  };
+})();

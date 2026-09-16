@@ -21,6 +21,7 @@ nothing — `labs/sahih/` does real RSA, ECDSA and HMAC on the browser's own
 | `labs/` | Eleven demo applications that run entirely inside a browser tab, with no server |
 | `case/` | Case studies: BioAge, Radar Duit, Cek Aman, RepBout, Selingkuh Detector |
 | `test/` | Tests. Never served to a visitor. |
+| `_lamaran/` | Job application tracker. Never served to a visitor, and the actual notes are gitignored rather than committed — see [`_lamaran/README.md`](_lamaran/README.md) |
 
 ## Running the tests
 

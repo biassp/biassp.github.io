@@ -160,6 +160,44 @@
             border-bottom: 1px solid var(--border);
         }
 
+        /* PROMO BAR — a slim availability announcement above the nav. It scrolls
+           away with the page; the sticky nav keeps its own Hire link afterward. */
+        .promo-bar {
+            background: color-mix(in srgb, var(--ok) 13%, var(--bg));
+            border-bottom: 1px solid color-mix(in srgb, var(--ok) 30%, transparent);
+            color: var(--text);
+            font-size: .85rem;
+            font-weight: 500;
+        }
+
+        .promo-bar .wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 40px;
+            padding: 7px 0;
+            text-align: center;
+            flex-wrap: wrap;
+        }
+
+        .promo-bar .pulse {
+            background: var(--ok);
+            box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 60%, transparent);
+        }
+
+        .promo-bar .promo-link {
+            color: var(--accent-2);
+            font-weight: 700;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .promo-bar .promo-link:hover,
+        .promo-bar .promo-link:focus-visible {
+            text-decoration: underline;
+        }
+
         /* min-height, not height: the bar has to grow rather than clip when the
            brand or the CTA needs a second line. At 390px the wordmark used to
            render three lines with the first cut off above the bar. */
@@ -1025,7 +1063,7 @@
                 --shadow: none;
                 --shadow-sm: none;
             }
-            body::before, header.nav, .hero-cta, footer .soc, .proj-cover .blob,
+            body::before, header.nav, .promo-bar, .hero-cta, footer .soc, .proj-cover .blob,
             .repo-filters, .repo-note, .repo-skel { display: none !important; }
             .card, .tl-card, .proj, .stat { box-shadow: none; border-color: #ccc; break-inside: avoid; }
             /* The one row still under 4.5:1 on paper once the reader turns
@@ -1054,6 +1092,15 @@
 </head>
 
 <body>
+    <!-- PROMO BAR — available-for-freelance announcement -->
+    <div class="promo-bar">
+        <div class="wrap">
+            <span class="pulse"></span>
+            <span data-i18n="promo.text">Available now for freelance projects — remote, worldwide.</span>
+            <a class="promo-link" href="./hire/" data-i18n="promo.cta">See rates &amp; hire me →</a>
+        </div>
+    </div>
+
     <!-- NAV -->
     <header class="nav">
         <div class="wrap nav-inner">
@@ -2230,6 +2277,8 @@
             "btn.cv": { en: "CV", id: "CV" },
 
             "hero.eyebrow": { en: "<span class=\"pulse\"></span>Available for freelance — rates and scope", id: "<span class=\"pulse\"></span>Terbuka untuk freelance — tarif dan lingkupnya" },
+            "promo.text": { en: "Available now for freelance projects — remote, worldwide.", id: "Tersedia untuk proyek freelance — remote, ke seluruh dunia." },
+            "promo.cta": { en: "See rates & hire me →", id: "Lihat tarif & sewa jasa →" },
             "nav.hire": { en: "Hire", id: "Sewa jasa" },
             "hero.title": { en: "Hi, I'm <span class=\"grad\">Bias Satrio Putra</span>", id: "Halo, saya <span class=\"grad\">Bias Satrio Putra</span>" },
             "hero.role": { en: "IT Professional · Full-Stack Developer & Product Builder", id: "Profesional IT · Full-Stack Developer & Product Builder" },

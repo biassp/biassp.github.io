@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<!--
+  Jasa integrasi payment gateway — biassp.github.io
+  Copyright (c) 2026 Bias Satrio Putra. All rights reserved.
+  Not open source. Readable for evaluation only — copying, modification,
+  re-branding or redistribution is not permitted. See /LICENSE.
+
+  Indonesian-only, by design. The rest of the site is English-first with an
+  EN/ID toggle, but this page exists to be found by Indonesian search queries,
+  and a toggle would serve English to the crawler — which defeats the point.
+  So it ships no #langToggle and no window.PAGE_I18N; case.js guards on both,
+  leaving only the theme toggle active. It is therefore absent from the PAGES
+  list in test/i18n.test.js on purpose: there is no second language to go stale.
+-->
+<html lang="id" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jasa Integrasi Payment Gateway — Midtrans, Xendit, Stripe</title>
+    <meta name="description"
+        content="Jasa integrasi payment gateway dengan webhook terverifikasi signature, idempotency, dan rekonsiliasi antar-provider. Pernah mengerjakan checkout produksi dengan tiga gateway sekaligus. Midtrans, Xendit, DOKU, Stripe.">
+    <meta name="author" content="Bias Satrio Putra">
+    <meta name="copyright" content="Copyright (c) 2026 Bias Satrio Putra. All rights reserved.">
+    <link rel="canonical" href="https://biassp.github.io/jasa/integrasi-payment-gateway/">
+    <link rel="stylesheet" href="../../case/case.css">
+    <link rel="stylesheet" href="../../hire/hire.css">
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2032%2032%22%3E%3Crect%20width=%2232%22%20height=%2232%22%20rx=%227%22%20fill=%22%236366f1%22/%3E%3Ccircle%20cx=%2216%22%20cy=%2212%22%20r=%224.5%22%20fill=%22%23fff%22/%3E%3Cpath%20d=%22M7%2026c0-4.4%204-8%209-8s9%203.6%209%208z%22%20fill=%22%23fff%22/%3E%3C/svg%3E">
+</head>
+
+<body>
+    <header class="top">
+        <div class="top-in">
+            <span class="crumb"><a href="../../">CV</a> · Jasa integrasi payment gateway</span>
+            <div class="tools">
+                <button class="btn" type="button" id="tema" aria-pressed="false">Terang</button>
+                <a class="btn" href="../../hire/">Hire (EN)</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="wrap">
+        <div class="hero">
+            <span class="eyebrow">Freelance · Remote · Colombo, GMT+5:30</span>
+            <h1>Jasa integrasi payment gateway, <span class="grad">sampai pembukuannya balance</span></h1>
+            <p class="lede">Menerima pembayaran itu bagian yang mudah. Yang sulit adalah memastikan pembayaran mana
+                yang benar-benar berhasil — dan di situlah sebagian besar integrasi diam-diam gagal. Saya pernah
+                mengerjakan checkout produksi dengan tiga gateway aktif bersamaan, webhook terverifikasi signature,
+                dan rekonsiliasi antar-provider supaya pembukuan tetap balance ketika data ketiganya berbeda.</p>
+
+            <div class="facts">
+                <div class="fact"><b>3 gateway</b><span>sekaligus, di produksi</span></div>
+                <div class="fact"><b>Midtrans &amp; Xendit</b><span>plus Stripe, DOKU</span></div>
+                <div class="fact"><b>7+ tahun</b><span>full-stack, 4 pasar</span></div>
+                <div class="fact"><b>Di bawah 24 jam</b><span>balasan pertama, hari kerja</span></div>
+            </div>
+        </div>
+
+        <h2>Kenapa integrasi pembayaran gagal setelah berbulan-bulan jalan</h2>
+        <p class="muted">Bukan karena pembayarannya tidak masuk. Tapi karena tiga hal ini tidak dikerjakan, dan
+            akibatnya baru terlihat saat uangnya sudah tidak cocok.</p>
+
+        <div class="why">
+            <b>Webhook datang dua kali, datang terlambat, atau tidak datang sama sekali.</b>
+            <span>Gateway mengirim ulang notifikasi ketika server Anda membalas lambat atau sedang mati. Tanpa
+                idempotency, satu transaksi tercatat dua kali — dan kalau itu menambah saldo atau mengaktifkan
+                langganan, Anda rugi tanpa tahu. Tanpa penanganan webhook yang hilang, transaksi yang berhasil di
+                gateway tetap tercatat pending di sistem Anda selamanya.</span>
+        </div>
+
+        <div class="why">
+            <b>Notifikasi diterima tanpa diverifikasi.</b>
+            <span>Endpoint webhook terbuka di internet. Kalau signature-nya tidak dicek, siapa pun yang tahu
+                URL-nya bisa mengirim notifikasi "pembayaran berhasil" palsu. Ini bukan kemungkinan teoretis — ini
+                cara toko online kehilangan barang tanpa pernah menerima uang.</span>
+        </div>
+
+        <div class="why">
+            <b>Database berhenti cocok dengan catatan provider, dan tidak ada yang memeriksanya.</b>
+            <span>Setiap sistem pembayaran akan menyimpang dari catatan gateway cepat atau lambat. Yang membedakan
+                sistem sehat dan sistem bermasalah bukan apakah itu terjadi, tapi apakah ada proses yang menemukannya
+                di hari yang sama atau baru ketahuan saat tutup buku bulanan.</span>
+        </div>
+
+        <h2>Yang saya kerjakan</h2>
+        <p class="muted">Tiga lingkup, dan masing-masing bisa dipesan terpisah kalau yang lain sudah ada.</p>
+
+        <section class="svc">
+            <h3>1 · Integrasi gateway dan alur checkout</h3>
+            <p class="for">Untuk produk yang belum bisa menerima pembayaran sama sekali.</p>
+            <ul>
+                <li>Alur checkout lengkap: pilih metode, buat transaksi, tangani kembali dari halaman pembayaran,
+                    dan tampilkan status yang benar ketika pengguna menutup tab di tengah proses.</li>
+                <li>Snap, Core API, atau invoice — dipilih sesuai kebutuhan produk Anda, bukan sesuai yang paling
+                    cepat saya kerjakan.</li>
+                <li>Uji di sandbox sampai seluruh jalur gagal ikut terbukti, bukan hanya jalur yang berhasil.</li>
+                <li>Metode pembayaran lokal yang sebenarnya dipakai orang: QRIS, virtual account, e-wallet,
+                    kartu, dan cicilan bila tersedia di gateway Anda.</li>
+            </ul>
+            <div class="proof">
+                <b>Periksa sendiri</b>
+                <a href="../../labs/buku/">Buku — arus kas yang rekonsiliasi ke buku besar</a>
+                <a href="../../hire/">Halaman hire, lengkap dengan batasannya</a>
+            </div>
+            <p class="band"><b>Bentuk umum:</b> satu gateway, pembayaran sekali bayar, mulai Rp 4.500.000 —
+                dilingkup dan ditawar harganya sebelum apa pun dimulai.</p>
+        </section>
+
+        <section class="svc">
+            <h3>2 · Webhook yang bisa dipercaya</h3>
+            <p class="for">Untuk sistem yang sudah menerima pembayaran, tapi statusnya kadang salah.</p>
+            <ul>
+                <li>Verifikasi signature pada setiap notifikasi, sesuai skema gateway masing-masing.</li>
+                <li>Idempotency, sehingga notifikasi yang sama dikirim sepuluh kali tetap menghasilkan satu
+                    perubahan saldo.</li>
+                <li>Antrean dan retry, supaya webhook tidak hilang ketika server Anda sedang di-deploy atau
+                    sedang mati.</li>
+                <li>Log yang bisa dibaca manusia saat ada sengketa: notifikasi apa yang masuk, kapan, dan apa
+                    yang sistem lakukan karenanya.</li>
+                <li>Polling status sebagai jaring pengaman, karena webhook yang tidak pernah datang tidak akan
+                    terdeteksi oleh penanganan webhook mana pun.</li>
+            </ul>
+            <div class="proof">
+                <b>Periksa sendiri</b>
+                <a href="../../labs/rombak/">Rombak — 262 properti tentang migrasi yang menghapus baris tanpa suara</a>
+                <a href="../../labs/">Sebelas lab, 5.826 asersi, dijalankan di CI</a>
+            </div>
+            <p class="band"><b>Bentuk umum:</b> perbaikan webhook pada sistem yang sudah ada, mulai Rp 3.500.000,
+                atau per jam bila lingkupnya belum bisa dipastikan.</p>
+        </section>
+
+        <section class="svc">
+            <h3>3 · Rekonsiliasi dan penanganan gagal bayar</h3>
+            <p class="for">Untuk sistem yang jalan, tapi laporannya tidak pernah persis cocok.</p>
+            <ul>
+                <li>Pencocokan harian antara catatan Anda dan catatan gateway, dengan laporan selisih yang
+                    menyebutkan transaksi mana, bukan hanya jumlah totalnya.</li>
+                <li>Penanganan refund dan refund sebagian, termasuk efeknya ke stok dan ke pembukuan.</li>
+                <li>Pembayaran kedaluwarsa, dibatalkan, dan yang setengah jadi — ketiganya status berbeda dan
+                    sering diperlakukan sama.</li>
+                <li>Rekonsiliasi antar-provider bila Anda memakai lebih dari satu gateway, supaya satu transaksi
+                    tidak terhitung dua kali di laporan.</li>
+                <li>Langganan dan penagihan berulang, termasuk apa yang terjadi ketika pembayaran perpanjangan
+                    gagal.</li>
+            </ul>
+            <div class="proof">
+                <b>Periksa sendiri</b>
+                <a href="../../labs/payroll/">Payroll — PPh 21 rezim TER, diasersi bukan dibaca</a>
+                <a href="../../case/cek-aman/">Cek Aman — studi kasus</a>
+            </div>
+            <p class="band"><b>Bentuk umum:</b> rekonsiliasi dan jalur gagal bayar, mulai Rp 9.000.000. Beberapa
+                gateway sekaligus dengan test suite, mulai Rp 18.000.000.</p>
+        </section>
+
+        <h2>Harga dan cara kerjanya</h2>
+        <p class="muted">Dalam rupiah, belum termasuk potongan platform kalau Anda menyewa saya lewat salah satunya.
+            Harga tetap lebih baik untuk kita berdua di mana pun lingkupnya bisa dituliskan, karena risiko estimasi
+            saya jatuh ke saya, bukan ke Anda.</p>
+
+        <div class="scroller">
+            <table class="rates">
+                <thead>
+                    <tr>
+                        <th>Bentuk</th>
+                        <th>Kapan cocok</th>
+                        <th>Harga</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Satu gateway</td>
+                        <td>Produk belum bisa menerima pembayaran. Sekali bayar, satu metode utama.</td>
+                        <td>Dari Rp 4.500.000</td>
+                    </tr>
+                    <tr>
+                        <td>Perbaikan webhook</td>
+                        <td>Pembayaran sudah masuk, tapi status di sistem kadang salah atau dobel.</td>
+                        <td>Dari Rp 3.500.000</td>
+                    </tr>
+                    <tr>
+                        <td>Rekonsiliasi penuh</td>
+                        <td>Laporan tidak pernah cocok, atau Anda memakai lebih dari satu gateway.</td>
+                        <td>Dari Rp 9.000.000</td>
+                    </tr>
+                    <tr>
+                        <td>Per jam</td>
+                        <td>Basis kode yang sudah ada, atau pekerjaan yang bentuknya berubah seiring kita tahu
+                            isinya.</td>
+                        <td>Rp 700.000–1.300.000</td>
+                    </tr>
+                    <tr>
+                        <td>Panggilan pertama</td>
+                        <td>Tiga puluh menit untuk tahu apakah saya orang yang tepat. Sering kali bukan, dan akan
+                            saya katakan.</td>
+                        <td>Gratis</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>Gateway yang saya tangani</h2>
+        <p class="muted">Lokal lebih dulu, karena di situ pekerjaan Indonesia sebenarnya berada.</p>
+        <div class="why">
+            <b>Indonesia: Midtrans, Xendit, DOKU, iPaymu.</b>
+            <span>QRIS, virtual account semua bank besar, e-wallet, kartu, dan cicilan. Ini yang dibutuhkan klien
+                Indonesia, dan ini bagian yang biasanya tidak dipahami pengembang luar negeri yang hanya pernah
+                memakai Stripe.</span>
+        </div>
+        <div class="why">
+            <b>Internasional: Stripe, PayPal, Paddle, Mollie, Razorpay.</b>
+            <span>Termasuk langganan, penagihan berulang, dan pajak digital bila penjualannya lintas negara. Fiat
+                maupun kripto.</span>
+        </div>
+        <div class="why">
+            <b>Stack: Node.js, Next.js, React, PHP, Laravel, WooCommerce.</b>
+            <span>Kalau gateway Anda punya REST API dan dokumentasi, saya bisa mengerjakannya meski namanya tidak
+                ada di daftar ini. Yang menentukan bukan nama providernya, tapi apakah alur gagalnya ditangani.</span>
+        </div>
+
+        <h2>Yang tidak saya kerjakan</h2>
+        <p class="muted">Setiap lab di situs ini mencantumkan batasnya sebagai bagian dari lab itu sendiri. Begitu
+            juga saya.</p>
+
+        <div class="honest">
+            <b>Saya tidak meminta secret key produksi Anda.</b>
+            <span>Key tetap berada di environment Anda sendiri. Saya bekerja memakai kredensial sandbox dan
+                memverifikasi hasilnya lewat dashboard gateway Anda. Kalau ada pengembang yang meminta live secret
+                key dikirim lewat chat, itu alasan yang cukup untuk tidak memakainya — termasuk kalau itu saya.</span>
+        </div>
+
+        <div class="honest">
+            <b>Saya tidak membangun sistem yang menyimpan nomor kartu Anda sendiri.</b>
+            <span>Data kartu tetap berada di gateway yang sudah tersertifikasi PCI DSS, lewat tokenisasi atau
+                halaman pembayaran milik mereka. Membangun penyimpanan kartu sendiri berarti menanggung beban
+                kepatuhan yang jauh lebih besar daripada nilai proyeknya, dan saya akan menolaknya.</span>
+        </div>
+
+        <div class="honest">
+            <b>Saya bukan konsultan lisensi atau kepatuhan.</b>
+            <span>Saya bisa membangun sistemnya dan menjelaskan apa yang dicatat di mana. Pertanyaan apakah model
+                bisnis Anda butuh izin PJP atau PJSP dari Bank Indonesia harus dijawab oleh penasihat hukum, bukan
+                oleh pengembang.</span>
+        </div>
+
+        <div class="honest">
+            <b>Saya tidak menjanjikan selisih nol tanpa melihat datanya.</b>
+            <span>Kalau pembukuan Anda sudah menyimpang berbulan-bulan, pekerjaan pertamanya adalah mencari tahu
+                sejak kapan dan kenapa. Saya akan menyebutkan angkanya apa adanya, termasuk kalau yang ditemukan
+                lebih buruk dari yang Anda duga.</span>
+        </div>
+
+        <div class="honest">
+            <b>Jam kerja Amerika tidak cocok.</b>
+            <span>Colombo di GMT+5:30. Indonesia, Asia Tenggara, Teluk, dan Eropa beririsan nyaman dengan hari
+                saya. Amerika bagian Pasifik tidak.</span>
+        </div>
+
+        <h2>Pertanyaan yang sering masuk</h2>
+
+        <h3>Gateway mana yang sebaiknya saya pakai?</h3>
+        <p>Tergantung apa yang Anda jual, siapa pembelinya, dan berapa nilai transaksi rata-ratanya. Sebutkan
+            ketiganya dan saya beri jawaban langsung, termasuk perkiraan biaya yang akan benar-benar Anda bayar per
+            transaksi. Itu gratis dan tidak perlu memesan apa pun dulu.</p>
+
+        <h3>Apa yang terjadi kalau pembayaran setengah jadi?</h3>
+        <p>Justru itu pekerjaannya. Webhook terverifikasi ditambah idempotency memastikan satu event tidak menagih
+            dua kali, dan rekonsiliasi menangkap apa pun yang terlewat oleh webhook. Kalau sebuah penawaran
+            integrasi tidak menyebut keduanya, bagian itu kemungkinan besar tidak dikerjakan.</p>
+
+        <h3>Saya sudah punya sistem pembayaran, tapi statusnya kadang salah. Bisa diperbaiki tanpa dibangun ulang?</h3>
+        <p>Biasanya bisa, dan itu memang yang saya sarankan lebih dulu. Saya periksa jalur webhook dan pencatatannya,
+            lalu sampaikan apakah ini perbaikan beberapa hari atau memang perlu dibangun ulang. Kalau jawabannya
+            membangun ulang, saya katakan sebelum Anda membayar, bukan di tengah jalan.</p>
+
+        <h3>Berapa lama?</h3>
+        <p>Satu gateway sekali bayar biasanya kurang dari seminggu kerja. Rekonsiliasi penuh pada sistem yang sudah
+            berjalan lebih lama, karena sebagian besar waktunya habis untuk membaca apa yang sudah ada, bukan untuk
+            menulis kode baru. Saya memegang pekerjaan penuh waktu, jadi tanggal yang saya berikan sudah
+            memperhitungkan itu.</p>
+
+        <h3>Apakah kode dan dokumentasinya saya pegang?</h3>
+        <p>Ya, seluruhnya. Kode, handler webhook, test untuk jalur gagalnya, dan catatan tertulis tentang apa yang
+            terjadi saat pembayaran setengah jadi. Tujuannya supaya Anda tidak terikat pada saya setelah pekerjaan
+            selesai.</p>
+
+        <h2>Mulai dari sini</h2>
+        <p>Ceritakan apa yang Anda jual, gateway yang sudah dipakai atau sedang dipertimbangkan, dan apa yang
+            sekarang bermasalah. Kalau ada repositori atau akses staging, sebutkan — saya lebih suka menjawab dengan
+            sesuatu yang spesifik daripada dengan daftar harga.</p>
+
+        <p>
+            <a class="cta"
+                href="mailto:biascanester@gmail.com?subject=Jasa%20integrasi%20payment%20gateway">Kirim email</a>
+            <a class="cta ghost" href="https://www.linkedin.com/in/bias-satrio-putra-b166a211b/" target="_blank"
+                rel="noopener">LinkedIn</a>
+            <a class="cta ghost" href="../../labs/">Buka labnya dulu</a>
+        </p>
+
+        <div class="honest">
+            <b>Ketersediaan, dinyatakan terus terang.</b>
+            <span>Saya memegang pekerjaan penuh waktu. Pekerjaan freelance berjalan di sekitarnya, sekitar lima
+                belas jam seminggu. Saya lebih baik menjanjikan tanggal yang lebih lambat tapi bisa saya pegang
+                daripada yang cepat tapi tidak.</span>
+        </div>
+
+        <div class="next">
+            <a href="../../">← Kembali ke CV</a>
+            <a href="../../hire/">Halaman hire, dalam bahasa Inggris →</a>
+        </div>
+    </main>
+
+    <footer class="wrap">
+        <p class="muted">© 2026 Bias Satrio Putra. Seluruh hak dilindungi. Bukan open source — lihat
+            <a href="../../LICENSE">LICENSE</a>.</p>
+    </footer>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "serviceType": "Integrasi payment gateway",
+      "name": "Jasa integrasi payment gateway",
+      "description": "Integrasi payment gateway dengan webhook terverifikasi signature, idempotency, dan rekonsiliasi antar-provider. Midtrans, Xendit, DOKU, Stripe.",
+      "url": "https://biassp.github.io/jasa/integrasi-payment-gateway/",
+      "inLanguage": "id",
+      "provider": {
+        "@type": "Person",
+        "name": "Bias Satrio Putra",
+        "url": "https://biassp.github.io/",
+        "jobTitle": "Full-stack developer"
+      },
+      "areaServed": {
+        "@type": "Country",
+        "name": "Indonesia"
+      },
+      "offers": {
+        "@type": "Offer",
+        "priceCurrency": "IDR",
+        "price": "4500000",
+        "priceSpecification": {
+          "@type": "PriceSpecification",
+          "priceCurrency": "IDR",
+          "minPrice": "3500000",
+          "description": "Harga mulai, tergantung lingkup. Dilingkup dan ditawar harganya sebelum pekerjaan dimulai."
+        }
+      }
+    }
+    </script>
+    <script src="../../case/case.js"></script>
+</body>
+
+</html>
